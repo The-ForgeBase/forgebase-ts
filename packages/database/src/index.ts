@@ -2,7 +2,7 @@ import type { Knex } from "knex";
 import { PermissionService } from "./permissionService";
 import { enforcePermissions } from "./rlsManager";
 import { DBInspector, type DatabaseSchema } from "./utils/inspector";
-import KnexHooks from "./knex-hooks";
+import { KnexHooks } from "./knex-hooks";
 import type {
   AddForeignKeyParams,
   DataDeleteParams,
@@ -380,3 +380,10 @@ export const createForgebase = (config: ForgebaseConfig) => {
 
 // Export types
 export * from "./types.js";
+export * from "./utils/column-utils.js";
+export * from "./utils/inspector.js";
+export * from "./knex-hooks.js";
+export * from "./permissionService.js";
+export * from "./rlsManager.js";
+export * from "./schema.js";
+export * from "./sdk/server.js";

@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import type KnexHooks from "./knex-hooks";
+import type { KnexHooks } from "./knex-hooks";
 import type { PermissionService } from "./permissionService";
 import type { DatabaseSchema } from "./utils/inspector";
 import { QueryParams } from "./sdk/server";

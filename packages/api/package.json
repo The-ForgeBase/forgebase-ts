@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/api.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && nx vite:build"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.7",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.5",
+    "vite-plugin-dts": "^4.5.0"
+  },
+  "dependencies": {
+    "@libsql/knex-libsql": "^0.1.0",
+    "database": "workspace:*",
+    "express": "^4.21.2",
+    "fastify": "^5.2.1",
+    "hono": "^4.6.17",
+    "knex": "^3.1.0"
+  }
+}

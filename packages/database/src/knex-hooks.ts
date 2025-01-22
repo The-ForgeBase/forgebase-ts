@@ -149,4 +149,4 @@ class KnexHooks {
   }
 }
 
-export default KnexHooks;
+export { KnexHooks };

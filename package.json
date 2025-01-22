@@ -9,7 +9,8 @@
     "format": "prettier --write .",
     "common": "pnpm --filter common",
     "app": "pnpm --filter web-app",
-    "database": "pnpm --filter database"
+    "database": "pnpm --filter database",
+    "api": "pnpm --filter api"
   },
   "keywords": [],
   "author": "",
