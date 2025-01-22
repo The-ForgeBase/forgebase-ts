@@ -1,0 +1,34 @@
+{
+  "name": "forgebase-ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "common": "pnpm --filter common",
+    "app": "pnpm --filter web-app",
+    "database": "pnpm --filter database"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@nx/eslint": "20.3.2",
+    "@nx/vite": "20.3.2",
+    "@nx/web": "20.3.2",
+    "@vitest/ui": "^1.3.1",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "globals": "^15.14.0",
+    "nx": "20.3.2",
+    "prettier": "^3.4.2",
+    "typescript-eslint": "^8.21.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.3.1"
+  },
+  "dependencies": {}
+}

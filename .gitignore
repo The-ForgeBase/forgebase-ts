@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.env
+
+
+.nx/cache
+.nx/workspace-data
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
