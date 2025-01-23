@@ -1,5 +1,4 @@
 import type { Knex } from "knex";
-import type { AuthService } from "./core/auth";
 import type { DatabaseService } from "./core/database";
 import type { StorageService } from "./core/storage";
 
@@ -15,11 +14,11 @@ export interface BaaSConfig {
   services: {
     storage: {
       provider: "local" | "s3" | "gcs";
-      config?: Record<string, any>;
+      config: Record<string, any>;
     };
     db: {
       provider: "sqlite" | "postgres" | "libsql";
-      config?: Record<string, any>;
+      config: Record<string, any>;
       knex?: Knex;
       realtime: boolean;
       enforceRls: boolean;
@@ -45,7 +44,6 @@ export type Context = {
   };
   services: {
     storage: StorageService;
-    auth: AuthService;
     db: DatabaseService;
   };
 };

@@ -1,20 +1,18 @@
 import { DataMutationParams, DataQueryParams } from "database";
 import { BaaSConfig, Context, Handler, ServerAdapter } from "../types";
-import { AuthService } from "./auth";
 import { DatabaseService } from "./database";
 import { StorageService } from "./storage";
 
 export class ForgeApi {
   private routes: Map<string, Map<string, Handler>>;
   private storage: StorageService;
-  private auth: AuthService;
   private db: DatabaseService;
   private config: BaaSConfig;
   private middlewares: Handler[] = [];
 
   constructor(config: Partial<BaaSConfig> = {}) {
     this.config = {
-      prefix: "/ForgeApi/baas",
+      prefix: "",
       auth: {
         enabled: false,
         exclude: ["/auth/login", "/auth/register"],
@@ -22,11 +20,13 @@ export class ForgeApi {
       services: {
         storage: {
           provider: "local",
+          config: {},
         },
         db: {
           provider: "sqlite",
           realtime: true,
           enforceRls: true,
+          config: {},
         },
       },
       ...config,
@@ -38,7 +38,6 @@ export class ForgeApi {
     this.routes = new Map();
     // Initialize services based on configuration
     this.storage = new StorageService(this.config.services?.storage);
-    this.auth = new AuthService(this.config.auth);
     this.db = new DatabaseService(this.config.services?.db);
     this.registerCoreRoutes();
   }
@@ -66,41 +65,8 @@ export class ForgeApi {
     };
   }
 
-  private async validateRequest(
-    path: string,
-    request: Request
-  ): Promise<boolean> {
-    if (!this.config.auth?.enabled) {
-      return true;
-    }
-
-    // Check excluded paths
-    const isExcluded = this.config.auth.exclude?.some((pattern) => {
-      if (pattern.endsWith("*")) {
-        const prefix = pattern.slice(0, -1);
-        return path.startsWith(prefix);
-      }
-      return pattern === path;
-    });
-
-    if (isExcluded) {
-      return true;
-    }
-
-    const token = request.headers.get("authorization")?.split(" ")[1];
-    if (!token) {
-      return false;
-    }
-
-    return await this.auth.validateToken(token);
-  }
-
   getStorageService(): StorageService {
     return this.storage;
-  }
-
-  getAuthService(): AuthService {
-    return this.auth;
   }
 
   getDatabaseService(): DatabaseService {
@@ -146,7 +112,7 @@ export class ForgeApi {
     return {
       req: request,
       res: response,
-      services: { storage: this.storage, auth: this.auth, db: this.db },
+      services: { storage: this.storage, db: this.db },
     };
   }
 
@@ -188,17 +154,6 @@ export class ForgeApi {
   }
 
   private registerCoreRoutes() {
-    // Built-in authentication endpoints
-    this.post("/auth/register", async (ctx) => {
-      const { email, password } = ctx.req.body;
-      const userId = await this.auth.createUser(email, password);
-      ctx.res.body = { userId };
-    });
-
-    this.post("/auth/login", async (ctx) => {
-      // Login implementation
-    });
-
     // Built-in storage endpoints
     this.post("/storage/:bucket/:key", async (ctx) => {
       const { bucket, key } = ctx.req.params;

@@ -13,6 +13,7 @@ import {
   UpdateColumnDefinition,
   UserContext,
 } from "database";
+import { resolve } from "path";
 
 export class DatabaseService {
   private config: BaaSConfig["services"]["db"];
@@ -26,6 +27,9 @@ export class DatabaseService {
       provider: "sqlite",
       realtime: false,
       enforceRls: false,
+      config: {
+        filename: resolve(__dirname, "../database.sqlite"),
+      },
     };
     let knexDb: Knex;
 
@@ -36,22 +40,24 @@ export class DatabaseService {
         knexDb = knex({
           client: "sqlite",
           connection: {
-            filename: process.env.DB_URL!,
+            filename: this.config.config.filename,
           },
-          useNullAsDefault: true,
+          ...this.config.config,
         });
       } else if (this.config.provider === "postgres") {
         knexDb = knex({
           client: "pg",
-          connection: this.config.config,
+          connection: this.config.config.connection,
+          ...this.config.config,
         });
       } else if (this.config.provider === "libsql") {
         knexDb = knex({
           client: Client_Libsql,
           connection: {
-            filename: process.env.DB_URL!,
+            filename: this.config.config.filename,
           },
           useNullAsDefault: true,
+          ...this.config.config,
         });
       } else {
         throw new Error("Unsupported database provider");
