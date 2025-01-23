@@ -9,8 +9,8 @@ import type {
   DataMutationParams,
   DataQueryParams,
   DropForeignKeyParams,
-  ForgebaseConfig,
-  ForgebaseEndpoints,
+  ForgeDatabaseConfig,
+  ForgeDatabaseEndpoints,
   ModifySchemaParams,
   PermissionParams,
   SchemaCreateParams,
@@ -26,7 +26,7 @@ import {
 } from "./schema";
 import { QueryHandler } from "./sdk/server";
 
-export class Forgebase {
+export class ForgeDatabase {
   private queryHandler: QueryHandler;
   private hooks: KnexHooks;
   private permissionService: PermissionService;
@@ -56,7 +56,7 @@ export class Forgebase {
     },
   };
 
-  constructor(private config: ForgebaseConfig = {}) {
+  constructor(private config: ForgeDatabaseConfig = {}) {
     if (!config.db) throw new Error("Database instance is required");
 
     this.hooks = config.hooks || new KnexHooks(config.db);
@@ -86,7 +86,7 @@ export class Forgebase {
     return this.hooks.getKnexInstance();
   }
 
-  public endpoints: ForgebaseEndpoints = {
+  public endpoints: ForgeDatabaseEndpoints = {
     schema: {
       get: async (): Promise<DatabaseSchema> => {
         try {
@@ -374,8 +374,8 @@ export class Forgebase {
 }
 
 // Export factory function
-export const createForgebase = (config: ForgebaseConfig) => {
-  return new Forgebase(config);
+export const createForgeDatabase = (config: ForgeDatabaseConfig) => {
+  return new ForgeDatabase(config);
 };
 
 // Export types

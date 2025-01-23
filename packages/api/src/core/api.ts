@@ -1,10 +1,10 @@
-import { DataQueryParams } from "database";
+import { DataMutationParams, DataQueryParams } from "database";
 import { BaaSConfig, Context, Handler, ServerAdapter } from "../types";
 import { AuthService } from "./auth";
 import { DatabaseService } from "./database";
 import { StorageService } from "./storage";
 
-export class Api {
+export class ForgeApi {
   private routes: Map<string, Map<string, Handler>>;
   private storage: StorageService;
   private auth: AuthService;
@@ -14,7 +14,7 @@ export class Api {
 
   constructor(config: Partial<BaaSConfig> = {}) {
     this.config = {
-      prefix: "/api/baas",
+      prefix: "/ForgeApi/baas",
       auth: {
         enabled: false,
         exclude: ["/auth/login", "/auth/register"],
@@ -26,6 +26,7 @@ export class Api {
         db: {
           provider: "sqlite",
           realtime: true,
+          enforceRls: true,
         },
       },
       ...config,
@@ -121,7 +122,7 @@ export class Api {
       method: adapter.getMethod(),
       path: adapter.getPath(),
       config: this.config,
-      user: adapter.getUserContext(),
+      userContext: adapter.getUserContext(),
     };
 
     const response = {
@@ -201,7 +202,14 @@ export class Api {
     // Built-in database endpoints
     this.post("/db/:collection", async (ctx) => {
       const { collection } = ctx.req.params;
-      const id = await this.db.insert(collection, ctx.req.body, ctx.req.user);
+      let { data } = ctx.req.body;
+
+      // check if data is an object, then convert to object
+      if (typeof data === "string") {
+        data = JSON.parse(data);
+      }
+
+      const id = await this.db.insert(collection, data, ctx.req.userContext);
       ctx.res.body = { id };
       ctx.res.status = 201;
     });
@@ -211,14 +219,103 @@ export class Api {
       ctx.res.body = await this.db.query(
         collection,
         ctx.req.query,
-        ctx.req.user
+        ctx.req.userContext
       );
     });
 
     this.get("/db/:collection/:id", async (ctx) => {
-      const { collection, id } = ctx.req.params;
+      let { collection, id } = ctx.req.params;
+      // check if id is a number, then convert to number
+      if (typeof id === "string" && !isNaN(Number(id))) {
+        id = Number(id);
+      }
       const query: DataQueryParams = { filter: { id: id }, select: ["*"] };
-      ctx.res.body = await this.db.query(collection, query, ctx.req.user);
+      ctx.res.body = await this.db.query(
+        collection,
+        query,
+        ctx.req.userContext
+      );
+    });
+
+    this.put("/db/:collection/:id", async (ctx) => {
+      let { collection, id } = ctx.req.params;
+      let { data } = ctx.req.body;
+      // check if id is a number, then convert to number
+      if (typeof id === "string" && !isNaN(Number(id))) {
+        id = Number(id);
+      }
+
+      // check if data is an object, then convert to object
+      if (typeof data === "string") {
+        data = JSON.parse(data);
+      }
+      const params: DataMutationParams = {
+        tableName: collection,
+        data: data,
+        id: id,
+      };
+      await this.db.update(params, ctx.req.userContext);
+      ctx.res.status = 204;
+    });
+
+    this.delete("/db/:collection/:id", async (ctx) => {
+      let { collection, id } = ctx.req.params;
+      // check if id is a number, then convert to number
+      if (typeof id === "string" && !isNaN(Number(id))) {
+        id = Number(id);
+      }
+      await this.db.delete(collection, id, ctx.req.userContext);
+      ctx.res.status = 204;
+    });
+
+    this.get("/db/schema", async (ctx) => {
+      ctx.res.body = await this.db.getSchema();
+    });
+
+    this.post("/db/schema", async (ctx) => {
+      const { tableName, columns } = ctx.req.body;
+      ctx.res.body = await this.db.creatSchema(tableName, columns);
+    });
+
+    this.post("/db/schema/column", async (ctx) => {
+      const { tableName, columns } = ctx.req.body;
+      ctx.res.body = await this.db.addColumn(tableName, columns);
+    });
+
+    this.delete("/db/schema/column", async (ctx) => {
+      const { tableName, columns } = ctx.req.body;
+      ctx.res.body = await this.db.deleteColumn(tableName, columns);
+    });
+
+    this.put("/db/schema/column", async (ctx) => {
+      const { tableName, columns } = ctx.req.body;
+      ctx.res.body = await this.db.updateColumn(tableName, columns);
+    });
+
+    this.post("/db/schema/foreign_key", async (ctx) => {
+      const { tableName, foreignKey } = ctx.req.body;
+      ctx.res.body = await this.db.addForeignKey(tableName, foreignKey);
+    });
+
+    this.delete("/db/schema/foreign_key", async (ctx) => {
+      const { tableName, column } = ctx.req.body;
+      ctx.res.body = await this.db.dropForeignKey(tableName, column);
+    });
+
+    this.delete("/db/schema/truncate", async (ctx) => {
+      const { tableName } = ctx.req.body;
+      ctx.res.body = await this.db.truncateTable(tableName);
+    });
+
+    this.get("/db/schema/permissions/:tableName", async (ctx) => {
+      const { tableName } = ctx.req.params;
+      ctx.res.body = await this.db.getPermissions(tableName);
+    });
+
+    this.put("/db/schema/permissions/:tableName", async (ctx) => {
+      const { tableName } = ctx.req.params;
+      const { permissions } = ctx.req.body;
+      ctx.res.body = await this.db.setPermissions(tableName, permissions);
     });
   }
 
@@ -230,7 +327,7 @@ export class Api {
     this.routes.get(method)!.set(path, handler);
   }
 
-  // Public API methods that match your preferred interface
+  // Public ForgeApi methods that match your preferred interface
   get(path: string, handler: Handler) {
     this.addRoute("GET", path, handler);
     return this;

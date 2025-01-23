@@ -101,7 +101,7 @@ export type TablePermissions = {
   };
 };
 
-export interface ForgebaseConfig {
+export interface ForgeDatabaseConfig {
   db?: Knex;
   hooks?: KnexHooks;
   permissions?: PermissionService;
@@ -167,7 +167,7 @@ export interface PermissionParams {
   permissions?: TablePermissions;
 }
 
-export interface ForgebaseEndpoints {
+export interface ForgeDatabaseEndpoints {
   schema: {
     get: () => Promise<DatabaseSchema>;
     create: (params: SchemaCreateParams) => Promise<{

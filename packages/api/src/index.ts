@@ -1,8 +1,8 @@
-import { Api } from "./core/api";
+import { ForgeApi } from "./core/api";
 import { BaaSConfig } from "./types";
 
-export function api(config?: Partial<BaaSConfig>): Api {
-  return new Api(config);
+export function forgeApi(config?: Partial<BaaSConfig>): ForgeApi {
+  return new ForgeApi(config);
 }
 
 export * from "./types";

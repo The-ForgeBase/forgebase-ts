@@ -2,10 +2,7 @@ import type { Knex } from "knex";
 import type { AuthService } from "./core/auth";
 import type { DatabaseService } from "./core/database";
 import type { StorageService } from "./core/storage";
-import {
-  Request as ExpressRequest,
-  Response as ExpressResponse,
-} from "express";
+
 import { UserContext } from "database";
 import { SupportedFramework } from "./frameworks";
 
@@ -25,25 +22,26 @@ export interface BaaSConfig {
       config?: Record<string, any>;
       knex?: Knex;
       realtime: boolean;
+      enforceRls: boolean;
     };
   };
 }
 
 export type Context = {
   req: {
-    params: Record<string, string>;
-    query: Record<string, string>;
+    params: Record<string, any>;
+    query: Record<string, any>;
     body: any;
     headers: Record<string, string>;
     method: string;
     path: string;
     config: BaaSConfig;
-    user: UserContext;
+    userContext: UserContext;
   };
   res: {
     body: any;
     status: number;
-    headers: Record<string, string>;
+    headers: Record<string, any>;
   };
   services: {
     storage: StorageService;
@@ -52,32 +50,7 @@ export type Context = {
   };
 };
 
-export interface ExpressContext {
-  req: {
-    params: Record<string, string>;
-    query: Record<string, any>;
-    body: any;
-    headers: Record<string, string | string[]>;
-    method: string;
-    path: string;
-    config: BaaSConfig;
-    user: UserContext;
-    raw: ExpressRequest; // Access to underlying Express request if needed
-  };
-  res: {
-    body: any;
-    status: number;
-    headers: Record<string, string | string[]>;
-    raw: ExpressResponse; // Access to underlying Express response if needed
-  };
-  services: {
-    storage: StorageService;
-    auth: AuthService;
-    db: DatabaseService;
-  };
-}
-
-export type Handler = (ctx: Context | ExpressContext) => Promise<void>;
+export type Handler = (ctx: Context) => Promise<void>;
 
 export type Route = {
   path: string;
