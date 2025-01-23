@@ -95,6 +95,18 @@ export class ForgeApi {
     return await this.auth.validateToken(token);
   }
 
+  getStorageService(): StorageService {
+    return this.storage;
+  }
+
+  getAuthService(): AuthService {
+    return this.auth;
+  }
+
+  getDatabaseService(): DatabaseService {
+    return this.db;
+  }
+
   use(middleware: Handler) {
     this.middlewares.push(middleware);
     return this;
