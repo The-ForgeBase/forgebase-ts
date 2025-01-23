@@ -1,7 +1,11 @@
-import { DataMutationParams, DataQueryParams } from "database";
-import { BaaSConfig, Context, Handler, ServerAdapter } from "../types";
-import { DatabaseService } from "./database";
-import { StorageService } from "./storage";
+import { DataMutationParams, DataQueryParams } from 'database';
+import { BaaSConfig, Context, Handler, ServerAdapter } from '../types.js';
+import { DatabaseService } from './database.js';
+import { StorageService } from './storage.js';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export class ForgeApi {
   private routes: Map<string, Map<string, Handler>>;
@@ -12,21 +16,23 @@ export class ForgeApi {
 
   constructor(config: Partial<BaaSConfig> = {}) {
     this.config = {
-      prefix: "",
+      prefix: '',
       auth: {
         enabled: false,
-        exclude: ["/auth/login", "/auth/register"],
+        exclude: ['/auth/login', '/auth/register'],
       },
       services: {
         storage: {
-          provider: "local",
+          provider: 'local',
           config: {},
         },
         db: {
-          provider: "sqlite",
+          provider: 'sqlite',
           realtime: true,
           enforceRls: true,
-          config: {},
+          config: {
+            filename: resolve(__dirname, '../database.sqlite'),
+          },
         },
       },
       ...config,
@@ -43,7 +49,7 @@ export class ForgeApi {
   }
   private mergeConfigs(
     defaultConfig: BaaSConfig,
-    userConfig: Partial<BaaSConfig>
+    userConfig: Partial<BaaSConfig>,
   ): BaaSConfig {
     return {
       ...defaultConfig,
@@ -125,9 +131,11 @@ export class ForgeApi {
     }
 
     const handler = this.findHandler(adapter.getMethod(), adapter.getPath());
+    console.log(`Handled request: ${adapter.getMethod()} ${adapter.getPath()}`);
+    console.log(`Executing handler: ${handler?.name}`);
     if (!handler) {
       adapter.setStatus(404);
-      adapter.send({ message: "Not found" });
+      adapter.send({ message: 'Not found' });
       return;
     }
 
@@ -135,9 +143,9 @@ export class ForgeApi {
       await handler(context);
       this.sendResponse(adapter, context);
     } catch (error) {
-      console.error("Handler error:", error);
+      console.error('Handler error:', error);
       adapter.setStatus(500);
-      adapter.send({ message: "Internal server error" });
+      adapter.send({ message: 'Internal server error' });
     }
   }
 
@@ -155,24 +163,24 @@ export class ForgeApi {
 
   private registerCoreRoutes() {
     // Built-in storage endpoints
-    this.post("/storage/:bucket/:key", async (ctx) => {
+    this.post('/storage/:bucket/:key', async (ctx) => {
       const { bucket, key } = ctx.req.params;
       await this.storage.upload(bucket, key, ctx.req.body);
       ctx.res.status = 201;
     });
 
-    this.get("/storage/:bucket/:key", async (ctx) => {
+    this.get('/storage/:bucket/:key', async (ctx) => {
       const { bucket, key } = ctx.req.params;
       ctx.res.body = await this.storage.download(bucket, key);
     });
 
     // Built-in database endpoints
-    this.post("/db/:collection", async (ctx) => {
+    this.post('/db/:collection', async (ctx) => {
       const { collection } = ctx.req.params;
       let { data } = ctx.req.body;
 
       // check if data is an object, then convert to object
-      if (typeof data === "string") {
+      if (typeof data === 'string') {
         data = JSON.parse(data);
       }
 
@@ -181,39 +189,39 @@ export class ForgeApi {
       ctx.res.status = 201;
     });
 
-    this.get("/db/:collection", async (ctx) => {
+    this.get('/db/:collection', async (ctx) => {
       const { collection } = ctx.req.params;
       ctx.res.body = await this.db.query(
         collection,
         ctx.req.query,
-        ctx.req.userContext
+        ctx.req.userContext,
       );
     });
 
-    this.get("/db/:collection/:id", async (ctx) => {
+    this.get('/db/:collection/:id', async (ctx) => {
       let { collection, id } = ctx.req.params;
       // check if id is a number, then convert to number
-      if (typeof id === "string" && !isNaN(Number(id))) {
+      if (typeof id === 'string' && !isNaN(Number(id))) {
         id = Number(id);
       }
-      const query: DataQueryParams = { filter: { id: id }, select: ["*"] };
+      const query: DataQueryParams = { filter: { id: id }, select: ['*'] };
       ctx.res.body = await this.db.query(
         collection,
         query,
-        ctx.req.userContext
+        ctx.req.userContext,
       );
     });
 
-    this.put("/db/:collection/:id", async (ctx) => {
+    this.put('/db/:collection/:id', async (ctx) => {
       let { collection, id } = ctx.req.params;
       let { data } = ctx.req.body;
       // check if id is a number, then convert to number
-      if (typeof id === "string" && !isNaN(Number(id))) {
+      if (typeof id === 'string' && !isNaN(Number(id))) {
         id = Number(id);
       }
 
       // check if data is an object, then convert to object
-      if (typeof data === "string") {
+      if (typeof data === 'string') {
         data = JSON.parse(data);
       }
       const params: DataMutationParams = {
@@ -225,61 +233,64 @@ export class ForgeApi {
       ctx.res.status = 204;
     });
 
-    this.delete("/db/:collection/:id", async (ctx) => {
+    this.delete('/db/:collection/:id', async (ctx) => {
       let { collection, id } = ctx.req.params;
       // check if id is a number, then convert to number
-      if (typeof id === "string" && !isNaN(Number(id))) {
+      if (typeof id === 'string' && !isNaN(Number(id))) {
         id = Number(id);
       }
       await this.db.delete(collection, id, ctx.req.userContext);
       ctx.res.status = 204;
     });
 
-    this.get("/db/schema", async (ctx) => {
-      ctx.res.body = await this.db.getSchema();
+    this.get('/db/schema', async (ctx) => {
+      console.log('DB Schema route handler called');
+      const res = await this.db.getSchema();
+      console.log('Schema:', res);
+      ctx.res.body = res;
     });
 
-    this.post("/db/schema", async (ctx) => {
+    this.post('/db/schema', async (ctx) => {
       const { tableName, columns } = ctx.req.body;
       ctx.res.body = await this.db.creatSchema(tableName, columns);
     });
 
-    this.post("/db/schema/column", async (ctx) => {
+    this.post('/db/schema/column', async (ctx) => {
       const { tableName, columns } = ctx.req.body;
       ctx.res.body = await this.db.addColumn(tableName, columns);
     });
 
-    this.delete("/db/schema/column", async (ctx) => {
+    this.delete('/db/schema/column', async (ctx) => {
       const { tableName, columns } = ctx.req.body;
       ctx.res.body = await this.db.deleteColumn(tableName, columns);
     });
 
-    this.put("/db/schema/column", async (ctx) => {
+    this.put('/db/schema/column', async (ctx) => {
       const { tableName, columns } = ctx.req.body;
       ctx.res.body = await this.db.updateColumn(tableName, columns);
     });
 
-    this.post("/db/schema/foreign_key", async (ctx) => {
+    this.post('/db/schema/foreign_key', async (ctx) => {
       const { tableName, foreignKey } = ctx.req.body;
       ctx.res.body = await this.db.addForeignKey(tableName, foreignKey);
     });
 
-    this.delete("/db/schema/foreign_key", async (ctx) => {
+    this.delete('/db/schema/foreign_key', async (ctx) => {
       const { tableName, column } = ctx.req.body;
       ctx.res.body = await this.db.dropForeignKey(tableName, column);
     });
 
-    this.delete("/db/schema/truncate", async (ctx) => {
+    this.delete('/db/schema/truncate', async (ctx) => {
       const { tableName } = ctx.req.body;
       ctx.res.body = await this.db.truncateTable(tableName);
     });
 
-    this.get("/db/schema/permissions/:tableName", async (ctx) => {
+    this.get('/db/schema/permissions/:tableName', async (ctx) => {
       const { tableName } = ctx.req.params;
       ctx.res.body = await this.db.getPermissions(tableName);
     });
 
-    this.put("/db/schema/permissions/:tableName", async (ctx) => {
+    this.put('/db/schema/permissions/:tableName', async (ctx) => {
       const { tableName } = ctx.req.params;
       const { permissions } = ctx.req.body;
       ctx.res.body = await this.db.setPermissions(tableName, permissions);
@@ -291,53 +302,85 @@ export class ForgeApi {
       this.routes.set(method, new Map());
     }
 
-    this.routes.get(method)!.set(path, handler);
+    // Normalize the path by removing the prefix if it exists
+    const normalizedPath = path.startsWith(this.config.prefix)
+      ? path.slice(this.config.prefix.length)
+      : path;
+
+    this.routes.get(method)!.set(normalizedPath, handler);
   }
 
   // Public ForgeApi methods that match your preferred interface
   get(path: string, handler: Handler) {
-    this.addRoute("GET", path, handler);
+    this.addRoute('GET', path, handler);
     return this;
   }
 
   post(path: string, handler: Handler) {
-    this.addRoute("POST", path, handler);
+    this.addRoute('POST', path, handler);
     return this;
   }
 
   put(path: string, handler: Handler) {
-    this.addRoute("PUT", path, handler);
+    this.addRoute('PUT', path, handler);
     return this;
   }
 
   delete(path: string, handler: Handler) {
-    this.addRoute("DELETE", path, handler);
+    this.addRoute('DELETE', path, handler);
     return this;
   }
 
   private findHandler(method: string, path: string): Handler | undefined {
+    console.log(`Searching for handler: ${method} ${path}`);
+    // Remove the API prefix from the path if it exists
+    const normalizedPath = path.startsWith(this.config.prefix)
+      ? path.slice(this.config.prefix.length)
+      : path;
+
+    console.log(`Normalized path: ${normalizedPath}`);
+    // Convert path to lowercase to match case-insensitive routes
+    const lowerPath = normalizedPath.toLowerCase();
+    console.log(`Lowercase path: ${lowerPath}`);
     const methodRoutes = this.routes.get(method);
+    console.log(
+      `Available routes for ${method}:`,
+      Array.from(methodRoutes?.keys() || []),
+    );
     if (!methodRoutes) return undefined;
 
     // Find matching route pattern
     for (const [pattern, handler] of methodRoutes.entries()) {
-      if (this.matchPath(pattern, path)) {
+      console.log(`Checking pattern: ${pattern}`);
+      if (this.matchPath(pattern, lowerPath)) {
+        console.log(`Match found: ${pattern}`);
         return handler;
       }
     }
 
+    console.log('No matching handler found');
     return undefined;
   }
 
   private matchPath(pattern: string, path: string): boolean {
-    const patternParts = pattern.split("/");
-    const pathParts = path.split("/");
+    console.log(`Matching pattern "${pattern}" with path "${path}"`);
+    const patternParts = pattern.split('/').filter(Boolean);
+    const pathParts = path.split('/').filter(Boolean);
 
-    if (patternParts.length !== pathParts.length) return false;
+    console.log('Pattern parts:', patternParts);
+    console.log('Path parts:', pathParts);
 
-    return patternParts.every((part, i) => {
-      if (part.startsWith(":")) return true;
-      return part === pathParts[i];
+    if (patternParts.length !== pathParts.length) {
+      console.log('Length mismatch');
+      return false;
+    }
+
+    const match = patternParts.every((part, i) => {
+      if (part.startsWith(':')) return true;
+      return part.toLowerCase() === pathParts[i].toLowerCase();
     });
+
+    console.log(`Match result: ${match}`);
+    return match;
   }
 }

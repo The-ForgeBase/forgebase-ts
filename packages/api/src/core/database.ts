@@ -1,6 +1,6 @@
-import { BaaSConfig } from "../types";
-import { knex, type Knex } from "knex";
-import Client_Libsql from "@libsql/knex-libsql";
+import { BaaSConfig } from '../types.js';
+import knex from 'knex';
+import Client_Libsql from '@libsql/knex-libsql';
 import {
   ColumnDefinition,
   DataMutationParams,
@@ -12,45 +12,53 @@ import {
   TablePermissions,
   UpdateColumnDefinition,
   UserContext,
-} from "database";
-import { resolve } from "path";
+} from 'database';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export class DatabaseService {
-  private config: BaaSConfig["services"]["db"];
-  private knexInstance: Knex;
+  private config: BaaSConfig['services']['db'];
+  private knexInstance: knex.Knex;
   private permissionService: PermissionService;
   private hookableDB: KnexHooks;
   private forgeDatabase: ForgeDatabase;
 
-  constructor(config?: BaaSConfig["services"]["db"]) {
+  constructor(config?: BaaSConfig['services']['db']) {
     this.config = config || {
-      provider: "sqlite",
+      provider: 'sqlite',
       realtime: false,
       enforceRls: false,
       config: {
-        filename: resolve(__dirname, "../database.sqlite"),
+        filename: resolve(__dirname, '../database.sqlite'),
       },
     };
-    let knexDb: Knex;
+    let knexDb: knex.Knex;
+
+    console.log(
+      `Initializing database service with provider: ${this.config.provider}`,
+    );
 
     if (this.config.knex) {
       knexDb = this.config.knex;
     } else {
-      if (this.config.provider === "sqlite") {
+      if (this.config.provider === 'sqlite') {
         knexDb = knex({
-          client: "sqlite",
+          client: 'sqlite3',
           connection: {
             filename: this.config.config.filename,
           },
+          useNullAsDefault: true,
           ...this.config.config,
         });
-      } else if (this.config.provider === "postgres") {
+      } else if (this.config.provider === 'postgres') {
         knexDb = knex({
-          client: "pg",
+          client: 'pg',
           connection: this.config.config.connection,
           ...this.config.config,
         });
-      } else if (this.config.provider === "libsql") {
+      } else if (this.config.provider === 'libsql') {
         knexDb = knex({
           client: Client_Libsql,
           connection: {
@@ -60,7 +68,7 @@ export class DatabaseService {
           ...this.config.config,
         });
       } else {
-        throw new Error("Unsupported database provider");
+        throw new Error('Unsupported database provider');
       }
     }
 
@@ -76,7 +84,7 @@ export class DatabaseService {
     });
   }
 
-  getDbInstance(): Knex {
+  getDbInstance(): knex.Knex {
     return this.knexInstance;
   }
 
@@ -94,13 +102,13 @@ export class DatabaseService {
   async query(
     tableName: string,
     query: DataQueryParams,
-    userContext: UserContext
+    userContext: UserContext,
   ): Promise<any[]> {
     try {
       const records = await this.forgeDatabase.endpoints.data.query<any>(
         tableName,
         query,
-        userContext
+        userContext,
       );
       return records;
     } catch (error) {
@@ -111,12 +119,12 @@ export class DatabaseService {
   async insert(
     tableName: string,
     data: DataMutationParams,
-    userContext: UserContext
+    userContext: UserContext,
   ): Promise<any> {
     try {
       const records = await this.forgeDatabase.endpoints.data.create(
         { ...data, tableName },
-        userContext
+        userContext,
       );
       return records;
     } catch (error) {
@@ -126,12 +134,12 @@ export class DatabaseService {
 
   async update(
     params: DataMutationParams,
-    userContext: UserContext
+    userContext: UserContext,
   ): Promise<any> {
     try {
       const records = await this.forgeDatabase.endpoints.data.update(
         params,
-        userContext
+        userContext,
       );
       return records;
     } catch (error) {
@@ -142,12 +150,12 @@ export class DatabaseService {
   async delete(
     tableName: string,
     id: string | number,
-    userContext: UserContext
+    userContext: UserContext,
   ): Promise<any> {
     try {
       const records = await this.forgeDatabase.endpoints.data.delete(
         { tableName, id },
-        userContext
+        userContext,
       );
       return records;
     } catch (error) {
@@ -166,7 +174,7 @@ export class DatabaseService {
 
   async creatSchema(
     tableName: string,
-    columns: ColumnDefinition[]
+    columns: ColumnDefinition[],
   ): Promise<{
     message: string;
     tablename: string;
@@ -185,11 +193,11 @@ export class DatabaseService {
 
   async addColumn(
     tableName: string,
-    columns: ColumnDefinition[] | UpdateColumnDefinition[]
+    columns: ColumnDefinition[] | UpdateColumnDefinition[],
   ): Promise<any> {
     try {
       const tb = await this.forgeDatabase.endpoints.schema.modify({
-        action: "addColumn",
+        action: 'addColumn',
         tableName,
         columns,
       });
@@ -201,11 +209,11 @@ export class DatabaseService {
 
   async deleteColumn(
     tableName: string,
-    columns: ColumnDefinition[] | UpdateColumnDefinition[]
+    columns: ColumnDefinition[] | UpdateColumnDefinition[],
   ): Promise<any> {
     try {
       const tb = await this.forgeDatabase.endpoints.schema.modify({
-        action: "deleteColumn",
+        action: 'deleteColumn',
         tableName,
         columns,
       });
@@ -217,11 +225,11 @@ export class DatabaseService {
 
   async updateColumn(
     tableName: string,
-    columns: UpdateColumnDefinition[]
+    columns: UpdateColumnDefinition[],
   ): Promise<any> {
     try {
       const tb = await this.forgeDatabase.endpoints.schema.modify({
-        action: "updateColumn",
+        action: 'updateColumn',
         tableName,
         columns,
       });
@@ -279,12 +287,12 @@ export class DatabaseService {
 
   async setPermissions(
     tableName: string,
-    permissions: TablePermissions
+    permissions: TablePermissions,
   ): Promise<any> {
     try {
       const result = await this.permissionService.setPermissionsForTable(
         tableName,
-        permissions
+        permissions,
       );
       return result;
     } catch (error) {

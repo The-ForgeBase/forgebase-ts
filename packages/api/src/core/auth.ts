@@ -1,4 +1,4 @@
-import { BaaSConfig } from "../types";
+import { BaaSConfig } from "../types.js";
 
 export class AuthService {
   private config: BaaSConfig["auth"];

@@ -1,13 +1,13 @@
-import { Knex } from 'knex';
-import { SchemaInspector } from '../types/schema-inspector';
-import { Table } from '../types/table';
-import { Column } from '../types/column';
-import { ForeignKey } from '../types/foreign-key';
-import { stripQuotes } from '../utils/strip-quotes';
+import { Knex } from "knex";
+import { SchemaInspector } from "../types/schema-inspector.js";
+import { Table } from "../types/table.js";
+import { Column } from "../types/column.js";
+import { ForeignKey } from "../types/foreign-key.js";
+import { stripQuotes } from "../utils/strip-quotes.js";
 
 type RawTable = {
   table_name: string;
-  table_schema: 'public' | string;
+  table_schema: "public" | string;
   table_comment: string | null;
 };
 
@@ -27,7 +27,7 @@ type RawColumn = {
 };
 
 type Constraint = {
-  type: 'f' | 'p' | 'u';
+  type: "f" | "p" | "u";
   table: string;
   column: string;
   foreign_key_schema: null | string;
@@ -42,9 +42,9 @@ type Constraint = {
  */
 export function parseDefaultValue(value: string | null) {
   if (value === null) return null;
-  if (value.startsWith('nextval(')) return value;
+  if (value.startsWith("nextval(")) return value;
 
-  value = value.split('::')[0];
+  value = value.split("::")[0];
 
   return stripQuotes(value);
 }
@@ -58,9 +58,9 @@ export default class CockroachDB implements SchemaInspector {
     this.knex = knex;
     const config = knex.client.config;
     if (!config.searchPath) {
-      this.schema = 'public';
+      this.schema = "public";
       this.explodedSchema = [this.schema];
-    } else if (typeof config.searchPath === 'string') {
+    } else if (typeof config.searchPath === "string") {
       this.schema = config.searchPath;
       this.explodedSchema = [config.searchPath];
     } else {
@@ -89,9 +89,9 @@ export default class CockroachDB implements SchemaInspector {
    */
   async tables() {
     const records = await this.knex
-      .select<{ tablename: string }[]>('tablename')
-      .from('pg_catalog.pg_tables')
-      .whereIn('schemaname', this.explodedSchema);
+      .select<{ tablename: string }[]>("tablename")
+      .from("pg_catalog.pg_tables")
+      .whereIn("schemaname", this.explodedSchema);
     return records.map(({ tablename }) => tablename);
   }
 
@@ -104,20 +104,20 @@ export default class CockroachDB implements SchemaInspector {
   async tableInfo(table?: string) {
     const query = this.knex
       .select(
-        'table_name',
-        'table_schema',
+        "table_name",
+        "table_schema",
         this.knex
-          .select(this.knex.raw('obj_description(oid)'))
-          .from('pg_class')
-          .where({ relkind: 'r' })
-          .andWhere({ relname: 'table_name' })
-          .as('table_comment')
+          .select(this.knex.raw("obj_description(oid)"))
+          .from("pg_class")
+          .where({ relkind: "r" })
+          .andWhere({ relname: "table_name" })
+          .as("table_comment")
       )
-      .from('information_schema.tables')
-      .whereIn('table_schema', this.explodedSchema)
+      .from("information_schema.tables")
+      .whereIn("table_schema", this.explodedSchema)
       .andWhereRaw(`"table_catalog" = current_database()`)
-      .andWhere({ table_type: 'BASE TABLE' })
-      .orderBy('table_name', 'asc');
+      .andWhere({ table_type: "BASE TABLE" })
+      .orderBy("table_name", "asc");
 
     if (table) {
       const rawTable: RawTable = await query
@@ -149,11 +149,11 @@ export default class CockroachDB implements SchemaInspector {
   async hasTable(table: string) {
     const subquery = this.knex
       .select()
-      .from('information_schema.tables')
-      .whereIn('table_schema', this.explodedSchema)
+      .from("information_schema.tables")
+      .whereIn("table_schema", this.explodedSchema)
       .andWhere({ table_name: table });
     const record = await this.knex
-      .select<{ exists: boolean }>(this.knex.raw('exists (?)', [subquery]))
+      .select<{ exists: boolean }>(this.knex.raw("exists (?)", [subquery]))
       .first();
     return record?.exists || false;
   }
@@ -166,12 +166,11 @@ export default class CockroachDB implements SchemaInspector {
    */
   async columns(table?: string) {
     const query = this.knex
-      .select<{ table_name: string; column_name: string }[]>(
-        'table_name',
-        'column_name'
-      )
-      .from('information_schema.columns')
-      .whereIn('table_schema', this.explodedSchema);
+      .select<
+        { table_name: string; column_name: string }[]
+      >("table_name", "column_name")
+      .from("information_schema.columns")
+      .whereIn("table_schema", this.explodedSchema);
 
     if (table) {
       query.andWhere({ table_name: table });
@@ -199,7 +198,7 @@ export default class CockroachDB implements SchemaInspector {
     if (column) bindings.push(column);
 
     const schemaIn = this.explodedSchema.map(
-      (schemaName) => `${this.knex.raw('?', [schemaName])}::regnamespace`
+      (schemaName) => `${this.knex.raw("?", [schemaName])}::regnamespace`
     );
 
     const [columns, constraints] = await Promise.all([
@@ -258,8 +257,8 @@ export default class CockroachDB implements SchemaInspector {
            LEFT JOIN pg_description des ON (att.attrelid, att.attnum) = (des.objoid, des.objsubid)
          WHERE
            rel.relnamespace IN (${schemaIn})
-           ${table ? 'AND rel.relname = ?' : ''}
-           ${column ? 'AND att.attname = ?' : ''}
+           ${table ? "AND rel.relname = ?" : ""}
+           ${column ? "AND att.attname = ?" : ""}
            AND rel.relkind = 'r'
            AND att.attnum > 0
            AND NOT att.attisdropped
@@ -285,8 +284,8 @@ export default class CockroachDB implements SchemaInspector {
          WHERE con.connamespace IN (${schemaIn})
            AND array_length(con.conkey, 1) <= 1
            AND (con.confkey IS NULL OR array_length(con.confkey, 1) = 1)
-           ${table ? 'AND rel.relname = ?' : ''}
-           ${column ? 'AND att.attname = ?' : ''}
+           ${table ? "AND rel.relname = ?" : ""}
+           ${column ? "AND att.attname = ?" : ""}
          `,
         bindings
       ),
@@ -299,20 +298,20 @@ export default class CockroachDB implements SchemaInspector {
       );
 
       const foreignKeyConstraint = constraintsForColumn.find(
-        (constraint) => constraint.type === 'f'
+        (constraint) => constraint.type === "f"
       );
 
       return {
         ...col,
         is_unique: constraintsForColumn.some((constraint) =>
-          ['u', 'p'].includes(constraint.type)
+          ["u", "p"].includes(constraint.type)
         ),
         is_primary_key: constraintsForColumn.some(
-          (constraint) => constraint.type === 'p'
+          (constraint) => constraint.type === "p"
         ),
         has_auto_increment:
-          ['integer', 'bigint'].includes(col.data_type) &&
-          (col.default_value?.startsWith('nextval(') ?? false),
+          ["integer", "bigint"].includes(col.data_type) &&
+          (col.default_value?.startsWith("nextval(") ?? false),
         default_value: parseDefaultValue(col.default_value),
         foreign_key_schema: foreignKeyConstraint?.foreign_key_schema ?? null,
         foreign_key_table: foreignKeyConstraint?.foreign_key_table ?? null,
@@ -330,14 +329,14 @@ export default class CockroachDB implements SchemaInspector {
   async hasColumn(table: string, column: string) {
     const subquery = this.knex
       .select()
-      .from('information_schema.columns')
-      .whereIn('table_schema', this.explodedSchema)
+      .from("information_schema.columns")
+      .whereIn("table_schema", this.explodedSchema)
       .andWhere({
         table_name: table,
         column_name: column,
       });
     const record = await this.knex
-      .select<{ exists: boolean }>(this.knex.raw('exists (?)', [subquery]))
+      .select<{ exists: boolean }>(this.knex.raw("exists (?)", [subquery]))
       .first();
     return record?.exists || false;
   }
@@ -347,20 +346,20 @@ export default class CockroachDB implements SchemaInspector {
    */
   async primary(table: string): Promise<string> {
     const result = await this.knex
-      .select('information_schema.key_column_usage.column_name')
-      .from('information_schema.key_column_usage')
+      .select("information_schema.key_column_usage.column_name")
+      .from("information_schema.key_column_usage")
       .leftJoin(
-        'information_schema.table_constraints',
-        'information_schema.table_constraints.constraint_name',
-        'information_schema.key_column_usage.constraint_name'
+        "information_schema.table_constraints",
+        "information_schema.table_constraints.constraint_name",
+        "information_schema.key_column_usage.constraint_name"
       )
       .whereIn(
-        'information_schema.table_constraints.table_schema',
+        "information_schema.table_constraints.table_schema",
         this.explodedSchema
       )
       .andWhere({
-        'information_schema.table_constraints.constraint_type': 'PRIMARY KEY',
-        'information_schema.table_constraints.table_name': table,
+        "information_schema.table_constraints.constraint_type": "PRIMARY KEY",
+        "information_schema.table_constraints.table_name": table,
       })
       .first();
 

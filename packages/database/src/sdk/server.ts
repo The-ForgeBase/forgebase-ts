@@ -1,6 +1,6 @@
 import type knex from "knex";
-import type { DatabaseAdapter } from "../adapters/base";
-import { DatabaseFeature, getAdapter } from "../adapters/index";
+import type { DatabaseAdapter } from "../adapters/base.js";
+import { DatabaseFeature, getAdapter } from "../adapters/index.js";
 
 // types.ts
 export type WhereOperator =

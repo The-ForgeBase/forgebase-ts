@@ -1,9 +1,9 @@
-import type { Knex } from "knex";
-import type { DatabaseService } from "./core/database";
-import type { StorageService } from "./core/storage";
+import knex from 'knex';
+import type { DatabaseService } from './core/database.js';
+import type { StorageService } from './core/storage.js';
 
-import { UserContext } from "database";
-import { SupportedFramework } from "./frameworks";
+import { UserContext } from 'database';
+import { SupportedFramework } from './frameworks/index.js';
 
 export interface BaaSConfig {
   prefix: string;
@@ -13,13 +13,13 @@ export interface BaaSConfig {
   };
   services: {
     storage: {
-      provider: "local" | "s3" | "gcs";
+      provider: 'local' | 's3' | 'gcs';
       config: Record<string, any>;
     };
     db: {
-      provider: "sqlite" | "postgres" | "libsql";
+      provider: 'sqlite' | 'postgres' | 'libsql';
       config: Record<string, any>;
-      knex?: Knex;
+      knex?: knex.Knex;
       realtime: boolean;
       enforceRls: boolean;
     };
@@ -70,6 +70,6 @@ export interface ServerAdapter {
 
 export interface AdapterFactory {
   createAdapter(
-    framework: SupportedFramework
+    framework: SupportedFramework,
   ): (req: any, res: any) => ServerAdapter;
 }

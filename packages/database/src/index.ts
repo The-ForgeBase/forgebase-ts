@@ -1,8 +1,8 @@
-import type { Knex } from "knex";
-import { PermissionService } from "./permissionService";
-import { enforcePermissions } from "./rlsManager";
-import { DBInspector, type DatabaseSchema } from "./utils/inspector";
-import { KnexHooks } from "./knex-hooks";
+import type { Knex } from 'knex';
+import { PermissionService } from './permissionService.js';
+import { enforcePermissions } from './rlsManager.js';
+import { DBInspector, type DatabaseSchema } from './utils/inspector.js';
+import { KnexHooks } from './knex-hooks.js';
 import type {
   AddForeignKeyParams,
   DataDeleteParams,
@@ -15,16 +15,16 @@ import type {
   PermissionParams,
   SchemaCreateParams,
   TablePermissions,
-} from "./types.js";
-import type { UserContext } from "./types.js";
-import { createColumn } from "./utils/column-utils";
+} from './types.js';
+import type { UserContext } from './types.js';
+import { createColumn } from './utils/column-utils.js';
 import {
   addForeignKey,
   dropForeignKey,
   modifySchema,
   truncateTable,
-} from "./schema";
-import { QueryHandler } from "./sdk/server";
+} from './schema.js';
+import { QueryHandler } from './sdk/server.js';
 
 export class ForgeDatabase {
   private queryHandler: QueryHandler;
@@ -35,29 +35,29 @@ export class ForgeDatabase {
     operations: {
       SELECT: [
         {
-          allow: "private",
+          allow: 'private',
         },
       ],
       INSERT: [
         {
-          allow: "private",
+          allow: 'private',
         },
       ],
       UPDATE: [
         {
-          allow: "private",
+          allow: 'private',
         },
       ],
       DELETE: [
         {
-          allow: "private",
+          allow: 'private',
         },
       ],
     },
   };
 
   constructor(private config: ForgeDatabaseConfig = {}) {
-    if (!config.db) throw new Error("Database instance is required");
+    if (!config.db) throw new Error('Database instance is required');
 
     this.hooks = config.hooks || new KnexHooks(config.db);
     this.queryHandler = new QueryHandler(this.hooks.getKnexInstance());
@@ -67,7 +67,7 @@ export class ForgeDatabase {
 
     // Setup real-time listeners if enabled
     if (config.realtime) {
-      this.hooks.on("beforeQuery", ({ tableName, context }) => {
+      this.hooks.on('beforeQuery', ({ tableName, context }) => {
         console.log(`[Real-Time Event] Query on ${tableName}:`, context);
       });
     }
@@ -100,15 +100,15 @@ export class ForgeDatabase {
           const { tableName, columns } = payload;
 
           if (!tableName) {
-            throw new Error("Invalid request body");
+            throw new Error('Invalid request body');
           }
 
           const hasTable = await this.hooks
             .getKnexInstance()
             .schema.hasTable(tableName);
           if (hasTable) {
-            console.log("Table already exists");
-            throw new Error("Table already exists");
+            console.log('Table already exists');
+            throw new Error('Table already exists');
             // await this.hooks
             //   .getKnexInstance()
             //   .schema.dropTableIfExists(tableName);
@@ -121,18 +121,18 @@ export class ForgeDatabase {
             .getKnexInstance()
             .schema.createTable(tableName, (table) => {
               columns.forEach((col: any) =>
-                createColumn(table, col, this.hooks.getKnexInstance())
+                createColumn(table, col, this.hooks.getKnexInstance()),
               );
             });
 
           this.permissionService.setPermissionsForTable(
             tableName,
-            this.defaultPermissions
+            this.defaultPermissions,
           );
           return {
-            message: "Table created successfully",
+            message: 'Table created successfully',
             tablename: tableName,
-            action: "create",
+            action: 'create',
           };
         } catch (error) {
           throw error;
@@ -147,9 +147,9 @@ export class ForgeDatabase {
           await this.permissionService.deletePermissionsForTable(tableName);
 
           return {
-            message: "Table deleted successfully",
+            message: 'Table deleted successfully',
             tablename: tableName,
-            action: "delete",
+            action: 'delete',
           };
         } catch (error) {
           throw error;
@@ -189,7 +189,7 @@ export class ForgeDatabase {
       query: async (
         tableName: string,
         params: DataQueryParams,
-        user?: UserContext
+        user?: UserContext,
       ) => {
         try {
           const queryParams = this.parseQueryParams(params);
@@ -197,16 +197,16 @@ export class ForgeDatabase {
           const records = await this.hooks.query(
             tableName,
             (query) => this.queryHandler.buildQuery(queryParams, query),
-            queryParams
+            queryParams,
           );
 
           if (this.config.enforceRls && user) {
             return enforcePermissions(
               tableName,
-              "SELECT",
+              'SELECT',
               records,
               user,
-              this.permissionService
+              this.permissionService,
             );
           }
 
@@ -229,27 +229,27 @@ export class ForgeDatabase {
             !records.length ||
             !records.every(
               (record) =>
-                typeof record === "object" && Object.keys(record).length > 0
+                typeof record === 'object' && Object.keys(record).length > 0,
             )
           ) {
-            throw new Error("Invalid request body");
+            throw new Error('Invalid request body');
           }
 
           if (this.config.enforceRls && user) {
             return enforcePermissions(
               tableName,
-              "INSERT",
+              'INSERT',
               records,
               user,
-              this.permissionService
+              this.permissionService,
             );
           }
 
           const result = this.hooks.mutate(
             tableName,
-            "create",
-            async (query) => query.insert(records).returning("*"),
-            records
+            'create',
+            async (query) => query.insert(records).returning('*'),
+            records,
           );
 
           return result;
@@ -265,19 +265,19 @@ export class ForgeDatabase {
           if (this.config.enforceRls && user) {
             return enforcePermissions(
               tableName,
-              "UPDATE",
+              'UPDATE',
               data,
               user,
-              this.permissionService
+              this.permissionService,
             );
           }
 
           const result = this.hooks.mutate(
             tableName,
-            "update",
-            async (query) => query.where({ id }).update(data).returning("*"),
+            'update',
+            async (query) => query.where({ id }).update(data).returning('*'),
 
-            { id, ...data }
+            { id, ...data },
           );
 
           return result;
@@ -296,24 +296,24 @@ export class ForgeDatabase {
             (query) => {
               return query.where({ id });
             },
-            { id }
+            { id },
           );
 
           if (this.config.enforceRls && user) {
             return enforcePermissions(
               tableName,
-              "DELETE",
+              'DELETE',
               record,
               user,
-              this.permissionService
+              this.permissionService,
             );
           }
 
           return this.hooks.mutate(
             tableName,
-            "delete",
+            'delete',
             async (query) => query.where({ id }).delete(),
-            { id }
+            { id },
           );
         } catch (error) {
           throw error;
@@ -336,12 +336,12 @@ export class ForgeDatabase {
           const { tableName, permissions } = params;
 
           if (!permissions) {
-            throw new Error("Permissions object is required");
+            throw new Error('Permissions object is required');
           }
 
           return this.permissionService.setPermissionsForTable(
             tableName,
-            permissions
+            permissions,
           );
         } catch (error) {
           throw error;
@@ -354,11 +354,11 @@ export class ForgeDatabase {
     const queryParams: Record<string, any> = {};
 
     Object.entries(params).forEach(([key, value]) => {
-      if (typeof value === "string") {
+      if (typeof value === 'string') {
         try {
           queryParams[key] = JSON.parse(value);
         } catch {
-          if (key === "limit" || key === "offset") {
+          if (key === 'limit' || key === 'offset') {
             queryParams[key] = parseInt(value, 10) || 10;
           } else {
             queryParams[key] = value;
@@ -379,11 +379,11 @@ export const createForgeDatabase = (config: ForgeDatabaseConfig) => {
 };
 
 // Export types
-export * from "./types.js";
-export * from "./utils/column-utils.js";
-export * from "./utils/inspector.js";
-export * from "./knex-hooks.js";
-export * from "./permissionService.js";
-export * from "./rlsManager.js";
-export * from "./schema.js";
-export * from "./sdk/server.js";
+export type * from './types.js';
+export * from './utils/column-utils.js';
+export * from './utils/inspector.js';
+export * from './knex-hooks.js';
+export * from './permissionService.js';
+export * from './rlsManager.js';
+export * from './schema.js';
+export * from './sdk/server.js';

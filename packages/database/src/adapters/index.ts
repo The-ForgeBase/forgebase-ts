@@ -1,7 +1,7 @@
 import type { Knex } from "knex";
-import { SQLiteAdapter } from "./sqlite";
-import { PostgresAdapter } from "./postgres";
-import type { DatabaseAdapter } from "./base";
+import { SQLiteAdapter } from "./sqlite.js";
+import { PostgresAdapter } from "./postgres.js";
+import type { DatabaseAdapter } from "./base.js";
 
 const getLibSQL = (client: any) => {
   if (client === "Client_Libsql") {

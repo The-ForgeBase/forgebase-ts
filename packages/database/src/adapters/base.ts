@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import { WindowFunction, OrderByClause } from "../sdk/server";
+import { WindowFunction, OrderByClause } from "../sdk/server.js";
 
 export interface DatabaseAdapter {
   buildWindowFunction(wf: WindowFunction): string;

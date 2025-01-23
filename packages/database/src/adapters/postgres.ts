@@ -1,5 +1,5 @@
-import { type DatabaseAdapter, DatabaseFeature } from "./base";
-import type { WindowFunction, OrderByClause } from "../sdk/server";
+import { type DatabaseAdapter, DatabaseFeature } from "./base.js";
+import type { WindowFunction, OrderByClause } from "../sdk/server.js";
 
 export class PostgresAdapter implements DatabaseAdapter {
   buildWindowFunction(wf: WindowFunction): string {

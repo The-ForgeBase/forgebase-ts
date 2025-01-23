@@ -1,9 +1,9 @@
-import { Knex } from 'knex';
-import { SchemaInspector } from '../types/schema-inspector';
-import { Table } from '../types/table';
-import { Column } from '../types/column';
-import { ForeignKey } from '../types/foreign-key';
-import { stripQuotes } from '../utils/strip-quotes';
+import { Knex } from "knex";
+import { SchemaInspector } from "../types/schema-inspector.js";
+import { Table } from "../types/table.js";
+import { Column } from "../types/column.js";
+import { ForeignKey } from "../types/foreign-key.js";
+import { stripQuotes } from "../utils/strip-quotes.js";
 
 type RawTable = {
   TABLE_NAME: string;
@@ -21,23 +21,23 @@ type RawColumn = {
   CHARACTER_MAXIMUM_LENGTH: number | null;
   NUMERIC_PRECISION: number | null;
   NUMERIC_SCALE: number | null;
-  IS_NULLABLE: 'YES' | 'NO';
+  IS_NULLABLE: "YES" | "NO";
   COLLATION_NAME: string | null;
   COLUMN_COMMENT: string | null;
   REFERENCED_TABLE_NAME: string | null;
   REFERENCED_COLUMN_NAME: string | null;
   UPDATE_RULE: string | null;
   DELETE_RULE: string | null;
-  COLUMN_KEY: 'PRI' | 'UNI' | null;
-  EXTRA: 'auto_increment' | 'STORED GENERATED' | 'VIRTUAL GENERATED' | null;
-  CONSTRAINT_NAME: 'PRIMARY' | null;
+  COLUMN_KEY: "PRI" | "UNI" | null;
+  EXTRA: "auto_increment" | "STORED GENERATED" | "VIRTUAL GENERATED" | null;
+  CONSTRAINT_NAME: "PRIMARY" | null;
   GENERATION_EXPRESSION: string;
 };
 
 export function rawColumnToColumn(rawColumn: RawColumn): Column {
-  let dataType = rawColumn.COLUMN_TYPE.replace(/\(.*?\)/, '');
-  if (rawColumn.COLUMN_TYPE.startsWith('tinyint(1)')) {
-    dataType = 'boolean';
+  let dataType = rawColumn.COLUMN_TYPE.replace(/\(.*?\)/, "");
+  if (rawColumn.COLUMN_TYPE.startsWith("tinyint(1)")) {
+    dataType = "boolean";
   }
 
   return {
@@ -49,12 +49,12 @@ export function rawColumnToColumn(rawColumn: RawColumn): Column {
     max_length: rawColumn.CHARACTER_MAXIMUM_LENGTH,
     numeric_precision: rawColumn.NUMERIC_PRECISION,
     numeric_scale: rawColumn.NUMERIC_SCALE,
-    is_generated: !!rawColumn.EXTRA?.endsWith('GENERATED'),
-    is_nullable: rawColumn.IS_NULLABLE === 'YES',
-    is_unique: rawColumn.COLUMN_KEY === 'UNI',
+    is_generated: !!rawColumn.EXTRA?.endsWith("GENERATED"),
+    is_nullable: rawColumn.IS_NULLABLE === "YES",
+    is_unique: rawColumn.COLUMN_KEY === "UNI",
     is_primary_key:
-      rawColumn.CONSTRAINT_NAME === 'PRIMARY' || rawColumn.COLUMN_KEY === 'PRI',
-    has_auto_increment: rawColumn.EXTRA === 'auto_increment',
+      rawColumn.CONSTRAINT_NAME === "PRIMARY" || rawColumn.COLUMN_KEY === "PRI",
+    has_auto_increment: rawColumn.EXTRA === "auto_increment",
     foreign_key_column: rawColumn.REFERENCED_COLUMN_NAME,
     foreign_key_table: rawColumn.REFERENCED_TABLE_NAME,
     comment: rawColumn.COLUMN_COMMENT,
@@ -62,7 +62,7 @@ export function rawColumnToColumn(rawColumn: RawColumn): Column {
 }
 
 export function parseDefaultValue(value: string | null) {
-  if (value === null || value.trim().toLowerCase() === 'null') return null;
+  if (value === null || value.trim().toLowerCase() === "null") return null;
 
   return stripQuotes(value);
 }
@@ -82,10 +82,10 @@ export default class MySQL implements SchemaInspector {
    */
   async tables() {
     const records = await this.knex
-      .select<{ TABLE_NAME: string }[]>('TABLE_NAME')
-      .from('INFORMATION_SCHEMA.TABLES')
+      .select<{ TABLE_NAME: string }[]>("TABLE_NAME")
+      .from("INFORMATION_SCHEMA.TABLES")
       .where({
-        TABLE_TYPE: 'BASE TABLE',
+        TABLE_TYPE: "BASE TABLE",
         TABLE_SCHEMA: this.knex.client.database(),
       });
     return records.map(({ TABLE_NAME }) => TABLE_NAME);
@@ -100,16 +100,16 @@ export default class MySQL implements SchemaInspector {
   async tableInfo<T>(table?: string) {
     const query = this.knex
       .select(
-        'TABLE_NAME',
-        'ENGINE',
-        'TABLE_SCHEMA',
-        'TABLE_COLLATION',
-        'TABLE_COMMENT'
+        "TABLE_NAME",
+        "ENGINE",
+        "TABLE_SCHEMA",
+        "TABLE_COLLATION",
+        "TABLE_COMMENT"
       )
-      .from('information_schema.tables')
+      .from("information_schema.tables")
       .where({
         table_schema: this.knex.client.database(),
-        table_type: 'BASE TABLE',
+        table_type: "BASE TABLE",
       });
 
     if (table) {
@@ -144,8 +144,8 @@ export default class MySQL implements SchemaInspector {
    */
   async hasTable(table: string): Promise<boolean> {
     const result = await this.knex
-      .count<{ count: 0 | 1 }>({ count: '*' })
-      .from('information_schema.tables')
+      .count<{ count: 0 | 1 }>({ count: "*" })
+      .from("information_schema.tables")
       .where({
         table_schema: this.knex.client.database(),
         table_name: table,
@@ -162,11 +162,10 @@ export default class MySQL implements SchemaInspector {
    */
   async columns(table?: string) {
     const query = this.knex
-      .select<{ TABLE_NAME: string; COLUMN_NAME: string }[]>(
-        'TABLE_NAME',
-        'COLUMN_NAME'
-      )
-      .from('INFORMATION_SCHEMA.COLUMNS')
+      .select<
+        { TABLE_NAME: string; COLUMN_NAME: string }[]
+      >("TABLE_NAME", "COLUMN_NAME")
+      .from("INFORMATION_SCHEMA.COLUMNS")
       .where({ TABLE_SCHEMA: this.knex.client.database() });
 
     if (table) {
@@ -190,51 +189,51 @@ export default class MySQL implements SchemaInspector {
   async columnInfo<T>(table?: string, column?: string) {
     const query = this.knex
       .select(
-        'c.TABLE_NAME',
-        'c.COLUMN_NAME',
-        'c.COLUMN_DEFAULT',
-        'c.COLUMN_TYPE',
-        'c.CHARACTER_MAXIMUM_LENGTH',
-        'c.IS_NULLABLE',
-        'c.COLUMN_KEY',
-        'c.EXTRA',
-        'c.COLLATION_NAME',
-        'c.COLUMN_COMMENT',
-        'c.NUMERIC_PRECISION',
-        'c.NUMERIC_SCALE',
-        'c.GENERATION_EXPRESSION',
-        'fk.REFERENCED_TABLE_NAME',
-        'fk.REFERENCED_COLUMN_NAME',
-        'fk.CONSTRAINT_NAME',
-        'rc.UPDATE_RULE',
-        'rc.DELETE_RULE',
-        'rc.MATCH_OPTION'
+        "c.TABLE_NAME",
+        "c.COLUMN_NAME",
+        "c.COLUMN_DEFAULT",
+        "c.COLUMN_TYPE",
+        "c.CHARACTER_MAXIMUM_LENGTH",
+        "c.IS_NULLABLE",
+        "c.COLUMN_KEY",
+        "c.EXTRA",
+        "c.COLLATION_NAME",
+        "c.COLUMN_COMMENT",
+        "c.NUMERIC_PRECISION",
+        "c.NUMERIC_SCALE",
+        "c.GENERATION_EXPRESSION",
+        "fk.REFERENCED_TABLE_NAME",
+        "fk.REFERENCED_COLUMN_NAME",
+        "fk.CONSTRAINT_NAME",
+        "rc.UPDATE_RULE",
+        "rc.DELETE_RULE",
+        "rc.MATCH_OPTION"
       )
-      .from('INFORMATION_SCHEMA.COLUMNS as c')
-      .leftJoin('INFORMATION_SCHEMA.KEY_COLUMN_USAGE as fk', function () {
-        this.on('c.TABLE_NAME', '=', 'fk.TABLE_NAME')
-          .andOn('fk.COLUMN_NAME', '=', 'c.COLUMN_NAME')
-          .andOn('fk.CONSTRAINT_SCHEMA', '=', 'c.TABLE_SCHEMA');
+      .from("INFORMATION_SCHEMA.COLUMNS as c")
+      .leftJoin("INFORMATION_SCHEMA.KEY_COLUMN_USAGE as fk", function () {
+        this.on("c.TABLE_NAME", "=", "fk.TABLE_NAME")
+          .andOn("fk.COLUMN_NAME", "=", "c.COLUMN_NAME")
+          .andOn("fk.CONSTRAINT_SCHEMA", "=", "c.TABLE_SCHEMA");
       })
       .leftJoin(
-        'INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS as rc',
+        "INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS as rc",
         function () {
-          this.on('rc.TABLE_NAME', '=', 'fk.TABLE_NAME')
-            .andOn('rc.CONSTRAINT_NAME', '=', 'fk.CONSTRAINT_NAME')
-            .andOn('rc.CONSTRAINT_SCHEMA', '=', 'fk.CONSTRAINT_SCHEMA');
+          this.on("rc.TABLE_NAME", "=", "fk.TABLE_NAME")
+            .andOn("rc.CONSTRAINT_NAME", "=", "fk.CONSTRAINT_NAME")
+            .andOn("rc.CONSTRAINT_SCHEMA", "=", "fk.CONSTRAINT_SCHEMA");
         }
       )
       .where({
-        'c.TABLE_SCHEMA': this.knex.client.database(),
+        "c.TABLE_SCHEMA": this.knex.client.database(),
       });
 
     if (table) {
-      query.andWhere({ 'c.TABLE_NAME': table });
+      query.andWhere({ "c.TABLE_NAME": table });
     }
 
     if (column) {
       const rawColumn: RawColumn = await query
-        .andWhere({ 'c.column_name': column })
+        .andWhere({ "c.column_name": column })
         .first();
 
       return rawColumnToColumn(rawColumn);
@@ -258,8 +257,8 @@ export default class MySQL implements SchemaInspector {
    */
   async hasColumn(table: string, column: string): Promise<boolean> {
     const result = await this.knex
-      .count<{ count: 0 | 1 }>('*', { as: 'count' })
-      .from('information_schema.columns')
+      .count<{ count: 0 | 1 }>("*", { as: "count" })
+      .from("information_schema.columns")
       .where({
         table_schema: this.knex.client.database(),
         table_name: table,
@@ -279,7 +278,7 @@ export default class MySQL implements SchemaInspector {
     );
 
     if (results && results.length && results[0].length) {
-      return results[0][0]['Column_name'] as string;
+      return results[0][0]["Column_name"] as string;
     }
 
     return null;
@@ -308,10 +307,10 @@ export default class MySQL implements SchemaInspector {
         );
       })
       .where({
-        'rc.CONSTRAINT_SCHEMA': this.knex.client.database(),
+        "rc.CONSTRAINT_SCHEMA": this.knex.client.database(),
       });
     if (table) {
-      query.andWhere({ 'rc.TABLE_NAME': table });
+      query.andWhere({ "rc.TABLE_NAME": table });
     }
     const result: ForeignKey[] = await query;
     return result;

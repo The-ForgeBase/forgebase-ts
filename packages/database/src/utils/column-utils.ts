@@ -1,6 +1,6 @@
 import type { Knex } from "knex";
-import type { ColumnDefinition, UpdateColumnDefinition } from "../types";
-import { SchemaInspector } from "../knex-schema-inspector/lib";
+import type { ColumnDefinition, UpdateColumnDefinition } from "../types.js";
+import { SchemaInspector } from "../knex-schema-inspector/lib/index.js";
 
 export function createColumn(
   table: Knex.TableBuilder,

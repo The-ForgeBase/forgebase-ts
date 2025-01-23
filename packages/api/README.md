@@ -28,20 +28,20 @@ npm install @forgeapi
 @ForgeApi can be configured with various options. Here's an example of how to initialize and configure the API:
 
 ```ts
-import { forgeApi } from "@forgeapi";
+import { forgeApi } from '@forgeapi';
 
 const api = forgeApi({
-  prefix: "/api",
+  prefix: '/api',
   auth: {
     enabled: true,
-    exclude: ["/auth/login", "/auth/register"],
+    exclude: ['/auth/login', '/auth/register'],
   },
   services: {
     storage: {
-      provider: "local",
+      provider: 'local',
     },
     db: {
-      provider: "sqlite",
+      provider: 'sqlite',
       realtime: true,
       enforceRls: true,
     },
@@ -210,20 +210,20 @@ api.use(async (ctx, next) => {
 #### Express
 
 ```ts
-import express from "express";
-import { forgeApi, ExpressAdapter } from "@forgeapi";
+import express from 'express';
+import { forgeApi, ExpressAdapter } from '@forgeapi';
 
 const app = express();
 const api = forgeApi();
 
-app.use("/api", (req, res) => {
+app.use('/api', (req, res) => {
   const adapter = new ExpressAdapter(req, res);
 
   api.handle(adapter);
 });
 
 app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
+  console.log('Server running on http://localhost:3000');
 });
 ```
 
@@ -256,13 +256,13 @@ app.register(async (server, opts) => {
 #### Hono
 
 ```ts
-import { forgeApi, HonoAdapter } from "@forgeapi";
-import { createServer } from "hono";
+import { forgeApi, HonoAdapter } from '@forgeapi';
+import { Hono } from 'hono';
 
-const app = createServer();
+const app = new Hono();
 const api = forgeApi();
 
-app.use("/api", (req, res) => {
+app.use('/api', (req, res) => {
   const adapter = new HonoAdapter(req, res);
   api.handle(adapter);
 });

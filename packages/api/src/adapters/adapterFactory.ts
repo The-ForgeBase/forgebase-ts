@@ -1,18 +1,18 @@
-import { ServerAdapter, AdapterFactory } from "../types";
-import { SupportedFramework } from "../frameworks";
+import { ServerAdapter, AdapterFactory } from '../types.js';
 import {
   Request as ExpressRequest,
   Response as ExpressResponse,
-} from "express";
-import { FastifyRequest, FastifyReply } from "fastify";
-import { Context as HonoContext } from "hono";
-import { StatusCode } from "hono/utils/http-status";
-import { UserContext } from "database";
+} from 'express';
+import { FastifyRequest, FastifyReply } from 'fastify';
+import { Context as HonoContext } from 'hono';
+import { StatusCode } from 'hono/utils/http-status';
+import { UserContext } from 'database';
+import { SupportedFramework } from '../frameworks/index.js';
 
-class ExpressAdapter implements ServerAdapter {
+export class ExpressAdapter implements ServerAdapter {
   constructor(
     private req: ExpressRequest,
-    private res: ExpressResponse
+    private res: ExpressResponse,
   ) {}
 
   getMethod(): string {
@@ -52,10 +52,10 @@ class ExpressAdapter implements ServerAdapter {
   }
 }
 
-class FastifyAdapter implements ServerAdapter {
+export class FastifyAdapter implements ServerAdapter {
   constructor(
     private req: FastifyRequest,
-    private reply: FastifyReply
+    private reply: FastifyReply,
   ) {}
 
   getMethod(): string {
@@ -95,7 +95,7 @@ class FastifyAdapter implements ServerAdapter {
   }
 }
 
-class HonoAdapter implements ServerAdapter {
+export class HonoAdapter implements ServerAdapter {
   constructor(private c: HonoContext) {}
 
   getMethod(): string {
@@ -115,7 +115,7 @@ class HonoAdapter implements ServerAdapter {
   }
 
   async getBody(): Promise<any> {
-    return await this.c.req.json();
+    return await this.c.req.parseBody();
   }
 
   setStatus(status: number): void {
@@ -134,20 +134,3 @@ class HonoAdapter implements ServerAdapter {
     return (this.c.req as any).userContext as UserContext;
   }
 }
-
-export const createAdapter: AdapterFactory["createAdapter"] = (
-  framework: SupportedFramework
-) => {
-  return (req: any, res: any): ServerAdapter => {
-    switch (framework) {
-      case "express":
-        return new ExpressAdapter(req, res);
-      case "fastify":
-        return new FastifyAdapter(req, res);
-      case "hono":
-        return new HonoAdapter(req);
-      default:
-        throw new Error(`Unsupported framework: ${framework}`);
-    }
-  };
-};

@@ -1,10 +1,10 @@
-import { BaaSConfig } from "../types";
+import { BaaSConfig } from "../types.js";
 
 export class StorageService {
   private config: BaaSConfig["services"]["storage"];
 
   constructor(config?: BaaSConfig["services"]["storage"]) {
-    this.config = config || { provider: "local" };
+    this.config = config || { provider: "local", config: {} };
   }
   async upload(bucket: string, key: string, data: Buffer): Promise<void> {
     // Implementation for file storage

@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import SchemaInspector from "../knex-schema-inspector/lib";
+import SchemaInspector from "../knex-schema-inspector/lib/index.js";
 
 interface TableInfo {
   columns: any;

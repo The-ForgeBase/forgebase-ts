@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import type { TablePermissions } from "./types";
+import type { TablePermissions } from "./types.js";
 import { LRUCache } from "lru-cache";
 
 class PermissionService {

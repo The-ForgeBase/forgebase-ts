@@ -1,8 +1,8 @@
 import type { Knex } from "knex";
-import type { KnexHooks } from "./knex-hooks";
-import type { PermissionService } from "./permissionService";
-import type { DatabaseSchema } from "./utils/inspector";
-import { QueryParams } from "./sdk/server";
+import type { KnexHooks } from "./knex-hooks.js";
+import type { PermissionService } from "./permissionService.js";
+import type { DatabaseSchema } from "./utils/inspector.js";
+import { QueryParams } from "./sdk/server.js";
 
 // Column definition for schema operations
 export type ColumnType =

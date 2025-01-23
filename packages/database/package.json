@@ -28,6 +28,8 @@
     "common": "workspace:*",
     "express": "^4.21.2",
     "knex": "^3.1.0",
+    "lodash.flatten": "^4.4.0",
+    "lodash.isnil": "^4.0.0",
     "lru-cache": "^11.0.2",
     "mysql": "^2.18.1",
     "mysql2": "^3.12.0",

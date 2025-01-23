@@ -1,6 +1,6 @@
 import type { Knex } from "knex";
-import { type DatabaseAdapter, DatabaseFeature } from "./base";
-import { WindowFunction, OrderByClause } from "../sdk/server";
+import { type DatabaseAdapter, DatabaseFeature } from "./base.js";
+import { WindowFunction, OrderByClause } from "../sdk/server.js";
 
 export class SQLiteAdapter implements DatabaseAdapter {
   buildWindowFunction(wf: WindowFunction): string {

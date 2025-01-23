@@ -4,8 +4,8 @@ import type {
   DropForeignKeyParams,
   ModifySchemaParams,
   UpdateColumnDefinition,
-} from "./types";
-import { createColumn, updateColumn } from "./utils/column-utils";
+} from "./types.js";
+import { createColumn, updateColumn } from "./utils/column-utils.js";
 
 // export async function createTable(knex: Knex, params: SchemaCreateParams) {
 //   const { tableName, action, columns } = params;
