@@ -1,21 +1,21 @@
-import type knex from "knex";
-import type { DatabaseAdapter } from "../adapters/base.js";
-import { DatabaseFeature, getAdapter } from "../adapters/index.js";
+import type knex from 'knex';
+import type { DatabaseAdapter } from '../adapters/base';
+import { DatabaseFeature, getAdapter } from '../adapters/index';
 
 // types.ts
 export type WhereOperator =
-  | "="
-  | "!="
-  | ">"
-  | ">="
-  | "<"
-  | "<="
-  | "like"
-  | "in"
-  | "not in"
-  | "between"
-  | "is null"
-  | "is not null";
+  | '='
+  | '!='
+  | '>'
+  | '>='
+  | '<'
+  | '<='
+  | 'like'
+  | 'in'
+  | 'not in'
+  | 'between'
+  | 'is null'
+  | 'is not null';
 
 export interface WhereClause {
   field: string;
@@ -26,33 +26,33 @@ export interface WhereClause {
 
 interface WhereBetweenClause {
   field: string;
-  operator: "between";
+  operator: 'between';
   value: [any, any];
   boolean?: GroupOperator;
 }
 
 export interface OrderByClause {
   field: string;
-  direction?: "asc" | "desc";
-  nulls?: "first" | "last";
+  direction?: 'asc' | 'desc';
+  nulls?: 'first' | 'last';
 }
 
 export interface WindowFunction {
   type:
-    | "row_number"
-    | "rank"
-    | "dense_rank"
-    | "lag"
-    | "lead"
-    | "first_value"
-    | "last_value"
-    | "sum"
-    | "avg"
-    | "count"
-    | "min"
-    | "max"
-    | "nth_value"
-    | "ntile";
+    | 'row_number'
+    | 'rank'
+    | 'dense_rank'
+    | 'lag'
+    | 'lead'
+    | 'first_value'
+    | 'last_value'
+    | 'sum'
+    | 'avg'
+    | 'count'
+    | 'min'
+    | 'max'
+    | 'nth_value'
+    | 'ntile';
   field?: string;
   alias: string;
   partitionBy?: string[];
@@ -86,7 +86,7 @@ interface TransformConfig {
 }
 
 interface AggregateOptions {
-  type: "count" | "sum" | "avg" | "min" | "max";
+  type: 'count' | 'sum' | 'avg' | 'min' | 'max';
   field: string;
   alias?: string;
 }
@@ -96,7 +96,7 @@ export interface RawExpression {
   bindings?: any[];
 }
 
-export type GroupOperator = "AND" | "OR";
+export type GroupOperator = 'AND' | 'OR';
 
 export interface WhereGroup {
   type: GroupOperator;
@@ -114,9 +114,9 @@ export interface WindowFunctionAdvanced extends WindowFunction {
     partitionBy?: string[];
     orderBy?: OrderByClause[];
     frame?: {
-      type: "ROWS" | "RANGE";
-      start: "UNBOUNDED PRECEDING" | "CURRENT ROW" | number;
-      end?: "UNBOUNDED FOLLOWING" | "CURRENT ROW" | number;
+      type: 'ROWS' | 'RANGE';
+      start: 'UNBOUNDED PRECEDING' | 'CURRENT ROW' | number;
+      end?: 'UNBOUNDED FOLLOWING' | 'CURRENT ROW' | number;
     };
   };
   filter?: WhereClause[];
@@ -131,7 +131,7 @@ export interface QueryParams {
   whereIn?: Record<string, any[]>;
   whereNotIn?: Record<string, any[]>;
   whereExists?: RawExpression[];
-  whereGroups?: Array<{ type: "AND" | "OR"; clauses: WhereClause[] }>;
+  whereGroups?: Array<{ type: 'AND' | 'OR'; clauses: WhereClause[] }>;
   orderBy?: OrderByClause[];
   groupBy?: string[];
   having?: HavingClause[];
@@ -180,11 +180,11 @@ export class QueryHandler {
           query = query.withRecursive(cte.name, (qb) => {
             return qb.from(() => {
               const initial = this.knex(cte.initialQuery.tableName)
-                .select("*")
+                .select('*')
                 .where(cte.initialQuery.params.filter || {});
 
               const recursive = this.knex(cte.recursiveQuery.tableName)
-                .select("*")
+                .select('*')
                 .where(cte.recursiveQuery.params.filter || {});
 
               if (cte.unionAll) {
@@ -237,19 +237,19 @@ export class QueryHandler {
         params.aggregates.forEach(({ type, field, alias }) => {
           const column = alias || `${type}_${field}`;
           switch (type) {
-            case "count":
+            case 'count':
               query = query.count(field as any, { as: column });
               break;
-            case "sum":
+            case 'sum':
               query = query.sum(field as any, { as: column });
               break;
-            case "avg":
+            case 'avg':
               query = query.avg(field as any, { as: column });
               break;
-            case "min":
+            case 'min':
               query = query.min(field as any, { as: column });
               break;
-            case "max":
+            case 'max':
               query = query.max(field as any, { as: column });
               break;
           }
@@ -311,7 +311,7 @@ export class QueryHandler {
           query = query.where(function (this: any) {
             group.clauses.forEach((clause) => {
               const method =
-                clause.boolean?.toLowerCase() === "or" ? "orWhere" : "where";
+                clause.boolean?.toLowerCase() === 'or' ? 'orWhere' : 'where';
               this[method](clause.field, clause.operator, clause.value);
             });
           });
@@ -419,22 +419,19 @@ export class QueryHandler {
 
   private applyGrouping(results: any[], groupBy: string[]): any[] {
     return Object.values(
-      results.reduce(
-        (acc, row) => {
-          const key = groupBy.map((field) => row[field]).join(":");
-          if (!acc[key]) {
-            acc[key] = { ...row, _count: 1 };
-          } else {
-            acc[key]._count++;
-          }
-          return acc;
-        },
-        {} as Record<string, any>
-      )
+      results.reduce((acc, row) => {
+        const key = groupBy.map((field) => row[field]).join(':');
+        if (!acc[key]) {
+          acc[key] = { ...row, _count: 1 };
+        } else {
+          acc[key]._count++;
+        }
+        return acc;
+      }, {} as Record<string, any>)
     );
   }
 
-  private applyPivot(results: any[], pivot: TransformConfig["pivot"]): any[] {
+  private applyPivot(results: any[], pivot: TransformConfig['pivot']): any[] {
     if (!pivot) return results;
 
     const { column, values, aggregate } = pivot;

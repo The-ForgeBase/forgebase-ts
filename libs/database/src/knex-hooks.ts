@@ -6,11 +6,11 @@ import { WebSocketManager } from './websocket/WebSocketManager';
 type MutationType = 'create' | 'update' | 'delete';
 
 type QueryFunction<T extends {}> = (
-  query: Knex.QueryBuilder<T, T[]>,
+  query: Knex.QueryBuilder<T, T[]>
 ) => Promise<T[]>;
 
 type MutationFunction<T extends {}> = (
-  query: Knex.QueryBuilder<T, any>,
+  query: Knex.QueryBuilder<T, any>
 ) => Promise<any>;
 
 type HookContext = Record<string, any>;
@@ -45,7 +45,7 @@ class KnexHooks {
   constructor(knexInstance: Knex, wsManager?: WebSocketManager) {
     if (!knexInstance) {
       throw new Error(
-        'A Knex.js instance is required to initialize HookableDB.',
+        'A Knex.js instance is required to initialize HookableDB.'
       );
     }
     this.knex = knexInstance;
@@ -61,7 +61,7 @@ class KnexHooks {
   async query<T extends {}>(
     tableName: string,
     queryFn: QueryFunction<T>,
-    context?: HookContext,
+    context?: HookContext
   ): Promise<T[]> {
     this.events.emit('beforeQuery', { tableName, context });
     await this.beforeQuery(tableName, context);
@@ -77,7 +77,7 @@ class KnexHooks {
     mutationType: MutationType,
     mutationFn: MutationFunction<T>,
     data?: any,
-    context?: HookContext,
+    context?: HookContext
   ): Promise<any> {
     this.events.emit('beforeMutation', {
       tableName,
@@ -109,7 +109,7 @@ class KnexHooks {
   async afterQuery(
     tableName: string,
     result: any,
-    context?: HookContext,
+    context?: HookContext
   ): Promise<void> {
     // Example: Log fetched data
     // console.log(`[Query] Fetched from ${tableName}:`, result);
@@ -119,7 +119,7 @@ class KnexHooks {
     tableName: string,
     mutationType: MutationType,
     data?: any,
-    context?: HookContext,
+    context?: HookContext
   ): Promise<void> {
     // Example: Enforce permissions here
     console.log(`[Before ${mutationType}] On ${tableName}:`, data);
@@ -130,7 +130,7 @@ class KnexHooks {
     mutationType: MutationType,
     result: any,
     data?: any,
-    context?: HookContext,
+    context?: HookContext
   ): Promise<void> {
     // Emit real-time events on mutations
     if (this.wsManager) {
@@ -145,14 +145,14 @@ class KnexHooks {
   // Expose the EventEmitter for external listeners
   on<Event extends keyof KnexHooksEvents>(
     event: Event,
-    listener: KnexHooksEvents[Event],
+    listener: KnexHooksEvents[Event]
   ): void {
     this.events.on(event, listener);
   }
 
   off<Event extends keyof KnexHooksEvents>(
     event: Event,
-    listener: KnexHooksEvents[Event],
+    listener: KnexHooksEvents[Event]
   ): void {
     this.events.off(event, listener);
   }

@@ -1,6 +1,6 @@
-import type { Knex } from "knex";
-import type { TablePermissions } from "./types.js";
-import { LRUCache } from "lru-cache";
+import type { Knex } from 'knex';
+import type { TablePermissions } from './types';
+import { LRUCache } from 'lru-cache';
 
 class PermissionService {
   private cache: LRUCache<string, TablePermissions>;
@@ -15,11 +15,11 @@ class PermissionService {
   }
 
   private async initializeDatabase() {
-    const hasTable = await this.knex.schema.hasTable("table_permissions");
+    const hasTable = await this.knex.schema.hasTable('table_permissions');
     if (!hasTable) {
-      await this.knex.schema.createTable("table_permissions", (table) => {
-        table.string("table_name").primary().unique().notNullable();
-        table.json("permissions").notNullable();
+      await this.knex.schema.createTable('table_permissions', (table) => {
+        table.string('table_name').primary().unique().notNullable();
+        table.json('permissions').notNullable();
         table.timestamps(true, true);
       });
     }
@@ -35,7 +35,7 @@ class PermissionService {
     }
 
     // If not in cache, fetch from database
-    const result = await this.knex("table_permissions")
+    const result = await this.knex('table_permissions')
       .where({ table_name: tableName })
       .first();
 
@@ -50,12 +50,12 @@ class PermissionService {
     tableName: string,
     permissions: TablePermissions
   ): Promise<void> {
-    await this.knex("table_permissions")
+    await this.knex('table_permissions')
       .insert({
         table_name: tableName,
         permissions: JSON.stringify(permissions),
       })
-      .onConflict("table_name")
+      .onConflict('table_name')
       .merge();
 
     // Update cache
@@ -63,7 +63,7 @@ class PermissionService {
   }
 
   async deletePermissionsForTable(tableName: string): Promise<void> {
-    await this.knex("table_permissions")
+    await this.knex('table_permissions')
       .where({ table_name: tableName })
       .delete();
 

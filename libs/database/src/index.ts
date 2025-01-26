@@ -1,8 +1,9 @@
-export type * from './types.js';
-export * from './utils/column-utils.js';
-export * from './utils/inspector.js';
-export * from './knex-hooks.js';
-export * from './permissionService.js';
-export * from './rlsManager.js';
-export * from './schema.js';
-export * from './sdk/server.js';
+export type * from './types';
+export * from './utils/column-utils';
+export * from './utils/inspector';
+export * from './knex-hooks';
+export * from './permissionService';
+export * from './rlsManager';
+export * from './schema';
+export * from './sdk/server';
+export * from './database';

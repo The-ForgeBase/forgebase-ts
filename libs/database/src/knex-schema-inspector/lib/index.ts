@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
-import { SchemaInspectorConstructor } from './types/schema-inspector.js';
-import sqlite from './dialects/sqlite.js';
+import { SchemaInspectorConstructor } from './types/schema-inspector';
+import sqlite from './dialects/sqlite';
 
 export function SchemaInspector(knex: Knex) {
   let constructor: SchemaInspectorConstructor;

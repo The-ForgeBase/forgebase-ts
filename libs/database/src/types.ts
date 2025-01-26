@@ -1,8 +1,8 @@
 import type { Knex } from 'knex';
-import type { KnexHooks } from './knex-hooks.js';
-import type { PermissionService } from './permissionService.js';
-import type { DatabaseSchema } from './utils/inspector.js';
-import { QueryParams } from './sdk/server.js';
+import type { KnexHooks } from './knex-hooks';
+import type { PermissionService } from './permissionService';
+import type { DatabaseSchema } from './utils/inspector';
+import { QueryParams } from './sdk/server';
 
 // Column definition for schema operations
 export type ColumnType =
@@ -190,7 +190,7 @@ export interface ForgeDatabaseEndpoints {
     query: <T>(
       tableName: string,
       params: DataQueryParams,
-      user?: UserContext,
+      user?: UserContext
     ) => Promise<T[]>;
     create: (params: DataMutationParams, user?: UserContext) => Promise<any>;
     update: (params: DataMutationParams, user?: UserContext) => Promise<any>;

@@ -1,38 +1,38 @@
-import { type DatabaseAdapter, DatabaseFeature } from "./base.js";
-import type { WindowFunction, OrderByClause } from "../sdk/server.js";
+import { type DatabaseAdapter, DatabaseFeature } from './base';
+import type { WindowFunction, OrderByClause } from '../sdk/server';
 
 export class PostgresAdapter implements DatabaseAdapter {
   buildWindowFunction(wf: WindowFunction): string {
     // PostgreSQL full window function support
     const fnCall =
-      wf.type === "row_number"
-        ? "ROW_NUMBER()"
-        : `${wf.type}(${wf.field || "*"})`;
+      wf.type === 'row_number'
+        ? 'ROW_NUMBER()'
+        : `${wf.type}(${wf.field || '*'})`;
 
-    let overClause = "OVER (";
+    let overClause = 'OVER (';
     if (wf.partitionBy?.length) {
-      overClause += `PARTITION BY ${wf.partitionBy.join(",")}`;
+      overClause += `PARTITION BY ${wf.partitionBy.join(',')}`;
     }
     if (wf.orderBy?.length) {
       overClause += ` ORDER BY ${wf.orderBy
-        .map((ob) => `${ob.field} ${ob.direction || "ASC"}`)
-        .join(",")}`;
+        .map((ob) => `${ob.field} ${ob.direction || 'ASC'}`)
+        .join(',')}`;
     }
     if (wf.frameClause) {
       overClause += ` ${wf.frameClause}`;
     }
-    overClause += ")";
+    overClause += ')';
 
     return `${fnCall} ${overClause} AS ${wf.alias}`;
   }
 
   buildOrderByClause(
     clauses: OrderByClause[]
-  ): { column: string; order: "asc" | "desc"; null?: "first" | "last" }[] {
+  ): { column: string; order: 'asc' | 'desc'; null?: 'first' | 'last' }[] {
     // PostgreSQL supports NULLS FIRST/LAST natively
     return clauses.map(({ field, direction, nulls }) => ({
       column: field,
-      order: direction || "asc",
+      order: direction || 'asc',
       nulls: nulls,
     }));
   }

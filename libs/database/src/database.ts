@@ -1,8 +1,8 @@
 import type { Knex } from 'knex';
-import { PermissionService } from './permissionService.js';
-import { enforcePermissions } from './rlsManager.js';
-import { DBInspector, type DatabaseSchema } from './utils/inspector.js';
-import { KnexHooks } from './knex-hooks.js';
+import { PermissionService } from './permissionService';
+import { enforcePermissions } from './rlsManager';
+import { DBInspector, type DatabaseSchema } from './utils/inspector';
+import { KnexHooks } from './knex-hooks';
 import type {
   AddForeignKeyParams,
   DataDeleteParams,
@@ -15,16 +15,16 @@ import type {
   PermissionParams,
   SchemaCreateParams,
   TablePermissions,
-} from './types.js';
-import type { UserContext } from './types.js';
-import { createColumn } from './utils/column-utils.js';
+} from './types';
+import type { UserContext } from './types';
+import { createColumn } from './utils/column-utils';
 import {
   addForeignKey,
   dropForeignKey,
   modifySchema,
   truncateTable,
-} from './schema.js';
-import { QueryHandler } from './sdk/server.js';
+} from './schema';
+import { QueryHandler } from './sdk/server';
 import { WebSocketManager } from './websocket/WebSocketManager';
 
 export class ForgeDatabase {
@@ -69,7 +69,7 @@ export class ForgeDatabase {
     if (config.realtime) {
       this.wsManager = new WebSocketManager(
         config.websocketPort || 9001,
-        config.permissions || new PermissionService(config.db),
+        config.permissions || new PermissionService(config.db)
       );
     }
     this.hooks = config.hooks || new KnexHooks(config.db, this.wsManager);
@@ -124,13 +124,13 @@ export class ForgeDatabase {
             .getKnexInstance()
             .schema.createTable(tableName, (table) => {
               columns.forEach((col: any) =>
-                createColumn(table, col, this.hooks.getKnexInstance()),
+                createColumn(table, col, this.hooks.getKnexInstance())
               );
             });
 
           this.permissionService.setPermissionsForTable(
             tableName,
-            this.defaultPermissions,
+            this.defaultPermissions
           );
           return {
             message: 'Table created successfully',
@@ -192,7 +192,7 @@ export class ForgeDatabase {
       query: async (
         tableName: string,
         params: DataQueryParams,
-        user?: UserContext,
+        user?: UserContext
       ) => {
         try {
           const queryParams = this.parseQueryParams(params);
@@ -200,7 +200,7 @@ export class ForgeDatabase {
           const records = await this.hooks.query(
             tableName,
             (query) => this.queryHandler.buildQuery(queryParams, query),
-            queryParams,
+            queryParams
           );
 
           if (this.config.enforceRls && user) {
@@ -209,7 +209,7 @@ export class ForgeDatabase {
               'SELECT',
               records,
               user,
-              this.permissionService,
+              this.permissionService
             );
           }
 
@@ -232,7 +232,7 @@ export class ForgeDatabase {
             !records.length ||
             !records.every(
               (record) =>
-                typeof record === 'object' && Object.keys(record).length > 0,
+                typeof record === 'object' && Object.keys(record).length > 0
             )
           ) {
             throw new Error('Invalid request body');
@@ -244,7 +244,7 @@ export class ForgeDatabase {
               'INSERT',
               records,
               user,
-              this.permissionService,
+              this.permissionService
             );
           }
 
@@ -252,7 +252,7 @@ export class ForgeDatabase {
             tableName,
             'create',
             async (query) => query.insert(records).returning('*'),
-            records,
+            records
           );
 
           return result;
@@ -271,7 +271,7 @@ export class ForgeDatabase {
               'UPDATE',
               data,
               user,
-              this.permissionService,
+              this.permissionService
             );
           }
 
@@ -280,7 +280,7 @@ export class ForgeDatabase {
             'update',
             async (query) => query.where({ id }).update(data).returning('*'),
 
-            { id, ...data },
+            { id, ...data }
           );
 
           return result;
@@ -299,7 +299,7 @@ export class ForgeDatabase {
             (query) => {
               return query.where({ id });
             },
-            { id },
+            { id }
           );
 
           if (this.config.enforceRls && user) {
@@ -308,7 +308,7 @@ export class ForgeDatabase {
               'DELETE',
               record,
               user,
-              this.permissionService,
+              this.permissionService
             );
           }
 
@@ -316,7 +316,7 @@ export class ForgeDatabase {
             tableName,
             'delete',
             async (query) => query.where({ id }).delete(),
-            { id },
+            { id }
           );
         } catch (error) {
           throw error;
@@ -344,7 +344,7 @@ export class ForgeDatabase {
 
           return this.permissionService.setPermissionsForTable(
             tableName,
-            permissions,
+            permissions
           );
         } catch (error) {
           throw error;

@@ -1,14 +1,14 @@
-import { Knex } from "knex";
-import { SchemaInspector } from "../types/schema-inspector.js";
-import { Table } from "../types/table.js";
-import { Column } from "../types/column.js";
-import { ForeignKey } from "../types/foreign-key.js";
-import { stripQuotes } from "../utils/strip-quotes.js";
+import { Knex } from 'knex';
+import { SchemaInspector } from '../types/schema-inspector';
+import { Table } from '../types/table';
+import { Column } from '../types/column';
+import { ForeignKey } from '../types/foreign-key';
+import { stripQuotes } from '../utils/strip-quotes';
 
 /**
  * NOTE: Use previous optimizer for better data dictionary performance.
  */
-const OPTIMIZER_FEATURES = "11.2.0.4";
+const OPTIMIZER_FEATURES = '11.2.0.4';
 
 type RawColumn = {
   TABLE_NAME: string;
@@ -18,17 +18,17 @@ type RawColumn = {
   DATA_LENGTH: number | null;
   DATA_PRECISION: number | null;
   DATA_SCALE: number | null;
-  NULLABLE: "Y" | "N";
+  NULLABLE: 'Y' | 'N';
   COLUMN_COMMENT: string | null;
   REFERENCED_TABLE_NAME: string | null;
   REFERENCED_COLUMN_NAME: string | null;
-  CONSTRAINT_TYPE: "P" | "U" | "R" | null;
-  VIRTUAL_COLUMN: "YES" | "NO";
-  IDENTITY_COLUMN: "YES" | "NO";
+  CONSTRAINT_TYPE: 'P' | 'U' | 'R' | null;
+  VIRTUAL_COLUMN: 'YES' | 'NO';
+  IDENTITY_COLUMN: 'YES' | 'NO';
 };
 
 export function rawColumnToColumn(rawColumn: RawColumn): Column {
-  const is_generated = rawColumn.VIRTUAL_COLUMN === "YES";
+  const is_generated = rawColumn.VIRTUAL_COLUMN === 'YES';
   const default_value = parseDefaultValue(rawColumn.DATA_DEFAULT);
   return {
     name: rawColumn.COLUMN_NAME,
@@ -39,11 +39,11 @@ export function rawColumnToColumn(rawColumn: RawColumn): Column {
     max_length: rawColumn.DATA_LENGTH,
     numeric_precision: rawColumn.DATA_PRECISION,
     numeric_scale: rawColumn.DATA_SCALE,
-    is_generated: rawColumn.VIRTUAL_COLUMN === "YES",
-    is_nullable: rawColumn.NULLABLE === "Y",
-    is_unique: rawColumn.CONSTRAINT_TYPE === "U",
-    is_primary_key: rawColumn.CONSTRAINT_TYPE === "P",
-    has_auto_increment: rawColumn.IDENTITY_COLUMN === "YES",
+    is_generated: rawColumn.VIRTUAL_COLUMN === 'YES',
+    is_nullable: rawColumn.NULLABLE === 'Y',
+    is_unique: rawColumn.CONSTRAINT_TYPE === 'U',
+    is_primary_key: rawColumn.CONSTRAINT_TYPE === 'P',
+    has_auto_increment: rawColumn.IDENTITY_COLUMN === 'YES',
     foreign_key_column: rawColumn.REFERENCED_COLUMN_NAME,
     foreign_key_table: rawColumn.REFERENCED_TABLE_NAME,
     comment: rawColumn.COLUMN_COMMENT,
@@ -51,8 +51,8 @@ export function rawColumnToColumn(rawColumn: RawColumn): Column {
 }
 
 export function parseDefaultValue(value: string | null): string | null {
-  if (value === null || value.trim().toLowerCase() === "null") return null;
-  if (value === "CURRENT_TIMESTAMP ") return "CURRENT_TIMESTAMP";
+  if (value === null || value.trim().toLowerCase() === 'null') return null;
+  if (value === 'CURRENT_TIMESTAMP ') return 'CURRENT_TIMESTAMP';
 
   return stripQuotes(value);
 }
@@ -78,7 +78,7 @@ export default class oracleDB implements SchemaInspector {
             "TABLE_NAME" "name"
         `)
       )
-      .from("USER_TABLES");
+      .from('USER_TABLES');
     return records.map(({ name }) => name);
   }
 
@@ -96,7 +96,7 @@ export default class oracleDB implements SchemaInspector {
             "TABLE_NAME" "name"
         `)
       )
-      .from("USER_TABLES");
+      .from('USER_TABLES');
 
     if (table) {
       return await query.andWhere({ TABLE_NAME: table }).first();
@@ -116,7 +116,7 @@ export default class oracleDB implements SchemaInspector {
             COUNT(*) "count"
         `)
       )
-      .from("USER_TABLES")
+      .from('USER_TABLES')
       .where({ TABLE_NAME: table })
       .first();
     return !!result?.count;
@@ -137,8 +137,8 @@ export default class oracleDB implements SchemaInspector {
             "COLUMN_NAME" "column"
         `)
       )
-      .from("USER_TAB_COLS")
-      .where({ HIDDEN_COLUMN: "NO" });
+      .from('USER_TAB_COLS')
+      .where({ HIDDEN_COLUMN: 'NO' });
 
     if (table) {
       query.andWhere({ TABLE_NAME: table });
@@ -159,7 +159,7 @@ export default class oracleDB implements SchemaInspector {
      */
     const query = this.knex
       .with(
-        "uc",
+        'uc',
         this.knex.raw(`
           SELECT /*+ MATERIALIZE */
             "uc"."TABLE_NAME",
@@ -214,16 +214,16 @@ export default class oracleDB implements SchemaInspector {
             ON "ct"."R_CONSTRAINT_NAME" = "fk"."CONSTRAINT_NAME"
         `)
       )
-      .where({ "c.HIDDEN_COLUMN": "NO" });
+      .where({ 'c.HIDDEN_COLUMN': 'NO' });
 
     if (table) {
-      query.andWhere({ "c.TABLE_NAME": table });
+      query.andWhere({ 'c.TABLE_NAME': table });
     }
 
     if (column) {
       const rawColumn = await query
         .andWhere({
-          "c.COLUMN_NAME": column,
+          'c.COLUMN_NAME': column,
         })
         .first();
       return rawColumnToColumn(rawColumn);
@@ -245,11 +245,11 @@ export default class oracleDB implements SchemaInspector {
             COUNT(*) "count"
         `)
       )
-      .from("USER_TAB_COLS")
+      .from('USER_TAB_COLS')
       .where({
         TABLE_NAME: table,
         COLUMN_NAME: column,
-        HIDDEN_COLUMN: "NO",
+        HIDDEN_COLUMN: 'NO',
       })
       .first();
     return !!result?.count;
@@ -264,13 +264,13 @@ export default class oracleDB implements SchemaInspector {
      */
     const result = await this.knex
       .with(
-        "uc",
+        'uc',
         this.knex
           .select(this.knex.raw(`/*+ MATERIALIZE */ "CONSTRAINT_NAME"`))
-          .from("USER_CONSTRAINTS")
+          .from('USER_CONSTRAINTS')
           .where({
             TABLE_NAME: table,
-            CONSTRAINT_TYPE: "P",
+            CONSTRAINT_TYPE: 'P',
           })
       )
       .select(
@@ -296,7 +296,7 @@ export default class oracleDB implements SchemaInspector {
      */
     const query = this.knex
       .with(
-        "ucc",
+        'ucc',
         this.knex.raw(`
           SELECT /*+ MATERIALIZE */
             "TABLE_NAME",
@@ -322,10 +322,10 @@ export default class oracleDB implements SchemaInspector {
             ON "uc"."R_CONSTRAINT_NAME" = "rcc"."CONSTRAINT_NAME"
       `)
       )
-      .where({ "uc.CONSTRAINT_TYPE": "R" });
+      .where({ 'uc.CONSTRAINT_TYPE': 'R' });
 
     if (table) {
-      query.andWhere({ "uc.TABLE_NAME": table });
+      query.andWhere({ 'uc.TABLE_NAME': table });
     }
 
     return await query;

@@ -1,9 +1,9 @@
-import { Knex } from "knex";
-import { SchemaInspector } from "../types/schema-inspector.js";
-import { Table } from "../types/table.js";
-import { Column } from "../types/column.js";
-import { ForeignKey } from "../types/foreign-key.js";
-import { stripQuotes } from "../utils/strip-quotes.js";
+import { Knex } from 'knex';
+import { SchemaInspector } from '../types/schema-inspector';
+import { Table } from '../types/table';
+import { Column } from '../types/column';
+import { ForeignKey } from '../types/foreign-key';
+import { stripQuotes } from '../utils/strip-quotes';
 
 type RawTable = {
   TABLE_NAME: string;
@@ -19,11 +19,11 @@ type RawColumn = {
   numeric_precision: number | null;
   numeric_scale: number | null;
   is_generated: boolean | null;
-  is_nullable: "YES" | "NO";
+  is_nullable: 'YES' | 'NO';
   default_value: string | null;
   is_unique: true | null;
   is_primary_key: true | null;
-  has_auto_increment: "YES" | "NO";
+  has_auto_increment: 'YES' | 'NO';
   foreign_key_table: string | null;
   foreign_key_column: string | null;
   generation_expression: string | null;
@@ -37,8 +37,8 @@ export function rawColumnToColumn(rawColumn: RawColumn): Column {
     is_generated: !!rawColumn.is_generated,
     is_unique: rawColumn.is_unique === true,
     is_primary_key: rawColumn.is_primary_key === true,
-    is_nullable: rawColumn.is_nullable === "YES",
-    has_auto_increment: rawColumn.has_auto_increment === "YES",
+    is_nullable: rawColumn.is_nullable === 'YES',
+    has_auto_increment: rawColumn.has_auto_increment === 'YES',
     numeric_precision: rawColumn.numeric_precision || null,
     numeric_scale: rawColumn.numeric_scale || null,
     max_length: parseMaxLength(rawColumn),
@@ -60,7 +60,7 @@ export function rawColumnToColumn(rawColumn: RawColumn): Column {
     // nvarchar(100) => max_length == 200
     // In order to get the actual max_length value, we'll divide the value by 2
     // Unless the value is -1, which is the case for n(var)char(MAX)
-    if (["nvarchar", "nchar", "ntext"].includes(rawColumn.data_type)) {
+    if (['nvarchar', 'nchar', 'ntext'].includes(rawColumn.data_type)) {
       return max_length === -1 ? max_length : max_length / 2;
     }
 
@@ -71,11 +71,11 @@ export function rawColumnToColumn(rawColumn: RawColumn): Column {
 export function parseDefaultValue(value: string | null) {
   if (value === null) return null;
 
-  while (value.startsWith("(") && value.endsWith(")")) {
+  while (value.startsWith('(') && value.endsWith(')')) {
     value = value.slice(1, -1);
   }
 
-  if (value.trim().toLowerCase() === "null") return null;
+  if (value.trim().toLowerCase() === 'null') return null;
 
   return stripQuotes(value);
 }
@@ -100,7 +100,7 @@ export default class MSSQL implements SchemaInspector {
   }
 
   get schema() {
-    return this._schema || "dbo";
+    return this._schema || 'dbo';
   }
 
   set schema(value: string) {
@@ -115,10 +115,10 @@ export default class MSSQL implements SchemaInspector {
    */
   async tables() {
     const records = await this.knex
-      .select<{ TABLE_NAME: string }[]>("TABLE_NAME")
-      .from("INFORMATION_SCHEMA.TABLES")
+      .select<{ TABLE_NAME: string }[]>('TABLE_NAME')
+      .from('INFORMATION_SCHEMA.TABLES')
       .where({
-        TABLE_TYPE: "BASE TABLE",
+        TABLE_TYPE: 'BASE TABLE',
         TABLE_CATALOG: this.knex.client.database(),
         TABLE_SCHEMA: this.schema,
       });
@@ -133,11 +133,11 @@ export default class MSSQL implements SchemaInspector {
   tableInfo(table: string): Promise<Table>;
   async tableInfo<T>(table?: string) {
     const query = this.knex
-      .select("TABLE_NAME", "TABLE_SCHEMA", "TABLE_CATALOG", "TABLE_TYPE")
-      .from("INFORMATION_SCHEMA.TABLES")
+      .select('TABLE_NAME', 'TABLE_SCHEMA', 'TABLE_CATALOG', 'TABLE_TYPE')
+      .from('INFORMATION_SCHEMA.TABLES')
       .where({
         TABLE_CATALOG: this.knex.client.database(),
-        TABLE_TYPE: "BASE TABLE",
+        TABLE_TYPE: 'BASE TABLE',
         TABLE_SCHEMA: this.schema,
       });
 
@@ -169,8 +169,8 @@ export default class MSSQL implements SchemaInspector {
    */
   async hasTable(table: string): Promise<boolean> {
     const result = await this.knex
-      .count<{ count: 0 | 1 }>({ count: "*" })
-      .from("INFORMATION_SCHEMA.TABLES")
+      .count<{ count: 0 | 1 }>({ count: '*' })
+      .from('INFORMATION_SCHEMA.TABLES')
       .where({
         TABLE_CATALOG: this.knex.client.database(),
         table_name: table,
@@ -188,10 +188,11 @@ export default class MSSQL implements SchemaInspector {
    */
   async columns(table?: string) {
     const query = this.knex
-      .select<
-        { TABLE_NAME: string; COLUMN_NAME: string }[]
-      >("TABLE_NAME", "COLUMN_NAME")
-      .from("INFORMATION_SCHEMA.COLUMNS")
+      .select<{ TABLE_NAME: string; COLUMN_NAME: string }[]>(
+        'TABLE_NAME',
+        'COLUMN_NAME'
+      )
+      .from('INFORMATION_SCHEMA.COLUMNS')
       .where({
         TABLE_CATALOG: this.knex.client.database(),
         TABLE_SCHEMA: this.schema,
@@ -281,15 +282,15 @@ export default class MSSQL implements SchemaInspector {
         AND ISNULL([i].[index_column_count], 1) = 1
         AND ISNULL([i].[index_priority], 1) = 1`
       )
-      .where({ "s.name": this.schema });
+      .where({ 's.name': this.schema });
 
     if (table) {
-      query.andWhere({ "o.name": table });
+      query.andWhere({ 'o.name': table });
     }
 
     if (column) {
       const rawColumn: RawColumn = await query
-        .andWhere({ "c.name": column })
+        .andWhere({ 'c.name': column })
         .first();
 
       return rawColumnToColumn(rawColumn);
@@ -305,8 +306,8 @@ export default class MSSQL implements SchemaInspector {
    */
   async hasColumn(table: string, column: string): Promise<boolean> {
     const result = await this.knex
-      .count<{ count: 0 | 1 }>({ count: "*" })
-      .from("INFORMATION_SCHEMA.COLUMNS")
+      .count<{ count: 0 | 1 }>({ count: '*' })
+      .from('INFORMATION_SCHEMA.COLUMNS')
       .where({
         TABLE_CATALOG: this.knex.client.database(),
         TABLE_NAME: table,
@@ -337,7 +338,7 @@ export default class MSSQL implements SchemaInspector {
       [table, this.schema]
     );
 
-    const columnName = results.length > 0 ? results[0]["Column_Name"] : null;
+    const columnName = results.length > 0 ? results[0]['Column_Name'] : null;
     return columnName as string;
   }
 

@@ -1,12 +1,12 @@
 import { Knex } from 'knex';
 import flatten from 'lodash.flatten';
-import { SchemaInspector } from '../types/schema-inspector.js';
-import { Table } from '../types/table.js';
-import { Column } from '../types/column.js';
-import extractMaxLength from '../utils/extract-max-length.js';
-import extractType from '../utils/extract-type.js';
-import { ForeignKey } from '../types/foreign-key.js';
-import { stripQuotes } from '../utils/strip-quotes.js';
+import { SchemaInspector } from '../types/schema-inspector';
+import { Table } from '../types/table';
+import { Column } from '../types/column';
+import extractMaxLength from '../utils/extract-max-length';
+import extractType from '../utils/extract-type';
+import { ForeignKey } from '../types/foreign-key';
+import { stripQuotes } from '../utils/strip-quotes';
 
 type RawColumn = {
   cid: number;
@@ -109,7 +109,7 @@ export default class SQLite implements SchemaInspector {
     if (table) {
       const columns = await this.knex.raw<RawColumn[]>(
         `PRAGMA table_xinfo(??)`,
-        table,
+        table
       );
       return columns.map((column) => ({
         table,
@@ -119,7 +119,7 @@ export default class SQLite implements SchemaInspector {
 
     const tables = await this.tables();
     const columnsPerTable = await Promise.all(
-      tables.map(async (table) => await this.columns(table)),
+      tables.map(async (table) => await this.columns(table))
     );
     return flatten(columnsPerTable);
   }
@@ -141,7 +141,7 @@ export default class SQLite implements SchemaInspector {
 
       const columns: RawColumn[] = await this.knex.raw(
         `PRAGMA table_xinfo(??)`,
-        table,
+        table
       );
 
       const foreignKeys = await this.knex.raw<
@@ -156,16 +156,16 @@ export default class SQLite implements SchemaInspector {
         indexList.map((index) =>
           this.knex.raw<{ seqno: number; cid: number; name: string }[]>(
             `PRAGMA index_info(??)`,
-            index.name,
-          ),
-        ),
+            index.name
+          )
+        )
       );
 
       return columns.map((raw): Column => {
         const foreignKey = foreignKeys.find((fk) => fk.from === raw.name);
 
         const indexIndex = indexInfoList.findIndex((list) =>
-          list.find((fk) => fk.name === raw.name),
+          list.find((fk) => fk.name === raw.name)
         );
         const index = indexList[indexIndex];
         const indexInfo = indexInfoList[indexIndex];
@@ -195,7 +195,7 @@ export default class SQLite implements SchemaInspector {
     if (!table) {
       const tables = await this.tables();
       const columnsPerTable = await Promise.all(
-        tables.map(async (table) => await getColumnsForTable(table)),
+        tables.map(async (table) => await getColumnsForTable(table))
       );
       return flatten(columnsPerTable);
     }
@@ -214,7 +214,7 @@ export default class SQLite implements SchemaInspector {
   async hasColumn(table: string, column: string): Promise<boolean> {
     let isColumn = false;
     const results = await this.knex.raw(
-      `SELECT COUNT(*) AS ct FROM pragma_table_xinfo('${table}') WHERE name='${column}'`,
+      `SELECT COUNT(*) AS ct FROM pragma_table_xinfo('${table}') WHERE name='${column}'`
     );
     const resultsVal = results[0]['ct'];
     if (resultsVal !== 0) {
@@ -229,7 +229,7 @@ export default class SQLite implements SchemaInspector {
   async primary(table: string) {
     const columns = await this.knex.raw<RawColumn[]>(
       `PRAGMA table_xinfo(??)`,
-      table,
+      table
     );
     const pkColumn = columns.find((col) => col.pk !== 0);
     return pkColumn?.name || null;
@@ -251,14 +251,14 @@ export default class SQLite implements SchemaInspector {
           on_update: key.on_update,
           on_delete: key.on_delete,
           constraint_name: null,
-        }),
+        })
       );
     }
 
     const tables = await this.tables();
 
     const keysPerTable = await Promise.all(
-      tables.map(async (table) => await this.foreignKeys(table)),
+      tables.map(async (table) => await this.foreignKeys(table))
     );
 
     return flatten(keysPerTable);

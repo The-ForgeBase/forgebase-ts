@@ -1,7 +1,7 @@
-import { Knex } from "knex";
-import { Table } from "./table.js";
-import { Column } from "./column.js";
-import { ForeignKey } from "./foreign-key.js";
+import { Knex } from 'knex';
+import { Table } from './table';
+import { Column } from './column';
+import { ForeignKey } from './foreign-key';
 
 export interface SchemaInspector {
   knex: Knex;

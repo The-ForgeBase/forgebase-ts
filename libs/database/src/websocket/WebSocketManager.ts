@@ -21,7 +21,7 @@ export class WebSocketManager {
 
   constructor(
     private port: number,
-    private permissionService: PermissionService,
+    private permissionService: PermissionService
   ) {
     this.app = App();
     this.setupWebSocketServer();
@@ -41,7 +41,7 @@ export class WebSocketManager {
           req.getHeader('sec-websocket-key'),
           req.getHeader('sec-websocket-protocol'),
           req.getHeader('sec-websocket-extensions'),
-          context,
+          context
         );
       },
       open: (ws: any) => {
@@ -91,8 +91,9 @@ export class WebSocketManager {
     }
 
     // Check table permissions
-    const permissions =
-      await this.permissionService.getPermissionsForTable(tableName);
+    const permissions = await this.permissionService.getPermissionsForTable(
+      tableName
+    );
     if (!this.canSubscribe(client.userContext, permissions)) {
       this.sendError(client, 'Permission denied');
       return;
@@ -120,7 +121,7 @@ export class WebSocketManager {
 
   private canSubscribe(
     userContext: UserContext,
-    permissions?: TablePermissions,
+    permissions?: TablePermissions
   ): boolean {
     if (!permissions) return false;
 
@@ -137,7 +138,7 @@ export class WebSocketManager {
     tableName: string,
     event: string,
     data: any[],
-    permissions: TablePermissions,
+    permissions: TablePermissions
   ) {
     const BATCH_SIZE = 100; // Adjust based on your needs
 
@@ -152,8 +153,8 @@ export class WebSocketManager {
             evaluatePermission(
               permissions.operations.SELECT!,
               client.userContext!,
-              item,
-            ),
+              item
+            )
           );
 
           if (filteredData.length > 0) {
@@ -162,10 +163,10 @@ export class WebSocketManager {
                 event,
                 tableName,
                 data: filteredData,
-              }),
+              })
             );
           }
-        }),
+        })
       );
     }
   }
@@ -174,8 +175,9 @@ export class WebSocketManager {
     const subscribers = this.tableSubscriptions.get(tableName);
     if (!subscribers) return;
 
-    const permissions =
-      await this.permissionService.getPermissionsForTable(tableName);
+    const permissions = await this.permissionService.getPermissionsForTable(
+      tableName
+    );
     if (!permissions || !permissions.operations.SELECT) return;
 
     // Get all active clients for this table
@@ -192,7 +194,7 @@ export class WebSocketManager {
       tableName,
       event,
       dataArray,
-      permissions,
+      permissions
     );
   }
 

@@ -1,14 +1,10 @@
-import type {
-  PermissionRule,
-  UserContext,
-  UserContextFields,
-} from './types.js';
-import { PermissionService } from './permissionService.js';
+import type { PermissionRule, UserContext, UserContextFields } from './types';
+import { PermissionService } from './permissionService';
 
 export function evaluatePermission(
   rules: PermissionRule[],
   userContext: UserContext,
-  row: Record<string, any> = {},
+  row: Record<string, any> = {}
 ): boolean {
   for (const rule of rules) {
     switch (rule.allow) {
@@ -111,7 +107,7 @@ export function evaluatePermission(
                 throw new Error(`Missing context value for key: ${key}`);
               }
               return JSON.stringify(userContext[key as UserContextFields]);
-            },
+            }
           );
           console.log(`Executing custom SQL: ${parsedSql}`);
           return true; // Simulate SQL execution
@@ -131,10 +127,11 @@ export async function enforcePermissions(
   operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE',
   rows: Row | Row[],
   userContext: UserContext,
-  permissionService: PermissionService,
+  permissionService: PermissionService
 ): Promise<Row | Row[]> {
-  const tablePermissions =
-    await permissionService.getPermissionsForTable(tableName);
+  const tablePermissions = await permissionService.getPermissionsForTable(
+    tableName
+  );
 
   if (!tablePermissions) {
     throw new Error(`Permission for Table "${tableName}" not found`);
@@ -142,7 +139,7 @@ export async function enforcePermissions(
 
   if (!tablePermissions?.operations?.[operation]) {
     throw new Error(
-      `Operation "${operation}" not allowed on table "${tableName}"`,
+      `Operation "${operation}" not allowed on table "${tableName}"`
     );
   }
 
@@ -158,7 +155,7 @@ export async function enforcePermissions(
     const access = evaluatePermission(rules, userContext, {});
     if (!access) {
       throw new Error(
-        `User does not have permission to perform operation "${operation}" on table "${tableName}"`,
+        `User does not have permission to perform operation "${operation}" on table "${tableName}"`
       );
     }
     return rows;
@@ -169,7 +166,7 @@ export async function enforcePermissions(
     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
       const chunk = rows.slice(i, i + CHUNK_SIZE);
       const filteredChunk = chunk.filter((row) =>
-        evaluatePermission(rules, userContext, row),
+        evaluatePermission(rules, userContext, row)
       );
       result.push(...filteredChunk);
     }
@@ -179,7 +176,7 @@ export async function enforcePermissions(
   const access = evaluatePermission(rules, userContext, rows);
   if (!access) {
     throw new Error(
-      `User does not have permission to perform operation "${operation}" on table "${tableName}"`,
+      `User does not have permission to perform operation "${operation}" on table "${tableName}"`
     );
   }
   return rows;
