@@ -1,6 +1,5 @@
-coverage
-public
-dist
-build
-pnpm-lock.yaml
-pnpm-workspace.yaml
+# Add files here to ignore them from prettier formatting
+/dist
+/coverage
+/.nx/cache
+/.nx/workspace-data

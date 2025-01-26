@@ -14,7 +14,20 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@forgebase-ts/api": ["libs/api/src/index.ts"],
+      "@forgebase-ts/auth": ["libs/auth/src/index.ts"],
+      "@forgebase-ts/common": ["libs/common/src/index.ts"],
+      "@forgebase-ts/database": ["libs/database/src/index.ts"],
+      "@forgebase-ts/lib/utils": ["libs/studio-ui-utils/src"],
+      "@forgebase-ts/lib/utils/*": ["libs/studio-ui-utils/src/*"],
+      "@forgebase-ts/real-time": ["libs/real-time/src/index.ts"],
+      "@forgebase-ts/storage": ["libs/storage/src/index.ts"],
+      "@forgebase-ts/studio-ui": ["libs/studio-ui/src"],
+      "@forgebase-ts/studio-ui-utils": ["libs/studio-ui-utils/src"],
+      "@forgebase-ts/studio-ui-utils/*": ["libs/studio-ui-utils/src/*"],
+      "@forgebase-ts/studio-ui/*": ["libs/studio-ui/src/*"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }
