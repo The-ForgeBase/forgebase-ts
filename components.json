@@ -12,8 +12,8 @@
   "aliases": {
     "ui": "@forgebase-ts/studio-ui",
     "components": "@forgebase-ts/studio-ui/components",
-    "utils": "@forgebase-ts/studio-ui-utils/src",
-    "lib": "@forgebase-ts/studio-ui-utils/src",
+    "utils": "@forgebase-ts/studio-ui-utils",
+    "lib": "@forgebase-ts/studio-ui-utils",
     "hooks": "@forgebase-ts/studio-ui/hooks"
   },
   "iconLibrary": "lucide"

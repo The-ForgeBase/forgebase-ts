@@ -4,7 +4,7 @@ import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@forgebase-ts/studio-ui/hooks/use-mobile"
-import { cn } from "@forgebase-ts/studio-ui-utils/src/utils"
+import { cn } from "@forgebase-ts/studio-ui-utils"
 import { Button } from "@forgebase-ts/studio-ui/button"
 import { Input } from "@forgebase-ts/studio-ui/input"
 import { Separator } from "@forgebase-ts/studio-ui/separator"

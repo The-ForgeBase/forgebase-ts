@@ -1,3 +1,5 @@
+"use client"
+
 import { AppSidebar } from "@forgebase-ts/studio-ui/components/app-sidebar"
 import {
   Breadcrumb,
