@@ -17,10 +17,20 @@
       }
     },
     "serve": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
       "dependsOn": ["build"],
       "options": {
-        "command": "tsx watch apps/hono-test/src/main.ts"
+        "buildTarget": "nest-test:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "nest-test:build:development"
+        },
+        "production": {
+          "buildTarget": "nest-test:build:production"
+        }
       }
     }
   },
