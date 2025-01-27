@@ -7,7 +7,7 @@ import type { Config } from 'tailwindcss';
 
 export function buildConfig(appDir: string): Config {
   return {
-    darkMode: ['class'],
+    darkMode: 'class',
     presets: [
       createPreset({
         preset: 'neutral',
@@ -16,7 +16,11 @@ export function buildConfig(appDir: string): Config {
     content: [
       join(
         appDir,
-        '{src,pages,components,app,content,mdx-components}/**/*!(*.stories|*.spec).{ts,tsx,html,mdx}'
+        '{src,pages,components,app,content,mdx-components}/**/*!(*.stories|*.spec).{ts,tsx,html,mdx,md}',
+        './components/**/*.{ts,tsx}',
+        './app/**/*.{ts,tsx}',
+        './content/**/*.{md,mdx}',
+        './mdx-components.{ts,tsx}'
       ),
       ...createGlobPatternsForDependencies(appDir),
       './node_modules/fumadocs-ui/dist/**/*.js',

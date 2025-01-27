@@ -14,11 +14,13 @@ const nextConfig = {
     // See: https://github.com/gregberge/svgr
     svgr: false,
   },
+  reactStrictMode: true,
 };
 
 const plugins = [
   // Add more Next.js plugins to this list if needed.
   withNx,
+  withMDX,
 ];
 
-module.exports = composePlugins(...plugins)(withMDX(nextConfig));
+module.exports = composePlugins(...plugins)(nextConfig);
