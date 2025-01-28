@@ -1,6 +1,6 @@
 import * as arctic from 'arctic';
 import { BaseOAuthProvider } from './basic';
-import { User, UserService } from '../../types';
+import { ConfigStore, User, UserService } from '../../types';
 import { Knex } from 'knex';
 import axios from 'axios';
 import { OAuthUser } from '.';
@@ -31,12 +31,13 @@ export class GoogleOAuthProvider<
     userService: UserService<TUser>;
     knex: Knex;
     name: string;
+    configStore: ConfigStore;
   }) {
     super(config);
   }
 
   private async getGoogleClient() {
-    const config = await this.getConfig();
+    const config = await this.getConfigb();
     return new arctic.Google(
       config.clientID,
       config.clientSecret,
@@ -48,7 +49,7 @@ export class GoogleOAuthProvider<
     try {
       const state = arctic.generateState();
       const codeVerifier = arctic.generateCodeVerifier();
-      const config = await this.getConfig();
+      const config = await this.getConfigb();
       const google = await this.getGoogleClient();
       const url = google.createAuthorizationURL(
         state,
@@ -116,6 +117,7 @@ export class GoogleOAuthProvider<
       const user: GoogleUserAttributes = response.data as GoogleUserAttributes;
 
       return {
+        id: user.sub,
         email: user.email,
         name: user.name,
         picture: user.picture,
@@ -123,6 +125,7 @@ export class GoogleOAuthProvider<
         firstName: user.given_name,
         lastName: user.family_name,
         accessToken,
+        data: user,
       };
     } catch (error) {
       console.error('Error getting user profile:', error);

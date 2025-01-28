@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import { User, AuthProvider, UserService } from '../../types';
+import { User, AuthProvider, UserService, ConfigStore } from '../../types';
 import { OAuthUser } from '.';
 
 export abstract class BaseOAuthProvider<TUser extends User>
@@ -18,19 +18,19 @@ export abstract class BaseOAuthProvider<TUser extends User>
       userService: UserService<TUser>;
       knex: Knex;
       name: string;
+      configStore: ConfigStore;
     }
   ) {}
 
-  async getConfig() {
-    const config = await this.config
-      .knex('oauth_providers')
-      .where('provider', this.config.name)
-      .first();
+  async getConfigb() {
+    const authConfig = await this.config.configStore.getConfig();
+    const providerConfig = authConfig.oauthProviders?.[this.config.name];
+
     return {
-      clientID: config?.client_id || this.config.clientID,
-      clientSecret: config?.client_secret || this.config.clientSecret,
-      callbackURL: this.config.callbackURL,
-      scopes: config?.scopes?.split(',') || this.config.scopes,
+      clientID: providerConfig?.clientId || this.config.clientID,
+      clientSecret: providerConfig?.clientSecret || this.config.clientSecret,
+      callbackURL: providerConfig?.redirectUrl || this.config.callbackURL,
+      scopes: providerConfig?.scopes || this.config.scopes,
     };
   }
 
@@ -59,7 +59,25 @@ export abstract class BaseOAuthProvider<TUser extends User>
         picture: profile.picture,
         email: profile.email,
       } as Partial<TUser>);
+
+      // create oauth account
+      await this.config.knex('oauth_accounts').insert({
+        user_id: user.id,
+        provider: this.config.name,
+        provider_user_id: profile.id,
+        provider_data: JSON.stringify(profile.data),
+      });
     }
+
+    // update oauth account
+    await this.config
+      .knex('oauth_accounts')
+      .where('user_id', user.id)
+      .where('provider', this.config.name)
+      .update({
+        provider_user_id: profile.id,
+        provider_data: JSON.stringify(profile.data),
+      });
 
     return user;
   }

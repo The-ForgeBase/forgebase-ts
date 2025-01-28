@@ -2,6 +2,7 @@ import { Knex } from 'knex';
 import { z } from 'zod';
 
 export const AuthConfigSchema = z.object({
+  id: z.any().optional(),
   enabledProviders: z.array(z.string()).default(['local']),
   authPolicy: z.object({
     emailVerificationRequired: z.boolean().default(true),

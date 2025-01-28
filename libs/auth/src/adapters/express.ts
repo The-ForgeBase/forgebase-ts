@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { DynamicAuthManager } from '../authManager';
-import { User, AuthToken, AuthRequiredType, MFARequiredError } from '../types';
-import { BaseOAuthProvider } from '../providers';
+import { User, MFARequiredError } from '../types';
 
 export interface ExpressAuthConfig {
   loginPath?: string;
@@ -50,7 +49,12 @@ export class ExpressAuthAdapter<TUser extends User> {
       const config = this.authManager.getConfig();
       const mfaStatus = this.authManager.getMfaStatus();
 
-      if (config.mfaSettings.required && mfaStatus && !user.mfa_enabled) {
+      if (
+        config.mfaSettings.required &&
+        mfaStatus &&
+        !user.mfa_enabled &&
+        !req.path.includes('mfa')
+      ) {
         throw new MFARequiredError();
       }
 
@@ -182,6 +186,7 @@ export class ExpressAuthAdapter<TUser extends User> {
         try {
           const token = this.extractToken(req);
           await this.authManager.logout(token);
+          res.clearCookie('token');
           res.json({ success: true });
         } catch (error) {
           res.status(400).json({ error: error.message });

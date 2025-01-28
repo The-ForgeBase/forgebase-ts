@@ -1,19 +1,14 @@
-import express from 'express';
-import { Knex, knex } from 'knex';
-import { DynamicAuthManager } from '../authManager';
-import { ExpressAuthAdapter } from '../adapters/express';
+import { Context, Hono } from 'hono';
 import { LocalAuthProvider } from '../providers/local';
 import { PasswordlessProvider } from '../providers/passwordless';
 import { GoogleOAuthProvider } from '../providers/oauth/google';
-import { KnexConfigStore } from '../config/knex-config';
+import { DynamicAuthManager } from '../authManager';
+import { HonoAuthAdapter } from '../adapters/hono';
+import { AppUser } from './types';
+import knex from 'knex';
+import { KnexConfigStore } from '../config';
 import { KnexUserService } from '../userService';
-import { User } from '../types';
 import { BasicSessionManager } from '../session/session';
-
-interface AppUser extends User {
-  name?: string;
-  picture?: string;
-}
 
 async function setupAuth() {
   // Initialize Knex instance
@@ -84,6 +79,7 @@ async function setupAuth() {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID || '',
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        redirectUrl: '/',
         enabled: true,
         scopes: ['email', 'profile'],
         provider: 'google',
@@ -91,7 +87,7 @@ async function setupAuth() {
     },
   });
 
-  // Initialize session manager (implement your own or use a library)
+  // Initialize session manager
   const sessionManager = new BasicSessionManager('my-secret-key', config, db);
 
   // Initialize auth manager
@@ -105,33 +101,28 @@ async function setupAuth() {
     { knex: db }
   );
 
-  // Initialize Express app
-  const app = express();
-  app.use(express.json());
+  // Initialize Hono app
+  const app = new Hono();
 
-  // Initialize Express auth adapter
-  const authAdapter = new ExpressAuthAdapter(authManager);
+  // Initialize Hono auth adapter
+  const authAdapter = new HonoAuthAdapter(authManager);
 
   // Setup auth routes
   authAdapter.setupRoutes(app);
 
   // Protected route example
-  app.get(
-    '/protected',
-    async (req, res, next) => {
-      await authAdapter.authenticate(req, res, next);
-    },
-    (req, res) => {
-      res.json({ message: 'This is a protected route', user: req['user'] });
-    }
-  );
+  app.get('/protected', authAdapter.authenticate, (c: Context) => {
+    return c.json({
+      message: 'This is a protected route',
+      user: c.get('user'),
+    });
+  });
 
   // Start server
   const port = process.env.PORT || 3000;
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
+  console.log(`Server running on port ${port}`);
+
+  return app;
 }
 
-// Run the example
-setupAuth().catch(console.error);
+export { setupAuth };

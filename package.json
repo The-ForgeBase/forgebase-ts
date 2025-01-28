@@ -5,6 +5,7 @@
   "scripts": {},
   "private": true,
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
     "@hono/node-server": "^1.13.7",
     "@libsql/client": "^0.14.0",
     "@libsql/knex-libsql": "^0.1.0",

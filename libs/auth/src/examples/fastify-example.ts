@@ -1,19 +1,14 @@
-import express from 'express';
-import { Knex, knex } from 'knex';
-import { DynamicAuthManager } from '../authManager';
-import { ExpressAuthAdapter } from '../adapters/express';
+import { FastifyInstance } from 'fastify';
 import { LocalAuthProvider } from '../providers/local';
 import { PasswordlessProvider } from '../providers/passwordless';
 import { GoogleOAuthProvider } from '../providers/oauth/google';
-import { KnexConfigStore } from '../config/knex-config';
+import { DynamicAuthManager } from '../authManager';
+import { FastifyAuthAdapter } from '../adapters/fastify';
+import { AppUser } from './types';
+import knex from 'knex';
+import { KnexConfigStore } from '../config';
 import { KnexUserService } from '../userService';
-import { User } from '../types';
 import { BasicSessionManager } from '../session/session';
-
-interface AppUser extends User {
-  name?: string;
-  picture?: string;
-}
 
 async function setupAuth() {
   // Initialize Knex instance
@@ -84,6 +79,7 @@ async function setupAuth() {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID || '',
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        redirectUrl: '/',
         enabled: true,
         scopes: ['email', 'profile'],
         provider: 'google',
@@ -91,7 +87,7 @@ async function setupAuth() {
     },
   });
 
-  // Initialize session manager (implement your own or use a library)
+  // Initialize session manager
   const sessionManager = new BasicSessionManager('my-secret-key', config, db);
 
   // Initialize auth manager
@@ -105,33 +101,37 @@ async function setupAuth() {
     { knex: db }
   );
 
-  // Initialize Express app
-  const app = express();
-  app.use(express.json());
+  // Initialize Fastify app
+  const app = require('fastify')();
 
-  // Initialize Express auth adapter
-  const authAdapter = new ExpressAuthAdapter(authManager);
+  // Initialize Fastify auth adapter
+  const authAdapter = new FastifyAuthAdapter(authManager);
 
-  // Setup auth routes
-  authAdapter.setupRoutes(app);
+  // Setup auth routes with cookie support
+  authAdapter.setupRoutes(app, true);
 
   // Protected route example
-  app.get(
-    '/protected',
-    async (req, res, next) => {
-      await authAdapter.authenticate(req, res, next);
+  app.get('/protected', {
+    preHandler: [authAdapter.authenticate],
+    handler: async (request, reply) => {
+      return reply.send({
+        message: 'This is a protected route',
+        user: request['user'],
+      });
     },
-    (req, res) => {
-      res.json({ message: 'This is a protected route', user: req['user'] });
-    }
-  );
+  });
 
   // Start server
   const port = process.env.PORT || 3000;
-  app.listen(port, () => {
+  app.listen({ port }, (err) => {
+    if (err) {
+      console.error('Error starting server:', err);
+      process.exit(1);
+    }
     console.log(`Server running on port ${port}`);
   });
+
+  return app;
 }
 
-// Run the example
-setupAuth().catch(console.error);
+export { setupAuth };
