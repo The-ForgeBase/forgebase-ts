@@ -2,6 +2,25 @@
 
 A flexible authentication library for Node.js applications, providing multiple authentication strategies and framework adapters.
 
+> **Notice:** This documentation is still a work in progress. Most features are not listed here yet and some are still in development.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+- [Configuration](#configuration)
+  - [Local Provider](#local-provider)
+  - [OAuth Provider](#oauth-provider)
+- [Framework Integration](#framework-integration)
+  - [Hono](#hono)
+  - [Express](#express)
+- [API Reference](#api-reference)
+  - [createAuth(options)](#createauthoptions)
+  - [auth.middleware()](#authmiddleware)
+  - [auth.handleCallback(provider)](#authhandlecallbackprovider)
+- [Building](#building)
+- [Running Tests](#running-tests)
+
 ## Features
 
 - Multiple authentication providers:
