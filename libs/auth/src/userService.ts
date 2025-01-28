@@ -51,9 +51,16 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
       .first();
   }
 
-  async createUser(userData: Partial<TUser>, password: string): Promise<TUser> {
+  async createUser(
+    userData: Partial<TUser>,
+    password?: string
+  ): Promise<TUser> {
     const { ...rest } = userData;
-    const hash = await hashPassword(password);
+    const hash = password ? await hashPassword(password) : null;
+
+    if (!userData.email) {
+      throw new Error('Email is required');
+    }
 
     return this.internalConfig
       .knex(this.table)

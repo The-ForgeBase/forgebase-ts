@@ -45,8 +45,10 @@ export const AuthConfigSchema = z.object({
       z.object({
         clientId: z.string(),
         clientSecret: z.string(),
+        redirectUrl: z.string(),
         enabled: z.boolean().default(false),
         scopes: z.array(z.string()),
+        provider: z.enum(['google', 'facebook', 'twitter']),
       })
     )
     .optional(),
@@ -61,6 +63,7 @@ export interface AuthInternalConfig<TUser extends User> {
     id?: string;
     email?: string;
     phone?: string;
+    name?: string;
     smsVerified?: boolean;
     emailVerified?: boolean;
     passwordHash?: string;
@@ -74,7 +77,7 @@ export interface AuthInternalConfig<TUser extends User> {
 
 export interface UserService<TUser extends User> {
   findUser(identifier: string): Promise<TUser | null>;
-  createUser(user: Partial<TUser>, password: string): Promise<TUser>;
+  createUser(user: Partial<TUser>, password?: string): Promise<TUser>;
   updateUser(userId: string, user: Partial<TUser>): Promise<TUser>;
   deleteUser(userId: string): Promise<void>;
 }
@@ -104,8 +107,10 @@ export interface ConfigStore {
 export interface BaseUser {
   id: string;
   email: string;
+  name?: string;
   phone?: string;
-  password_hash: string;
+  picture?: string;
+  password_hash?: string;
   email_verified: boolean;
   phone_verified: boolean;
   created_at: Date;
@@ -121,9 +126,10 @@ export interface BaseUser {
 export type User<T extends Record<string, unknown> = {}> = BaseUser & T;
 
 export interface AuthProvider<TUser extends User = User> {
-  authenticate(credentials: Record<string, string>): Promise<TUser>;
+  authenticate(credentials: Record<string, string>): Promise<TUser | null>;
   validate?(token: string): Promise<TUser>;
   register?(user: Partial<TUser>, password: string): Promise<TUser>;
+  getConfig?(): Promise<Record<string, string>>;
   //   verifyEmail?(token: string): Promise<void>;
   //   sendVerificationEmail?(email: string): Promise<void>;
   //   verifyPhone?(token: string): Promise<void>;

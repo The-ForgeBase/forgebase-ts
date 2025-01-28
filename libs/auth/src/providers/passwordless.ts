@@ -14,7 +14,7 @@ export class PasswordlessProvider<TUser extends User>
     }
   ) {}
 
-  async authenticate({ email }: { email: string }) {
+  async authenticate({ email }: { email: string }): Promise<null> {
     const token = crypto.randomBytes(32).toString('hex');
     await this.config.tokenStore('passwordless_tokens').insert({
       token,
@@ -26,7 +26,7 @@ export class PasswordlessProvider<TUser extends User>
     return null; // No immediate user return
   }
 
-  async verifyToken(token: string) {
+  async validate(token: string) {
     const record = await this.config
       .tokenStore('passwordless_tokens')
       .where({ token })

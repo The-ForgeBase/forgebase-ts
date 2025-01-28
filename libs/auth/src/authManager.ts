@@ -1,4 +1,5 @@
 import { hashPassword } from './lib/password';
+import { BaseOAuthProvider } from './providers';
 import {
   AuthConfig,
   AuthInternalConfig,
@@ -63,7 +64,11 @@ export class DynamicAuthManager<TUser extends User> {
     provider: string,
     credentials: Partial<TUser>,
     password: string
-  ): Promise<{ user: TUser; token: AuthToken | string | AuthRequiredType }> {
+  ): Promise<{
+    user?: TUser;
+    token: AuthToken | string | AuthRequiredType;
+    url?: URL;
+  }> {
     if (!this.config.enabledProviders.includes(provider)) {
       throw new ProviderNotEnabled(provider);
     }
@@ -76,6 +81,13 @@ export class DynamicAuthManager<TUser extends User> {
     const authProvider = this.providers[provider];
     if (!authProvider) throw new InvalidProvider();
     if (!authProvider.register) throw new ProviderDoesNotSupportReg(provider);
+
+    if (authProvider instanceof BaseOAuthProvider) {
+      const url = await authProvider.getAuthorizationUrl();
+
+      return { user: undefined, token: provider, url };
+    }
+
     const user = await authProvider.register(credentials, password);
 
     if (
@@ -108,10 +120,26 @@ export class DynamicAuthManager<TUser extends User> {
     return { user, token: '' };
   }
 
+  getProviders() {
+    return this.providers;
+  }
+
+  getProvider(provider: string) {
+    return this.providers[provider];
+  }
+
+  getProviderConfig(provider: string) {
+    return this.providers[provider].getConfig();
+  }
+
   async login(
     provider: string,
     credentials: Record<string, string>
-  ): Promise<{ user: TUser; token: AuthToken | string | AuthRequiredType }> {
+  ): Promise<{
+    user?: TUser;
+    token: AuthToken | string | AuthRequiredType;
+    url?: URL;
+  }> {
     if (!this.config.enabledProviders.includes(provider)) {
       throw new ProviderNotEnabled(provider);
     }
@@ -124,7 +152,17 @@ export class DynamicAuthManager<TUser extends User> {
     const authProvider = this.providers[provider];
     if (!authProvider) throw new InvalidProvider();
 
+    if (authProvider instanceof BaseOAuthProvider) {
+      const url = await authProvider.getAuthorizationUrl();
+
+      return { user: undefined, token: provider, url };
+    }
+
     const user = await authProvider.authenticate(credentials);
+
+    if (!user) {
+      return { token: provider };
+    }
 
     if (
       this.config.authPolicy.emailVerificationRequired &&
@@ -142,22 +180,39 @@ export class DynamicAuthManager<TUser extends User> {
       throw new VerificationRequiredError('sms');
     }
 
-    if (this.config.mfaSettings.required && this.mfa && !user.mfa_enabled) {
-      throw new MFARequiredError();
-    }
-
-    const token =
-      this.mfa && user.mfa_enabled
-        ? 'mfa-required'
-        : await this.sessionManager.createSession(user);
+    const token = await this.sessionManager.createSession(user);
     return { user, token };
+  }
+
+  getConfig() {
+    return this.config;
+  }
+
+  getMfaStatus() {
+    if (!this.mfa) {
+      return false;
+    }
+    return true;
   }
 
   async refreshToken(refreshToken: string) {
     return this.sessionManager.refreshSession(refreshToken);
   }
 
-  async validateToken(token: string): Promise<TUser> {
+  async validateToken(token: string, provider: string): Promise<TUser> {
+    if (provider === 'passwordless') {
+      const authProvider = this.providers[provider];
+
+      if (!authProvider) throw new InvalidProvider();
+
+      const user = await authProvider.validate(token);
+      if (!user) {
+        throw new UserNotFoundError(user.id);
+      }
+
+      return user;
+    }
+
     const user = await this.sessionManager.verifySession(token);
     return user as TUser;
   }
