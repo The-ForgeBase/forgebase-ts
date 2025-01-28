@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import { User, AuthProvider, UserService, ConfigStore } from '../../types';
+import { User, AuthProvider, UserService } from '../../types';
 import { OAuthUser } from '.';
 
 export abstract class BaseOAuthProvider<TUser extends User>
@@ -18,20 +18,35 @@ export abstract class BaseOAuthProvider<TUser extends User>
       userService: UserService<TUser>;
       knex: Knex;
       name: string;
-      configStore: ConfigStore;
     }
   ) {}
 
-  async getConfigb() {
-    const authConfig = await this.config.configStore.getConfig();
-    const providerConfig = authConfig.oauthProviders?.[this.config.name];
+  async getConfig() {
+    const result = await this.config
+      .knex('oauth_providers')
+      .where('name', this.config.name)
+      .first();
 
-    return {
-      clientID: providerConfig?.clientId || this.config.clientID,
-      clientSecret: providerConfig?.clientSecret || this.config.clientSecret,
-      callbackURL: providerConfig?.redirectUrl || this.config.callbackURL,
-      scopes: providerConfig?.scopes || this.config.scopes,
+    // if result is undefined and config is not complete, throw error
+    if (
+      !result &&
+      (!this.config.clientID ||
+        !this.config.clientSecret ||
+        !this.config.scopes)
+    ) {
+      throw new Error(
+        'OAuth provider is not configured. Please set clientID and clientSecret in config.'
+      );
+    }
+
+    const config = {
+      clientID: result?.client_id || this.config.clientID,
+      clientSecret: result?.client_secret || this.config.clientSecret,
+      callbackURL: this.config.callbackURL,
+      scopes: result?.scopes?.split(',') || this.config.scopes,
     };
+
+    return config;
   }
 
   abstract getAuthorizationUrl(): Promise<URL>;

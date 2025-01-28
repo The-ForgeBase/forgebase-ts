@@ -9,6 +9,7 @@ import knex from 'knex';
 import { KnexConfigStore } from '../config';
 import { KnexUserService } from '../userService';
 import { BasicSessionManager } from '../session/session';
+import { initializeAuthSchema } from '../config';
 
 async function setupAuth() {
   // Initialize Knex instance
@@ -20,21 +21,8 @@ async function setupAuth() {
     useNullAsDefault: true,
   });
 
-  // Create necessary tables
-  await db.schema.createTable('users', (table) => {
-    table.increments('id');
-    table.string('email').unique();
-    table.string('password_hash');
-    table.string('name');
-    table.string('picture');
-    table.boolean('email_verified').defaultTo(false);
-    table.boolean('phone_verified').defaultTo(false);
-    table.string('phone');
-    table.boolean('mfa_enabled').defaultTo(false);
-    table.string('mfa_secret');
-    table.json('mfa_recovery_codes');
-    table.timestamps(true, true);
-  });
+  // Create all table schemas
+  await initializeAuthSchema(db);
 
   // Initialize config store
   const configStore = new KnexConfigStore(db);
@@ -68,23 +56,22 @@ async function setupAuth() {
       userService,
       knex: db,
       name: 'google',
-      configStore,
     }),
   };
 
   // Update config to enable providers
   await configStore.updateConfig({
     enabledProviders: ['local', 'passwordless', 'google'],
-    oauthProviders: {
-      google: {
-        clientId: process.env.GOOGLE_CLIENT_ID || '',
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-        redirectUrl: '/',
-        enabled: true,
-        scopes: ['email', 'profile'],
-        provider: 'google',
-      },
-    },
+    // oauthProviders: {
+    //   google: {
+    //     clientId: process.env.GOOGLE_CLIENT_ID || '',
+    //     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    //     redirectUrl: '/',
+    //     enabled: true,
+    //     scopes: ['email', 'profile'],
+    //     provider: 'google',
+    //   },
+    // },
   });
 
   // Initialize session manager

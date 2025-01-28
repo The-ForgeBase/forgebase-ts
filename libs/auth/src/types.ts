@@ -41,18 +41,6 @@ export const AuthConfigSchema = z.object({
       login: { requests: 5, interval: '15m' },
       mfa: { requests: 3, interval: '5m' },
     }),
-  oauthProviders: z
-    .record(
-      z.object({
-        clientId: z.string(),
-        clientSecret: z.string(),
-        redirectUrl: z.string(),
-        enabled: z.boolean().default(false),
-        scopes: z.array(z.string()),
-        provider: z.enum(['google', 'facebook', 'twitter']),
-      })
-    )
-    .optional(),
 });
 
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;

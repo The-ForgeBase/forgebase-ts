@@ -1,4 +1,5 @@
 export * from './basic';
+export * from './google';
 
 export interface OAuthUser {
   id: string;

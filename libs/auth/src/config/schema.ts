@@ -12,6 +12,18 @@ export async function initializeAuthSchema(knex: Knex) {
     });
   }
 
+  // OAuth Providers Table
+  const hasAuthProviders = await knex.schema.hasTable('oauth_providers');
+  if (!hasAuthProviders) {
+    await knex.schema.createTable('oauth_providers', (table) => {
+      table.increments('id');
+      table.string('name').notNullable().unique();
+      table.json('config').notNullable();
+      table.timestamp('created_at').defaultTo(knex.fn.now());
+      table.timestamp('updated_at').defaultTo(knex.fn.now());
+    });
+  }
+
   // Users Table
   const hasUsers = await knex.schema.hasTable('users');
   if (!hasUsers) {

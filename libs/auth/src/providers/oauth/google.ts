@@ -1,6 +1,6 @@
 import * as arctic from 'arctic';
 import { BaseOAuthProvider } from './basic';
-import { ConfigStore, User, UserService } from '../../types';
+import { User, UserService } from '../../types';
 import { Knex } from 'knex';
 import axios from 'axios';
 import { OAuthUser } from '.';
@@ -31,13 +31,12 @@ export class GoogleOAuthProvider<
     userService: UserService<TUser>;
     knex: Knex;
     name: string;
-    configStore: ConfigStore;
   }) {
     super(config);
   }
 
   private async getGoogleClient() {
-    const config = await this.getConfigb();
+    const config = await this.getConfig();
     return new arctic.Google(
       config.clientID,
       config.clientSecret,
@@ -49,7 +48,7 @@ export class GoogleOAuthProvider<
     try {
       const state = arctic.generateState();
       const codeVerifier = arctic.generateCodeVerifier();
-      const config = await this.getConfigb();
+      const config = await this.getConfig();
       const google = await this.getGoogleClient();
       const url = google.createAuthorizationURL(
         state,
