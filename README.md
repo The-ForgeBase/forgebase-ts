@@ -80,3 +80,42 @@ And join the Nx community:
 - [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)
 - [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+
+## Overview of Packages
+
+This project contains several packages, each with its own documentation. Below is an overview of all packages in the project along with links to their respective documentation:
+
+- [Auth](libs/auth/README.md): A flexible authentication library for Node.js applications, providing multiple authentication strategies and framework adapters.
+- [API](libs/api/README.md): Provides API functionalities and integrations.
+- [Common](libs/common/README.md): Common utilities and shared code used across the project.
+- [Database](libs/database/README.md): Database management and integration.
+- [Real-Time](libs/real-time/README.md): Real-time communication and updates.
+- [Storage](libs/storage/README.md): Storage management and integration.
+- [Studio UI Utils](libs/studio-ui-utils/README.md): UI utilities for the Studio application.
+- [Studio UI](libs/studio-ui/README.md): UI components for the Studio application.
+
+Each package's documentation provides detailed information on features, usage examples, and configuration instructions.
+
+## Purpose of the Project
+
+The BaaS Framework is an open-source Backend as a Service (BaaS) framework designed to provide backend functionality for a variety of backend frameworks across multiple languages, including but not limited to:
+
+- Go
+- TypeScript
+- Rust
+- PHP
+- Deno
+- Node.js
+- and more!
+
+## Core Features
+
+- Authentication & Authorization: Fine-grained role, table, and namespace-level permissions.
+- Database Integration: Compatibility with modern real-time databases like RethinkDB, SurrealDB, etc.
+- Object Storage: Built-in support for object storage solutions.
+- Extendability: Easy to add custom routes and extend functionality beyond the BaaS features.
+- Real-time Features: Full real-time support for db, presence, etc.
+
+## Why This Framework?
+
+Our mission is to simplify backend development by providing a highly flexible, language-agnostic BaaS framework that developers can plug into their existing server setup. While we are 70% inspired by Pocketbase, we recognized its limitations—particularly its dependency on SQLite and its inability to scale horizontally. To overcome these challenges, we are building a better alternative that not only supports horizontal scaling but also integrates with more robust databases like PostgreSQL, SurrealDB, etc. This approach ensures that our framework is scalable, versatile, and suitable for a wide range of applications, from small projects to large, distributed systems.
