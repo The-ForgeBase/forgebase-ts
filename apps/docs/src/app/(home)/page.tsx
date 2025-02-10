@@ -202,6 +202,87 @@ export default function HomePage() {
             </Link>
           </CardContent>
         </Card>
+
+        {/* Package 1 */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="currentColor"
+                  d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89c1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"
+                />
+              </svg>
+              <span>Package 1</span>
+            </div>
+            <CardTitle>Comprehensive guide and examples for using Package 1.</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Learn how to use Package 1 in your projects.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              href="/docs/package1"
+              className="text-sm text-muted-foreground hover:text-primary flex items-center"
+            >
+              Learn more <ArrowRight className="ml-1 w-4 h-4" />
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Package 2 */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="currentColor"
+                  d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89c1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"
+                />
+              </svg>
+              <span>Package 2</span>
+            </div>
+            <CardTitle>Comprehensive guide and examples for using Package 2.</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Learn how to use Package 2 in your projects.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              href="/docs/package2"
+              className="text-sm text-muted-foreground hover:text-primary flex items-center"
+            >
+              Learn more <ArrowRight className="ml-1 w-4 h-4" />
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Package 3 */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="currentColor"
+                  d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89c1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"
+                />
+              </svg>
+              <span>Package 3</span>
+            </div>
+            <CardTitle>Comprehensive guide and examples for using Package 3.</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Learn how to use Package 3 in your projects.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              href="/docs/package3"
+              className="text-sm text-muted-foreground hover:text-primary flex items-center"
+            >
+              Learn more <ArrowRight className="ml-1 w-4 h-4" />
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

@@ -1,0 +1,106 @@
+---
+title: Package 2 Documentation
+description: Comprehensive guide and examples for using Package 2.
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Package 2 Documentation
+
+Welcome to the documentation for Package 2. This guide will provide you with all the necessary information to get started and effectively use Package 2 in your projects.
+
+## Installation
+
+To install Package 2, use the following command:
+
+```bash
+npm install package2
+```
+
+## Usage
+
+Here are some examples of how to use Package 2 in your code:
+
+### Example 1: Basic Usage
+
+```typescript
+import { Package2 } from 'package2';
+
+const instance = new Package2();
+instance.doSomething();
+```
+
+### Example 2: Advanced Usage
+
+```typescript
+import { Package2 } from 'package2';
+
+const instance = new Package2({ option: 'value' });
+instance.doSomethingAdvanced();
+```
+
+## API Reference
+
+### `Package2`
+
+The main class provided by Package 2.
+
+#### Methods
+
+- `doSomething()`: Performs a basic operation.
+- `doSomethingAdvanced(options: object)`: Performs an advanced operation with the given options.
+
+## Examples
+
+<Steps>
+<Step>
+### Step 1: Initialize Package 2
+
+```typescript
+import { Package2 } from 'package2';
+
+const instance = new Package2();
+```
+</Step>
+
+<Step>
+### Step 2: Perform an Operation
+
+```typescript
+instance.doSomething();
+```
+</Step>
+
+<Step>
+### Step 3: Perform an Advanced Operation
+
+```typescript
+instance.doSomethingAdvanced({ option: 'value' });
+```
+</Step>
+</Steps>
+
+<Callout type="info">
+For more detailed information, refer to the official API documentation.
+</Callout>
+
+## Best Practices
+
+1. **Initialization**: Always initialize Package 2 before using its methods.
+2. **Error Handling**: Implement proper error handling for robust applications.
+3. **Configuration**: Customize the package using the available options for advanced use cases.
+
+## Next Steps
+
+<Cards>
+  <Card title="Package 1 Documentation" href="/docs/package1">
+    Learn how to use Package 1 in your projects.
+  </Card>
+  <Card title="Package 3 Documentation" href="/docs/package3">
+    Explore the features and usage of Package 3.
+  </Card>
+  <Card title="API Reference" href="/docs/api-reference">
+    Browse the complete API documentation for all packages.
+  </Card>
+</Cards>
