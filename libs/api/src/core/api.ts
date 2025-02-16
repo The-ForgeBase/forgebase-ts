@@ -257,7 +257,7 @@ export class ForgeApi {
 
     addRoute(this.router, 'POST', '/db/schema', async (ctx) => {
       const { tableName, columns } = ctx.req.body;
-      ctx.res.body = await this.db.creatSchema(tableName, columns);
+      ctx.res.body = await this.db.createSchema(tableName, columns);
     });
 
     addRoute(this.router, 'POST', '/db/schema/column', async (ctx) => {

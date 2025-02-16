@@ -1,5 +1,6 @@
 import { ForgeApi } from './api';
 import { Context, Handler, ServerAdapter } from '../types';
+import { UserContext } from '@forgebase-ts/database';
 
 class MockServerAdapter implements ServerAdapter {
   constructor(
@@ -29,8 +30,14 @@ class MockServerAdapter implements ServerAdapter {
     return this.body;
   }
 
-  getUserContext(): Record<string, any> {
-    return {};
+  getUserContext(): UserContext {
+    return {
+      userId: '1',
+      labels: [],
+      teams: [],
+      permissions: [],
+      role: 'user',
+    };
   }
 }
 
@@ -88,7 +95,7 @@ describe('ForgeApi', () => {
 
     it('should throw error for non-existent routes', async () => {
       const adapter = new MockServerAdapter('GET', '/api/nonexistent');
-      
+
       await expect(api.handle(adapter)).rejects.toThrow('No handler found');
     });
   });
@@ -96,7 +103,13 @@ describe('ForgeApi', () => {
   describe('Middleware', () => {
     it('should execute middleware before route handler', async () => {
       const middleware: Handler = async (ctx: Context) => {
-        ctx.req.userContext = { user: 'test' };
+        ctx.req.userContext = {
+          userId: '123',
+          labels: ['test-label'],
+          teams: ['test-team'],
+          permissions: ['read'],
+          role: 'tester',
+        };
       };
 
       const routeHandler: Handler = async (ctx: Context) => {
@@ -109,7 +122,13 @@ describe('ForgeApi', () => {
       const adapter = new MockServerAdapter('GET', '/api/test');
       const { context } = await api.handle(adapter);
 
-      expect(context.res.body).toEqual({ user: 'test' });
+      expect(context.res.body).toEqual({
+        userId: '123',
+        labels: ['test-label'],
+        teams: ['test-team'],
+        permissions: ['read'],
+        role: 'tester',
+      });
     });
 
     it('should stop processing if middleware sets response', async () => {
@@ -132,47 +151,114 @@ describe('ForgeApi', () => {
   });
 
   describe('Database Routes', () => {
+    beforeEach(async () => {
+      // Create users table schema first
+      const createTableAdapter = new MockServerAdapter(
+        'POST',
+        '/api/db/schema',
+        {
+          tableName: 'users',
+          columns: [
+            {
+              name: 'id',
+              type: 'integer',
+              primaryKey: true,
+              autoIncrement: true,
+            },
+            { name: 'name', type: 'text' },
+            {
+              name: 'created_at',
+              type: 'timestamp',
+              defaultValue: 'CURRENT_TIMESTAMP',
+            },
+          ],
+        }
+      );
+      await api.handle(createTableAdapter);
+    });
+
     it('should handle database insert', async () => {
       const testData = { name: 'Test' };
-      const adapter = new MockServerAdapter('POST', '/api/db/users', { data: testData });
-      
+      const adapter = new MockServerAdapter('POST', '/api/db/users', {
+        data: testData,
+      });
+
       const { context } = await api.handle(adapter);
-      
+
       expect(context.res.status).toBe(201);
       expect(context.res.body).toHaveProperty('id');
     });
 
     it('should handle database query', async () => {
-      const adapter = new MockServerAdapter('GET', '/api/db/users', null, {
-        filter: JSON.stringify({ name: 'Test' })
+      // First insert test data
+      const insertAdapter = new MockServerAdapter('POST', '/api/db/users', {
+        data: { name: 'Test' },
       });
-      
+      await api.handle(insertAdapter);
+
+      // Then query it
+      const adapter = new MockServerAdapter('GET', '/api/db/users', null, {
+        filter: JSON.stringify({ name: 'Test' }),
+      });
+
       const { context } = await api.handle(adapter);
-      
+
       expect(context.res.status).toBe(200);
+      expect(context.res.body).toHaveLength(1);
+      expect(context.res.body[0].name).toBe('Test');
     });
   });
 
   describe('Storage Routes', () => {
+    const testBucket = 'public';
+    const testKey = 'test.txt';
+    const fileData = Buffer.from('test file content');
+
+    // Clean up after each test
+    afterEach(async () => {
+      const storageService = api.getStorageService();
+      try {
+        // await storageService.delete(testBucket, testKey);
+      } catch (e) {
+        // Ignore deletion errors
+      }
+    });
+
     it('should handle file upload', async () => {
-      const fileData = Buffer.from('test file content');
-      const adapter = new MockServerAdapter('POST', '/api/storage/public/test.txt', fileData);
-      
+      const adapter = new MockServerAdapter(
+        'POST',
+        `/api/storage/${testBucket}/${testKey}`,
+        fileData
+      );
+
       const { context } = await api.handle(adapter);
-      
+
       expect(context.res.status).toBe(201);
     });
 
     it('should handle file download', async () => {
       // First upload a file
-      const fileData = Buffer.from('test file content');
-      await api.handle(new MockServerAdapter('POST', '/api/storage/public/test.txt', fileData));
+      await api.handle(
+        new MockServerAdapter(
+          'POST',
+          `/api/storage/${testBucket}/${testKey}`,
+          fileData
+        )
+      );
 
       // Then try to download it
-      const adapter = new MockServerAdapter('GET', '/api/storage/public/test.txt');
+      const adapter = new MockServerAdapter(
+        'GET',
+        `/api/storage/${testBucket}/${testKey}`
+      );
       const { context } = await api.handle(adapter);
-      
-      expect(context.res.body).toEqual(fileData);
+
+      // Convert the response body to Buffer if it isn't already
+      const responseBuffer = Buffer.isBuffer(context.res.body)
+        ? context.res.body
+        : Buffer.from(context.res.body.data);
+
+      expect(responseBuffer).toEqual(fileData);
     });
   });
 });

@@ -169,7 +169,7 @@ export class DatabaseService {
     }
   }
 
-  async creatSchema(
+  async createSchema(
     tableName: string,
     columns: ColumnDefinition[]
   ): Promise<{
