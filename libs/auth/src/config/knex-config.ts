@@ -10,12 +10,15 @@ export class KnexConfigStore implements ConfigStore {
   ) {}
 
   async initialize() {
-    await this.knex.schema.createTableIfNotExists(this.tableName, (table) => {
-      table.increments('id');
-      table.jsonb('config').notNullable();
-      table.timestamp('created_at').defaultTo(this.knex.fn.now());
-      table.timestamp('updated_at').defaultTo(this.knex.fn.now());
-    });
+    const hasTable = await this.knex.schema.hasTable(this.tableName);
+    if (!hasTable) {
+      await this.knex.schema.createTable(this.tableName, (table) => {
+        table.increments('id');
+        table.json('config').notNullable();
+        table.timestamp('created_at').defaultTo(this.knex.fn.now());
+        table.timestamp('updated_at').defaultTo(this.knex.fn.now());
+      });
+    }
 
     await this.getConfig();
   }
@@ -33,12 +36,53 @@ export class KnexConfigStore implements ConfigStore {
       .first();
 
     if (!result) {
-      const defaultConfig = AuthConfigSchema.parse({});
-      await this.knex(this.tableName).insert({ config: defaultConfig });
-      return defaultConfig;
+      const defaultConfig = AuthConfigSchema.parse({
+        authPolicy: {
+          allowEmailAuth: true,
+          allowPhoneAuth: false,
+          allowOAuthAuth: true,
+          requireEmailVerification: true,
+          requirePhoneVerification: false,
+        },
+        passwordPolicy: {
+          minLength: 8,
+          requireNumbers: true,
+          requireSpecialChars: true,
+          requireUppercase: true,
+          requireLowercase: true,
+        },
+        sessionSettings: {
+          accessTokenTTL: '3600', // 1 hour
+          refreshTokenTTL: '2592000', // 30 days
+          cookieSecure: true,
+          cookieSameSite: 'lax',
+        },
+        mfaSettings: {
+          enabled: false,
+          issuer: 'ForgeBase',
+          algorithm: 'SHA1',
+          digits: 6,
+          period: 30,
+        },
+      });
+      console.log('Inserting default config:', typeof defaultConfig);
+      const [id] = await this.knex(this.tableName)
+        .insert({ config: defaultConfig })
+        .returning('id');
+      const configWithId = { ...defaultConfig, id };
+      this.cache = { value: configWithId, expires: Date.now() + this.cacheTTL };
+      return configWithId;
     }
 
-    const parsed = AuthConfigSchema.parse(result.config);
+    console.log('Loaded config from database:', typeof result.config);
+
+    // Parse the JSON string into an object before validating with Zod
+    const configObject =
+      typeof result.config === 'string'
+        ? JSON.parse(result.config)
+        : result.config;
+
+    const parsed = AuthConfigSchema.parse(configObject);
     this.cache = { value: parsed, expires: Date.now() + this.cacheTTL };
     return parsed;
   }

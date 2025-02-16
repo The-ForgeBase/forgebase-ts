@@ -6,7 +6,7 @@ export async function initializeAuthSchema(knex: Knex) {
   if (!hasAuthConfig) {
     await knex.schema.createTable('auth_config', (table) => {
       table.increments('id');
-      table.jsonb('config').notNullable();
+      table.json('config').notNullable();
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
     });
@@ -28,7 +28,7 @@ export async function initializeAuthSchema(knex: Knex) {
   const hasUsers = await knex.schema.hasTable('users');
   if (!hasUsers) {
     await knex.schema.createTable('users', (table) => {
-      table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.string('email').unique().index();
       table.string('phone').unique().nullable();
       table.string('name').nullable();
@@ -38,7 +38,7 @@ export async function initializeAuthSchema(knex: Knex) {
       table.boolean('phone_verified').defaultTo(false);
       table.boolean('mfa_enabled').defaultTo(false);
       table.string('mfa_secret').nullable();
-      table.jsonb('mfa_recovery_codes').nullable();
+      table.json('mfa_recovery_codes').nullable();
       table.timestamp('last_login_at').nullable();
       table.timestamps(true, true);
 
@@ -53,11 +53,11 @@ export async function initializeAuthSchema(knex: Knex) {
   const hasOAuthAccounts = await knex.schema.hasTable('oauth_accounts');
   if (!hasOAuthAccounts) {
     await knex.schema.createTable('oauth_accounts', (table) => {
-      table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('provider').notNullable();
       table.string('provider_user_id').notNullable();
-      table.jsonb('provider_data').nullable();
+      table.json('provider_data').nullable();
       table.timestamps(true, true);
 
       // Foreign key to users table
@@ -77,7 +77,7 @@ export async function initializeAuthSchema(knex: Knex) {
   const hasSessions = await knex.schema.hasTable('sessions');
   if (!hasSessions) {
     await knex.schema.createTable('sessions', (table) => {
-      table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('refresh_token').unique();
       table.timestamp('expires_at').notNullable();
@@ -101,7 +101,7 @@ export async function initializeAuthSchema(knex: Knex) {
   );
   if (!hasVerificationTokens) {
     await knex.schema.createTable('verification_tokens', (table) => {
-      table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').notNullable();
       table.string('type').notNullable(); // 'email', 'phone', 'password_reset'
@@ -126,7 +126,7 @@ export async function initializeAuthSchema(knex: Knex) {
   const hasAccessTokens = await knex.schema.hasTable('access_tokens');
   if (!hasAccessTokens) {
     await knex.schema.createTable('access_tokens', (table) => {
-      table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').notNullable();
       table.timestamp('expires_at').notNullable();
