@@ -77,6 +77,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.7
         version: 1.1.7(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@sinclair/typebox':
+        specifier: ^0.34.25
+        version: 0.34.25
       '@types/mdx':
         specifier: ^2.0.13
         version: 2.0.13
@@ -122,6 +125,9 @@ importers:
       hono:
         specifier: ^4.6.19
         version: 4.6.19
+      jose:
+        specifier: ^5.9.6
+        version: 5.9.6
       jotai:
         specifier: ^2.11.1
         version: 2.11.1(@types/react@18.3.1)(react@18.3.1)
@@ -152,6 +158,9 @@ importers:
       mysql2:
         specifier: ^3.12.0
         version: 3.12.0
+      nanoid:
+        specifier: ^5.1.0
+        version: 5.1.0
       next:
         specifier: 14.2.16
         version: 14.2.16(@babel/core@7.26.7)(@playwright/test@1.50.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.83.4)
@@ -3488,6 +3497,9 @@ packages:
 
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
+
+  '@sinclair/typebox@0.34.25':
+    resolution: {integrity: sha512-gu+tdy9WZIRulrR4CAcGXZAAixwakKszkUXudMJ4EhtNflBEify5Pm5vnVEVqdmMkxnT4tcdfJps5XYqaNeF9Q==}
 
   '@sinonjs/commons@3.0.1':
     resolution: {integrity: sha512-K3mCHKQ9sVh8o1C9cxkwxaOmXoAMlDxC1mYyHrjqOWEcBjYr76t96zL2zlj5dUGZ3HSw240X1qgH3Mjf1yJWpQ==}
@@ -7714,6 +7726,11 @@ packages:
   nanoid@3.3.8:
     resolution: {integrity: sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
+  nanoid@5.1.0:
+    resolution: {integrity: sha512-zDAl/llz8Ue/EblwSYwdxGBYfj46IM1dhjVi8dyp9LQffoIGxJEAHj2oeZ4uNcgycSRcQ83CnfcZqEJzVDLcDw==}
+    engines: {node: ^18 || >=20}
     hasBin: true
 
   nanostores@0.11.3:
@@ -14078,6 +14095,8 @@ snapshots:
 
   '@sinclair/typebox@0.27.8': {}
 
+  '@sinclair/typebox@0.34.25': {}
+
   '@sinonjs/commons@3.0.1':
     dependencies:
       type-detect: 4.0.8
@@ -19539,6 +19558,8 @@ snapshots:
       lru-cache: 7.18.3
 
   nanoid@3.3.8: {}
+
+  nanoid@5.1.0: {}
 
   nanostores@0.11.3: {}
 

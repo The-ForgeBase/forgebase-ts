@@ -64,6 +64,12 @@ describe('ForgeApi', () => {
     });
   });
 
+  afterAll(async () => {
+    // Clean up database connections
+    const db = api.getDatabaseService();
+    await db.getDbInstance().destroy();
+  });
+
   describe('Routing', () => {
     it('should handle GET requests', async () => {
       const testHandler: Handler = async (ctx: Context) => {
