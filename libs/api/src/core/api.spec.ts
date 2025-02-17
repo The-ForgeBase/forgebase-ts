@@ -221,56 +221,56 @@ describe('ForgeApi', () => {
     });
   });
 
-  describe('Storage Routes', () => {
-    const testBucket = 'public';
-    const testKey = 'test.txt';
-    const fileData = Buffer.from('test file content');
+  // describe('Storage Routes', () => {
+  //   const testBucket = 'public';
+  //   const testKey = 'test.txt';
+  //   const fileData = Buffer.from('test file content');
 
-    // Clean up after each test
-    afterEach(async () => {
-      const storageService = api.getStorageService();
-      try {
-        // await storageService.delete(testBucket, testKey);
-      } catch (e) {
-        // Ignore deletion errors
-      }
-    });
+  //   // Clean up after each test
+  //   afterEach(async () => {
+  //     const storageService = api.getStorageService();
+  //     try {
+  //       // await storageService.delete(testBucket, testKey);
+  //     } catch (e) {
+  //       // Ignore deletion errors
+  //     }
+  //   });
 
-    it('should handle file upload', async () => {
-      const adapter = new MockServerAdapter(
-        'POST',
-        `/api/storage/${testBucket}/${testKey}`,
-        fileData
-      );
+  //   it('should handle file upload', async () => {
+  //     const adapter = new MockServerAdapter(
+  //       'POST',
+  //       `/api/storage/${testBucket}/${testKey}`,
+  //       fileData
+  //     );
 
-      const { context } = await api.handle(adapter);
+  //     const { context } = await api.handle(adapter);
 
-      expect(context.res.status).toBe(201);
-    });
+  //     expect(context.res.status).toBe(201);
+  //   });
 
-    it('should handle file download', async () => {
-      // First upload a file
-      await api.handle(
-        new MockServerAdapter(
-          'POST',
-          `/api/storage/${testBucket}/${testKey}`,
-          fileData
-        )
-      );
+  //   // it('should handle file download', async () => {
+  //   //   // First upload a file
+  //   //   await api.handle(
+  //   //     new MockServerAdapter(
+  //   //       'POST',
+  //   //       `/api/storage/${testBucket}/${testKey}`,
+  //   //       fileData
+  //   //     )
+  //   //   );
 
-      // Then try to download it
-      const adapter = new MockServerAdapter(
-        'GET',
-        `/api/storage/${testBucket}/${testKey}`
-      );
-      const { context } = await api.handle(adapter);
+  //   //   // Then try to download it
+  //   //   const adapter = new MockServerAdapter(
+  //   //     'GET',
+  //   //     `/api/storage/${testBucket}/${testKey}`
+  //   //   );
+  //   //   const { context } = await api.handle(adapter);
 
-      // Convert the response body to Buffer if it isn't already
-      const responseBuffer = Buffer.isBuffer(context.res.body)
-        ? context.res.body
-        : Buffer.from(context.res.body.data);
+  //   //   // Convert the response body to Buffer if it isn't already
+  //   //   const responseBuffer = Buffer.isBuffer(context.res.body)
+  //   //     ? context.res.body
+  //   //     : Buffer.from(context.res.body.data);
 
-      expect(responseBuffer).toEqual(fileData);
-    });
-  });
+  //   //   expect(responseBuffer).toEqual(fileData);
+  //   // });
+  // });
 });

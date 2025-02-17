@@ -185,7 +185,20 @@ export class ForgeApi {
         data = JSON.parse(data);
       }
 
-      const id = await this.db.insert(collection, data, ctx.req.userContext);
+      if (!data || typeof data !== 'object') {
+        ctx.res.status = 400;
+        ctx.res.body = { error: 'Invalid data provided' };
+        return;
+      }
+
+      const id = await this.db.insert(
+        collection,
+        {
+          tableName: collection,
+          data,
+        },
+        ctx.req.userContext
+      );
       ctx.res.body = { id };
       ctx.res.status = 201;
     });

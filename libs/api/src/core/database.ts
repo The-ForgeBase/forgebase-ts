@@ -119,12 +119,14 @@ export class DatabaseService {
     userContext: UserContext
   ): Promise<any> {
     try {
+      console.log('Inserting data', data, { ...data, tableName });
       const records = await this.forgeDatabase.endpoints.data.create(
         { ...data, tableName },
         userContext
       );
       return records;
     } catch (error) {
+      console.error('Error inserting data', error);
       throw error;
     }
   }
