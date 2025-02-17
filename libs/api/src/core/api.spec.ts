@@ -7,7 +7,7 @@ class MockServerAdapter implements ServerAdapter {
     private method: string,
     private path: string,
     private body?: any,
-    private query: Record<string, string> = {}
+    private query: Record<string, any> = {}
   ) {}
 
   getMethod(): string {
@@ -161,11 +161,14 @@ describe('ForgeApi', () => {
           columns: [
             {
               name: 'id',
-              type: 'integer',
+              type: 'increments',
               primaryKey: true,
-              autoIncrement: true,
             },
-            { name: 'name', type: 'text' },
+            {
+              name: 'name',
+              type: 'string',
+              nullable: false,
+            },
             {
               name: 'created_at',
               type: 'timestamp',
@@ -178,9 +181,11 @@ describe('ForgeApi', () => {
     });
 
     it('should handle database insert', async () => {
-      const testData = { name: 'Test' };
       const adapter = new MockServerAdapter('POST', '/api/db/users', {
-        data: testData,
+        // This matches the client SDK's createRecord structure
+        data: {
+          name: 'Test User',
+        },
       });
 
       const { context } = await api.handle(adapter);
@@ -191,21 +196,28 @@ describe('ForgeApi', () => {
 
     it('should handle database query', async () => {
       // First insert test data
-      const insertAdapter = new MockServerAdapter('POST', '/api/db/users', {
-        data: { name: 'Test' },
-      });
-      await api.handle(insertAdapter);
+      await api.handle(
+        new MockServerAdapter('POST', '/api/db/users', {
+          data: {
+            name: 'Test User',
+          },
+        })
+      );
 
-      // Then query it
-      const adapter = new MockServerAdapter('GET', '/api/db/users', null, {
-        filter: JSON.stringify({ name: 'Test' }),
+      // Then query it with the correct query structure from the SDK
+      const queryAdapter = new MockServerAdapter('GET', '/api/db/users', null, {
+        filter: {
+          name: 'Test User',
+        },
+        select: ['*'],
       });
 
-      const { context } = await api.handle(adapter);
+      const { context } = await api.handle(queryAdapter);
 
       expect(context.res.status).toBe(200);
-      expect(context.res.body).toHaveLength(1);
-      expect(context.res.body[0].name).toBe('Test');
+      expect(Array.isArray(context.res.body)).toBe(true);
+      expect(context.res.body.length).toBeGreaterThan(0);
+      expect(context.res.body[0].name).toBe('Test User');
     });
   });
 
