@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { DynamicAuthManager } from '../authManager';
 import { User, MFARequiredError } from '../types';
+import { AuthFrameworkAdapter } from './framework';
 
 export interface ExpressAuthConfig {
   loginPath?: string;
@@ -264,5 +265,56 @@ export class ExpressAuthAdapter<TUser extends User> {
         }
       }
     );
+  }
+}
+
+export class ExpressAdapter implements AuthFrameworkAdapter {
+  async getRequestData(req: Request) {
+    return {
+      headers: req.headers as Record<string, string>,
+      cookies: req.cookies || {},
+      body: req.body,
+      query: req.query as Record<string, string>,
+    };
+  }
+
+  async setResponseData(
+    res: Response,
+    data: {
+      headers?: Record<string, string>;
+      cookies?: Array<{
+        name: string;
+        value: string;
+        options?: Record<string, any>;
+      }>;
+      status?: number;
+      body?: unknown;
+    }
+  ): Promise<void> {
+    if (data.headers) {
+      Object.entries(data.headers).forEach(([key, value]) => {
+        res.setHeader(key, value);
+      });
+    }
+
+    if (data.cookies) {
+      data.cookies.forEach(({ name, value, options }) => {
+        res.cookie(name, value, options);
+      });
+    }
+
+    if (data.status) {
+      res.status(data.status);
+    }
+
+    if (data.body !== undefined) {
+      res.json(data.body);
+    }
+  }
+
+  createError(status: number, message: string): Error {
+    const error = new Error(message);
+    (error as any).status = status;
+    return error;
   }
 }

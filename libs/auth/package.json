@@ -18,6 +18,19 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "zod": "^3.22.4",
+    "jose": "^5.1.0",
+    "deepmerge": "^4.3.1",
+    "nanoid": "^5.0.3",
+    "@sinclair/typebox": "^0.31.28",
+    "type-fest": "^4.8.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   }
 }

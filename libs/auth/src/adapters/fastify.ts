@@ -3,6 +3,7 @@ import type { FastifyCookieOptions } from '@fastify/cookie';
 import cookie from '@fastify/cookie';
 import { DynamicAuthManager } from '../authManager';
 import { User, MFARequiredError } from '../types';
+import { AuthFrameworkAdapter } from './framework';
 
 export interface FastifyAuthConfig {
   loginPath?: string;
@@ -292,5 +293,56 @@ export class FastifyAuthAdapter<TUser extends User> {
         }
       }
     );
+  }
+}
+
+export class FastifyAdapter implements AuthFrameworkAdapter {
+  async getRequestData(req: FastifyRequest) {
+    return {
+      headers: req.headers as Record<string, string>,
+      cookies: req.cookies || {},
+      body: req.body,
+      query: req.query as Record<string, string>,
+    };
+  }
+
+  async setResponseData(
+    reply: FastifyReply,
+    data: {
+      headers?: Record<string, string>;
+      cookies?: Array<{
+        name: string;
+        value: string;
+        options?: Record<string, any>;
+      }>;
+      status?: number;
+      body?: unknown;
+    }
+  ): Promise<void> {
+    if (data.headers) {
+      Object.entries(data.headers).forEach(([key, value]) => {
+        reply.header(key, value);
+      });
+    }
+
+    if (data.cookies) {
+      data.cookies.forEach(({ name, value, options }) => {
+        reply.setCookie(name, value, options);
+      });
+    }
+
+    if (data.status) {
+      reply.status(data.status);
+    }
+
+    if (data.body !== undefined) {
+      reply.send(data.body);
+    }
+  }
+
+  createError(status: number, message: string): Error {
+    const error = new Error(message);
+    (error as any).statusCode = status;
+    return error;
   }
 }
