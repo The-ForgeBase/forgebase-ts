@@ -1,17 +1,8 @@
 import { BaaSConfig } from '../types';
+import { StorageService as BaseStorageService } from '@forgebase-ts/storage';
 
-export class StorageService {
-  private config: BaaSConfig['services']['storage'];
-
+export class StorageService extends BaseStorageService {
   constructor(config?: BaaSConfig['services']['storage']) {
-    this.config = config || { provider: 'local', config: {} };
-  }
-  async upload(bucket: string, key: string, data: Buffer): Promise<void> {
-    // Implementation for file storage
-  }
-
-  async download(bucket: string, key: string): Promise<Buffer> {
-    // Implementation for file retrieval
-    return Buffer.from('');
+    super(config || { provider: 'local', config: {} });
   }
 }
