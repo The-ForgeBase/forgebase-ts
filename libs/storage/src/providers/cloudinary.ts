@@ -1,5 +1,7 @@
 import { StorageProvider } from '../types';
 import { v2 as cloudinary } from 'cloudinary';
+import { ReadStream } from 'fs';
+import { Readable } from 'stream';
 
 export interface CloudinaryStorageConfig {
   cloud_name: string;
@@ -30,11 +32,11 @@ export class CloudinaryStorageProvider implements StorageProvider {
   async upload(
     bucket: string,
     key: string,
-    data: Uint8Array | ReadableStream
+    data: Buffer | ReadStream
   ): Promise<void> {
     const path = this.getFullPath(bucket, key);
 
-    if (data instanceof Uint8Array) {
+    if (Buffer.isBuffer(data)) {
       await new Promise((resolve, reject) => {
         cloudinary.uploader
           .upload_stream({ public_id: path }, (error, result) => {
@@ -44,7 +46,6 @@ export class CloudinaryStorageProvider implements StorageProvider {
           .end(data);
       });
     } else {
-      const reader = data.getReader();
       await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           { public_id: path },
@@ -53,17 +54,7 @@ export class CloudinaryStorageProvider implements StorageProvider {
             else resolve(result);
           }
         );
-
-        async function pump() {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            uploadStream.write(value);
-          }
-          uploadStream.end();
-        }
-
-        pump().catch(reject);
+        data.pipe(uploadStream);
       });
     }
   }

@@ -7,6 +7,8 @@ import {
   ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { ReadStream } from 'fs';
+import { Readable } from 'stream';
 
 export interface S3StorageConfig {
   region: string;
@@ -36,19 +38,12 @@ export class S3StorageProvider implements StorageProvider {
   async upload(
     bucket: string,
     key: string,
-    data: Uint8Array | ReadableStream
+    data: Buffer | ReadStream
   ): Promise<void> {
-    let body: Buffer | ReadableStream;
-    if (data instanceof Uint8Array) {
-      body = Buffer.from(data);
-    } else {
-      body = data;
-    }
-
     const command = new PutObjectCommand({
       Bucket: bucket,
       Key: key,
-      Body: body,
+      Body: data,
     });
 
     await this.client.send(command);
@@ -61,25 +56,14 @@ export class S3StorageProvider implements StorageProvider {
     });
 
     const response = await this.client.send(command);
-    const stream = response.Body as ReadableStream;
-    const reader = stream.getReader();
-    const chunks: Uint8Array[] = [];
+    const stream = response.Body as Readable;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-
-    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const chunk of chunks) {
-      result.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    return Buffer.from(result);
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      stream.on('data', (chunk) => chunks.push(chunk));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', reject);
+    });
   }
 
   async delete(bucket: string, key: string): Promise<void> {

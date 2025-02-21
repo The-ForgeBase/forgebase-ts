@@ -1,11 +1,13 @@
+import { ReadStream } from 'fs';
+import { LocalStorageConfig } from './providers/local';
 import { CloudinaryStorageConfig } from './providers/cloudinary';
 import { GCPStorageConfig } from './providers/gcp';
-import { LocalStorageConfig } from './providers/local';
 import { S3StorageConfig } from './providers/s3';
 
 export interface StorageConfig {
   provider: 'local' | 's3' | 'gcp' | 'cloudinary';
   config:
+    | Record<string, any>
     | LocalStorageConfig
     | S3StorageConfig
     | GCPStorageConfig
@@ -13,11 +15,7 @@ export interface StorageConfig {
 }
 
 export interface StorageProvider {
-  upload(
-    bucket: string,
-    key: string,
-    data: Uint8Array | ReadableStream
-  ): Promise<void>;
+  upload(bucket: string, key: string, data: Buffer | ReadStream): Promise<void>;
   download(bucket: string, key: string): Promise<Buffer>;
   delete(bucket: string, key: string): Promise<void>;
   list(bucket: string, prefix?: string): Promise<string[]>;

@@ -1,5 +1,6 @@
 import { StorageProvider } from '../types';
 import { Storage, GetSignedUrlConfig } from '@google-cloud/storage';
+import { ReadStream } from 'fs';
 
 export interface GCPStorageConfig {
   projectId: string;
@@ -24,26 +25,15 @@ export class GCPStorageProvider implements StorageProvider {
   async upload(
     bucket: string,
     key: string,
-    data: Uint8Array | ReadableStream
+    data: Buffer | ReadStream
   ): Promise<void> {
     const file = this.storage.bucket(bucket).file(key);
-    if (data instanceof Uint8Array) {
+    if (Buffer.isBuffer(data)) {
       await file.save(data);
     } else {
       await new Promise((resolve, reject) => {
         const writeStream = file.createWriteStream();
-        const reader = data.getReader();
-
-        async function pump() {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            writeStream.write(value);
-          }
-          writeStream.end();
-        }
-
-        pump().then(resolve).catch(reject);
+        data.pipe(writeStream).on('finish', resolve).on('error', reject);
       });
     }
   }

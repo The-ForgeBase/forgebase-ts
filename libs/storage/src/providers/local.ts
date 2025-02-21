@@ -1,30 +1,8 @@
 import { StorageProvider } from '../types';
+import { promises as fs } from 'fs';
+import * as fsCallback from 'fs';
 import { join, dirname } from 'path';
-
-declare const Deno: any;
-declare const Bun: any;
-
-type FileSystem = {
-  mkdir: (path: string, options?: { recursive: boolean }) => Promise<void>;
-  writeFile: (path: string, data: Uint8Array) => Promise<void>;
-  readFile: (path: string) => Promise<Uint8Array>;
-  unlink: (path: string) => Promise<void>;
-  readdir: (
-    path: string,
-    options?: { recursive: boolean }
-  ) => Promise<string[]>;
-  createWriteStream?: (path: string) => any;
-};
-
-const getFileSystem = (): FileSystem => {
-  if (typeof Deno !== 'undefined') {
-    return Deno.fs;
-  } else if (typeof Bun !== 'undefined') {
-    return Bun.fs;
-  } else {
-    return require('fs').promises;
-  }
-};
+import { ReadStream } from 'fs';
 
 export interface LocalStorageConfig {
   rootDir?: string;
@@ -38,7 +16,6 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   private async ensureDirectory(path: string): Promise<void> {
-    const fs = getFileSystem();
     await fs.mkdir(dirname(path), { recursive: true });
   }
 
@@ -49,55 +26,42 @@ export class LocalStorageProvider implements StorageProvider {
   async upload(
     bucket: string,
     key: string,
-    data: Uint8Array | ReadableStream
+    data: Buffer | ReadStream
   ): Promise<void> {
     const filePath = this.getFilePath(bucket, key);
     await this.ensureDirectory(filePath);
 
-    const fs = getFileSystem();
-    if (data instanceof Uint8Array) {
+    if (Buffer.isBuffer(data)) {
       await fs.writeFile(filePath, data);
     } else {
-      const chunks: Uint8Array[] = [];
-      const reader = data.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
-      const concatenated = new Uint8Array(
-        chunks.reduce((acc, chunk) => acc + chunk.length, 0)
-      );
-      let offset = 0;
-      for (const chunk of chunks) {
-        concatenated.set(chunk, offset);
-        offset += chunk.length;
-      }
-      await fs.writeFile(filePath, concatenated);
+      const writeStream = fsCallback.createWriteStream(filePath);
+      data.pipe(writeStream);
+      await new Promise((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+      });
     }
   }
 
   async download(bucket: string, key: string): Promise<Buffer> {
-    const fs = getFileSystem();
     const filePath = this.getFilePath(bucket, key);
-    const data = await fs.readFile(filePath);
-    return Buffer.from(data);
+    return await fs.readFile(filePath);
   }
 
   async delete(bucket: string, key: string): Promise<void> {
-    const fs = getFileSystem();
     const filePath = this.getFilePath(bucket, key);
     await fs.unlink(filePath);
   }
 
   async list(bucket: string, prefix?: string): Promise<string[]> {
-    const fs = getFileSystem();
     const bucketPath = join(this.rootDir, bucket);
     try {
-      const files = await fs.readdir(bucketPath, { recursive: true });
-      return files
-        .filter((file) => !prefix || file.startsWith(prefix))
-        .map((file) => file.toString());
+      const files = await fs.readdir(bucketPath, { withFileTypes: true });
+      const fileNames = files
+        .filter((dirent) => dirent.isFile())
+        .map((dirent) => dirent.name)
+        .filter((file) => !prefix || file.startsWith(prefix));
+      return fileNames;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         return [];

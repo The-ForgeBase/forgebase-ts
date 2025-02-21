@@ -35,7 +35,7 @@ export class StorageService {
   async upload(
     bucket: string,
     key: string,
-    data: Uint8Array | ReadableStream,
+    data: Buffer | ReadStream,
     options?: UploadOptions
   ): Promise<void> {
     await this.provider.upload(bucket, key, data);
