@@ -14,8 +14,10 @@ import {
   MfaRecoveryCodeInvalid,
   MFARequiredError,
   MfaService,
+  OAuthProviderNotExist,
   ProviderDoesNotSupportReg,
   ProviderNotEnabled,
+  ProviderNotExist,
   RateLimiter,
   RateLimitExceededError,
   SessionManager,
@@ -130,6 +132,51 @@ export class DynamicAuthManager<TUser extends User> {
 
   getProviderConfig(provider: string) {
     return this.providers[provider].getConfig();
+  }
+
+  async oauthCallback(
+    provider: string,
+    { code, state }: { code: string; state: string }
+  ): Promise<{
+    user?: TUser;
+    token: AuthToken | string | AuthRequiredType;
+  }> {
+    if (!this.config.enabledProviders.includes(provider)) {
+      throw new ProviderNotEnabled(provider);
+    }
+
+    // if (this.rateLimiter) {
+    //   const limit = await this.rateLimiter.checkLimit(credentials.email);
+    //   if (!limit.allowed) throw new RateLimitExceededError();
+    // }
+
+    const authProvider = this.providers[provider];
+    if (!authProvider) throw new InvalidProvider();
+
+    if (!(authProvider instanceof BaseOAuthProvider)) {
+      throw new OAuthProviderNotExist(provider);
+    }
+
+    const user = await authProvider.authenticate({ code, state });
+
+    if (
+      this.config.authPolicy.emailVerificationRequired &&
+      !this.verificationService &&
+      !user.email_verified
+    ) {
+      throw new VerificationRequiredError('email');
+    }
+
+    if (
+      this.config.authPolicy.smsVerificationRequired &&
+      !this.verificationService &&
+      !user.phone_verified
+    ) {
+      throw new VerificationRequiredError('sms');
+    }
+
+    const token = await this.sessionManager.createSession(user);
+    return { user, token };
   }
 
   async login(

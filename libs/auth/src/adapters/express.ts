@@ -88,7 +88,7 @@ export class ExpressAuthAdapter<TUser extends User> {
               .json({ error: 'Missing required OAuth parameters' });
           }
 
-          const { user, token } = await this.authManager.login(
+          const { user, token } = await this.authManager.oauthCallback(
             provider as string,
             {
               code: code as string,

@@ -79,7 +79,7 @@ export class GoogleOAuthProvider<
         .first();
 
       if (storedState === null || code_verifier === null) {
-        throw new Error('Invalid request');
+        throw new Error('Invalid OAuth request');
       }
 
       const google = await this.getGoogleClient();

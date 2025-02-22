@@ -1,8 +1,5 @@
 import { AuthConfig, SessionManager, User } from '../types';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import { Knex } from 'knex';
-// import type { StringValue } from 'ms';
 import { timeStringToDate } from '@forgebase-ts/common';
 import { generateSessionId, generateSessionToken } from '../lib/osolo';
 

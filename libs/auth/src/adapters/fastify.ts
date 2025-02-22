@@ -103,7 +103,7 @@ export class FastifyAuthAdapter<TUser extends User> {
             .send({ error: 'Missing required OAuth parameters' });
         }
 
-        const { user, token } = await this.authManager.login(provider, {
+        const { user, token } = await this.authManager.oauthCallback(provider, {
           code,
           state,
         });

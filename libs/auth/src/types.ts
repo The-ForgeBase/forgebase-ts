@@ -203,6 +203,18 @@ export class ProviderNotEnabled extends Error {
   }
 }
 
+export class ProviderNotExist extends Error {
+  constructor(name: string) {
+    super(`Provider ${name} does not exist`);
+  }
+}
+
+export class OAuthProviderNotExist extends Error {
+  constructor(name: string) {
+    super(`OAuth Provider ${name} does not exist`);
+  }
+}
+
 export class MfaAlreadyEnabledError extends Error {
   constructor(identifier: string) {
     super(`MFA already enabled for user ${identifier}`);

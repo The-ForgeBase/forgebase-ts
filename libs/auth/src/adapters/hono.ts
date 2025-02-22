@@ -87,7 +87,7 @@ export class HonoAuthAdapter<TUser extends User> {
           return c.json({ error: 'Missing required OAuth parameters' }, 400);
         }
 
-        const { user, token } = await this.authManager.login(provider, {
+        const { user, token } = await this.authManager.oauthCallback(provider, {
           code,
           state,
         });
