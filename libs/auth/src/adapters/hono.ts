@@ -46,9 +46,34 @@ export class HonoAuthAdapter<TUser extends User> {
     }
 
     try {
-      const user = await this.authManager.validateToken(token, 'local');
+      const { user, token: newToken } = await this.authManager.validateToken(
+        token,
+        'local'
+      );
       const config = this.authManager.getConfig();
       const mfaStatus = this.authManager.getMfaStatus();
+
+      if (!user || !newToken) {
+        return c.json({ error: 'Invalid token' }, 401);
+      }
+
+      if (newToken) {
+        if (typeof newToken === 'object' && newToken !== null) {
+          setCookie(c, 'token', newToken.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+          setCookie(c, 'refreshToken', newToken.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        } else {
+          setCookie(c, 'token', newToken as string, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        }
+      }
 
       if (
         config.mfaSettings.required &&

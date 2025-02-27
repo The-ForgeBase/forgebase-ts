@@ -45,9 +45,34 @@ export class ExpressAuthAdapter<TUser extends User> {
     }
 
     try {
-      const user = await this.authManager.validateToken(token, 'local');
+      const { user, token: newToken } = await this.authManager.validateToken(
+        token,
+        'local'
+      );
       const config = this.authManager.getConfig();
       const mfaStatus = this.authManager.getMfaStatus();
+
+      if (!user || !newToken) {
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+
+      if (newToken) {
+        if (typeof newToken === 'object' && newToken !== null) {
+          res.cookie('token', newToken.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+          res.cookie('refreshToken', newToken.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        } else {
+          res.cookie('token', newToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        }
+      }
 
       if (
         config.mfaSettings.required &&

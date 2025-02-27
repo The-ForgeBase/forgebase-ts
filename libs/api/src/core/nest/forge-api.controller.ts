@@ -1,6 +1,5 @@
 import {
   Controller,
-  Inject,
   Get,
   Post,
   Put,
