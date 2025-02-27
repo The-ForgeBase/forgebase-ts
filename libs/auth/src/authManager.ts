@@ -246,7 +246,14 @@ export class DynamicAuthManager<TUser extends User> {
     return this.sessionManager.refreshSession(refreshToken);
   }
 
-  async validateToken(token: string, provider: string): Promise<TUser> {
+  async createToken(user: TUser): Promise<AuthToken | string> {
+    return this.sessionManager.createSession(user);
+  }
+
+  async validateToken(
+    token: string,
+    provider: string
+  ): Promise<{ user: TUser; token?: string | AuthToken }> {
     if (provider === 'passwordless') {
       const authProvider = this.providers[provider];
 
@@ -257,11 +264,13 @@ export class DynamicAuthManager<TUser extends User> {
         throw new UserNotFoundError(user.id);
       }
 
-      return user;
+      const fToken = await this.sessionManager.createSession(user);
+
+      return { user, token: fToken };
     }
 
     const user = await this.sessionManager.verifySession(token);
-    return user as TUser;
+    return user as { user: TUser; token?: string | AuthToken };
   }
 
   async logout(token: string): Promise<void> {

@@ -1,6 +1,12 @@
 import { DynamicAuthManager, MFARequiredError, User } from '@forgebase-ts/auth';
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Request, Response } from 'express';
 
 @Injectable()
 export class AuthGuard<TUser extends User> implements CanActivate {
@@ -9,7 +15,7 @@ export class AuthGuard<TUser extends User> implements CanActivate {
     private reflector: Reflector
   ) {}
 
-  private extractToken(request: any): string | null {
+  private extractToken(request: Request): string | null {
     if (request.headers.authorization?.startsWith('Bearer ')) {
       return request.headers.authorization.substring(7);
     }
@@ -21,12 +27,16 @@ export class AuthGuard<TUser extends User> implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.get<boolean>('isPublic', context.getHandler());
+    const isPublic = this.reflector.get<boolean>(
+      'isPublic',
+      context.getHandler()
+    );
     if (isPublic) {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest() as Request;
+    const res = context.switchToHttp().getResponse() as Response;
     const token = this.extractToken(request);
 
     if (!token) {
@@ -34,7 +44,29 @@ export class AuthGuard<TUser extends User> implements CanActivate {
     }
 
     try {
-      const user = await this.authManager.validateToken(token, 'local');
+      const { user, token: newToken } = await this.authManager.validateToken(
+        token,
+        'local'
+      );
+
+      if (newToken) {
+        if (typeof newToken === 'object' && newToken !== null) {
+          res.cookie('token', newToken.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+          res.cookie('refreshToken', newToken.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        } else {
+          res.cookie('token', newToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        }
+      }
+
       const config = this.authManager.getConfig();
       const mfaStatus = this.authManager.getMfaStatus();
 

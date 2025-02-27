@@ -139,7 +139,9 @@ export type AuthRequiredType =
 export interface SessionManager {
   createSession(user: User): Promise<AuthToken | string>;
   destroySession(token: string): Promise<void>;
-  verifySession(token: string): Promise<User>;
+  verifySession(
+    token: string
+  ): Promise<{ user: User; token?: string | AuthToken }>;
   refreshSession?(refreshToken: string): Promise<AuthToken | string>;
 }
 

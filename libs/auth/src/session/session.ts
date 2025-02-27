@@ -1,4 +1,4 @@
-import { AuthConfig, SessionManager, User } from '../types';
+import { AuthConfig, AuthToken, SessionManager, User } from '../types';
 import { Knex } from 'knex';
 import { timeStringToDate } from '@forgebase-ts/common';
 import { generateSessionId, generateSessionToken } from '../lib/osolo';
@@ -37,7 +37,9 @@ export class BasicSessionManager implements SessionManager {
     return token;
   }
 
-  async verifySession(token: string): Promise<User> {
+  async verifySession(
+    token: string
+  ): Promise<{ user: User; token?: string | AuthToken }> {
     const sessionToken = generateSessionId(token);
     const session = await this.knex('sessions')
       .where({ token: sessionToken })
@@ -50,7 +52,7 @@ export class BasicSessionManager implements SessionManager {
       .first();
 
     if (!user) throw new Error('Invalid session');
-    return user;
+    return { user };
   }
 
   async destroySession(token: string): Promise<void> {

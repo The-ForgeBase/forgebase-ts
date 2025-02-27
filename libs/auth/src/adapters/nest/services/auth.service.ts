@@ -1,4 +1,9 @@
-import { AuthRequiredType, AuthToken, DynamicAuthManager, User } from '@forgebase-ts/auth';
+import {
+  AuthRequiredType,
+  AuthToken,
+  DynamicAuthManager,
+  User,
+} from '@forgebase-ts/auth';
 import { Injectable, Inject } from '@nestjs/common';
 
 @Injectable()
@@ -28,6 +33,22 @@ export class AuthService<TUser extends User> {
     url?: URL;
   }> {
     return this.authManager.login(provider, credentials);
+  }
+
+  async passwordlessLogin(code: string): Promise<{
+    user: TUser;
+    token: AuthToken | string | AuthRequiredType;
+  }> {
+    const user = await this.authManager.validateToken(code, 'passwordless');
+
+    if (!user) {
+      throw new Error('Invalid code');
+    }
+
+    return user as {
+      user: TUser;
+      token: AuthToken | string | AuthRequiredType;
+    };
   }
 
   async oauthCallback(
@@ -69,7 +90,10 @@ export class AuthService<TUser extends User> {
     return this.authManager.disableMfa(userId, code);
   }
 
-  async validateToken(token: string, provider: string): Promise<TUser> {
+  async validateToken(
+    token: string,
+    provider: string
+  ): Promise<{ user: TUser; token?: string | AuthToken }> {
     return this.authManager.validateToken(token, provider);
   }
 
