@@ -124,11 +124,12 @@ export class ForgeApi {
     context: Context;
   }> {
     const context = await this.createContext(adapter);
+    const path = adapter.getPath();
 
     if (this.config.auth.enabled && this.config.auth.beforeMiddleware) {
       const user = context.req.userContext;
       //TODO: future iteration will proper auth checking
-      if (!user) {
+      if (!user && !this.config.auth.exclude?.includes(path)) {
         throw new Error('Unauthorized');
       }
     }
@@ -140,12 +141,11 @@ export class ForgeApi {
     if (this.config.auth.enabled && !this.config.auth.beforeMiddleware) {
       const user = context.req.userContext;
       //TODO: future iteration will proper auth checking
-      if (!user) {
+      if (!user && !this.config.auth.exclude?.includes(path)) {
         throw new Error('Unauthorized');
       }
     }
 
-    const path = adapter.getPath();
     const method = adapter.getMethod();
     const normalizedPath = path.startsWith(this.config.prefix)
       ? path.slice(this.config.prefix.length)
