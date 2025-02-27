@@ -1,4 +1,5 @@
-export type SupportedFramework = 'express' | 'fastify' | 'hono';
+export type SupportedFramework = 'express' | 'fastify' | 'hono' | 'nest';
 
 export * from './hono';
 export * from './elysia';
+export * from './nest';

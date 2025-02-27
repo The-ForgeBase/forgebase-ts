@@ -164,16 +164,16 @@ export class ForgeApi {
 
   private registerCoreRoutes() {
     // Built-in storage endpoints
-    addRoute(this.router, 'POST', '/storage/:bucket/:key', async (ctx) => {
-      const { bucket, key } = ctx.req.params;
-      await this.storage.upload(bucket, key, ctx.req.body);
-      ctx.res.status = 201;
-    });
+    // addRoute(this.router, 'POST', '/storage/:bucket/:key', async (ctx) => {
+    //   const { bucket, key } = ctx.req.params;
+    //   await this.storage.upload(bucket, key, ctx.req.body);
+    //   ctx.res.status = 201;
+    // });
 
-    addRoute(this.router, 'GET', '/storage/:bucket/:key', async (ctx) => {
-      const { bucket, key } = ctx.req.params;
-      ctx.res.body = await this.storage.download(bucket, key);
-    });
+    // addRoute(this.router, 'GET', '/storage/:bucket/:key', async (ctx) => {
+    //   const { bucket, key } = ctx.req.params;
+    //   ctx.res.body = await this.storage.download(bucket, key);
+    // });
 
     // Built-in database endpoints
     addRoute(this.router, 'POST', '/db/:collection', async (ctx) => {

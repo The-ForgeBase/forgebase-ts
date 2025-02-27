@@ -1,5 +1,4 @@
 import { UserContext } from '@forgebase-ts/database';
-import { User, Session } from 'better-auth/types';
 import { Context as HonoContext } from 'hono';
 
 export const honoUserMiddleware = async (

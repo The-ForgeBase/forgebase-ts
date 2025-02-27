@@ -58,6 +58,8 @@ pnpm add @forgebase/api
 
 ## Basic Usage
 
+### Standalone Usage
+
 ```typescript
 import { forgeApi } from '@forgebase/api';
 
@@ -80,6 +82,49 @@ const api = forgeApi({
     },
   },
 });
+```
+
+### NestJS Integration
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ForgeNestApiModule } from '@forgebase/api';
+
+@Module({
+  imports: [
+    ForgeNestApiModule.forRoot({
+      prefix: '/api',
+      auth: {
+        enabled: true,
+        exclude: ['/auth/login', '/auth/register'],
+      },
+      services: {
+        storage: {
+          provider: 'local',
+          config: {},
+        },
+        db: {
+          provider: 'sqlite',
+          config: {
+            filename: './database.sqlite',
+          },
+        },
+      },
+    }),
+  ],
+})
+export class AppModule {}
+
+// Feature module with custom route configuration
+@Module({
+  imports: [
+    ForgeNestApiModule.forChild({
+      prefix: '/custom-api',
+      routes: ['/custom-api/*'],
+    }),
+  ],
+})
+export class CustomModule {}
 ```
 
 ## Configuration
