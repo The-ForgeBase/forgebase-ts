@@ -4,17 +4,22 @@ import type { StorageService } from './core/storage';
 
 import { UserContext } from '@forgebase-ts/database';
 import { SupportedFramework } from './frameworks/index';
+import { LocalStorageConfig, S3StorageConfig, GCPStorageConfig, CloudinaryStorageConfig } from '@forgebase-ts/storage';
 
 export interface BaaSConfig {
   prefix: string;
   auth: {
     enabled: boolean;
     exclude?: string[];
+    beforeMiddleware?: boolean;
   };
   services: {
     storage: {
-      provider: 'local' | 's3' | 'gcs';
-      config: Record<string, any>;
+      provider: 'local' | 's3' | 'gcp' | 'cloudinary';
+      config: | LocalStorageConfig
+      | S3StorageConfig
+      | GCPStorageConfig
+      | CloudinaryStorageConfig;
     };
     db: {
       provider: 'sqlite' | 'postgres' | 'libsql';

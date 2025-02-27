@@ -125,8 +125,24 @@ export class ForgeApi {
   }> {
     const context = await this.createContext(adapter);
 
+    if (this.config.auth.enabled && this.config.auth.beforeMiddleware) {
+      const user = context.req.userContext;
+      //TODO: future iteration will proper auth checking
+      if (!user) {
+        throw new Error('Unauthorized');
+      }
+    }
+
     if (await this.runMiddlewares(context)) {
       return { adapter, context };
+    }
+
+    if (this.config.auth.enabled && !this.config.auth.beforeMiddleware) {
+      const user = context.req.userContext;
+      //TODO: future iteration will proper auth checking
+      if (!user) {
+        throw new Error('Unauthorized');
+      }
     }
 
     const path = adapter.getPath();

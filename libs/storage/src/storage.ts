@@ -6,7 +6,6 @@ import {
   CloudinaryStorageConfig,
   CloudinaryStorageProvider,
 } from './providers/cloudinary';
-import { ReadStream } from 'fs';
 
 export class StorageService {
   private provider: StorageProvider;
