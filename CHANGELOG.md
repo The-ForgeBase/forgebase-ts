@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
+* Merge pull request #15 from The-ForgeBase/nest (86071f5)
+* Update release.yml (555acf5)
+* docs: update changelog [skip ci] (8b77f7f)
 * Merge pull request #14 from The-ForgeBase/nest (2788961)
 * docs: update changelog [skip ci] (d7cef55)
 * Merge pull request #13 from The-ForgeBase/nest (2471655)
