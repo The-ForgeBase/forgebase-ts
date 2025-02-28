@@ -1,18 +1,10 @@
 # ForgeBase Storage
 
-The ForgeBase Storage library provides comprehensive storage management and integration functionalities. It includes support for various storage services and real-time updates.
+The ForgeBase Storage library provides comprehensive file and object storage capabilities for the ForgeBase ecosystem. It offers a unified interface for working with various storage providers while supporting efficient file operations and access control.
 
-## Purpose of the Project
+## Purpose
 
-The BaaS Framework is an open-source Backend as a Service (BaaS) framework designed to provide backend functionality for a variety of backend frameworks across multiple languages, including but not limited to:
-
-- Go
-- TypeScript
-- Rust
-- PHP
-- Deno
-- Node.js
-- and more!
+This library simplifies storage operations by providing an abstraction layer that works with multiple storage providers. It handles common storage tasks like file uploads, downloads, permissions management, and metadata handling, allowing developers to focus on their application logic rather than storage implementation details.
 
 ## Core Features
 

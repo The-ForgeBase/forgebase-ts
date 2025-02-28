@@ -1,18 +1,10 @@
 # ForgeBase Real-Time
 
-The ForgeBase Real-Time library provides real-time communication and updates for your applications. It includes support for WebSocket connections, real-time data synchronization, and event broadcasting.
+The ForgeBase Real-Time library provides powerful real-time communication capabilities for applications within the ForgeBase ecosystem. It enables bidirectional, event-based communication between clients and servers with support for WebSockets, SSE, and other real-time protocols.
 
-## Purpose of the Project
+## Purpose
 
-The BaaS Framework is an open-source Backend as a Service (BaaS) framework designed to provide backend functionality for a variety of backend frameworks across multiple languages, including but not limited to:
-
-- Go
-- TypeScript
-- Rust
-- PHP
-- Deno
-- Node.js
-- and more!
+This library simplifies the implementation of real-time features in your applications by providing a unified interface for various real-time communication methods. It handles connection management, event broadcasting, presence detection, and data synchronization, allowing developers to build interactive, collaborative applications with minimal effort.
 
 ## Core Features
 
