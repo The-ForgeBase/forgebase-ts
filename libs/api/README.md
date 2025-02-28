@@ -53,13 +53,15 @@ Our mission is to simplify backend development by providing a highly flexible, l
 ## Installation
 
 ```bash
-pnpm add @forgebase/api
+pnpm add @forgebase-ts/api
 ```
 
 ## Basic Usage
 
+### Standalone Usage
+
 ```typescript
-import { forgeApi } from '@forgebase/api';
+import { forgeApi } from '@forgebase-ts/api';
 
 const api = forgeApi({
   prefix: '/api',
@@ -82,6 +84,147 @@ const api = forgeApi({
 });
 ```
 
+### NestJS Integration
+
+ForgeBase API provides three main integration modules for NestJS:
+
+#### Option 1: Using ForgeApiModule
+
+This is the simplest integration method, suitable for applications that need a single global configuration.
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ForgeApiModule } from '@forgebase-ts/api';
+
+@Module({
+  imports: [
+    ForgeApiModule.forRoot({
+      prefix: 'api',
+      services: {
+        db: {
+          provider: 'sqlite',
+          config: {
+            filename: 'database.sqlite',
+          },
+          enforceRls: false,
+          realtime: false,
+        },
+        storage: {
+          provider: 'local',
+          config: {},
+        },
+      },
+    }),
+    // Your other modules...
+  ],
+})
+export class AppModule {}
+```
+
+#### Option 2: Using ForgeApiWithChildModule
+
+This option provides more flexibility by allowing different parts of your application to use different configurations.
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ForgeApiWithChildModule } from '@forgebase-ts/api';
+
+// Main AppModule with global configuration
+@Module({
+  imports: [
+    ForgeApiWithChildModule.forRoot({
+      prefix: 'api',
+      services: {
+        db: {
+          provider: 'sqlite',
+          config: {
+            filename: 'database.sqlite',
+          },
+          enforceRls: false,
+          realtime: false,
+        },
+        storage: {
+          provider: 'local',
+          config: {},
+        },
+      },
+    }),
+    // Your other modules...
+  ],
+})
+export class AppModule {}
+
+// Feature module with its own configuration
+@Module({
+  imports: [
+    ForgeApiWithChildModule.forChild({
+      prefix: 'feature-api',
+      services: {
+        db: {
+          provider: 'sqlite',
+          config: {
+            filename: 'database.sqlite',
+          },
+          enforceRls: false,
+          realtime: false,
+        },
+        storage: {
+          provider: 'local',
+          config: {},
+        },
+      },
+    }),
+  ],
+})
+export class FeatureModule {}
+```
+
+#### Option 3: Using ForgeNestApiModule
+
+This is the recommended module for NestJS applications, providing direct integration with NestJS middleware system.
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ForgeNestApiModule } from '@forgebase-ts/api';
+import knex from 'knex';
+
+// Create a database connection
+export const db = knex({
+  client: 'sqlite3',
+  connection: {
+    filename: ':memory:',
+  },
+  useNullAsDefault: true,
+});
+
+@Module({
+  imports: [
+    ForgeNestApiModule.forRoot({
+      prefix: '/api',
+      services: {
+        db: {
+          provider: 'sqlite',
+          realtime: false,
+          enforceRls: false,
+          config: {
+            filename: './database.sqlite',
+          },
+          knex: db, // Pass an existing knex instance
+        },
+        storage: {
+          provider: 'local',
+          config: {},
+        },
+      },
+    }),
+    // Your other modules...
+  ],
+})
+export class AppModule {}
+```
+
+````
+
 ## Configuration
 
 ### Storage Service
@@ -91,7 +234,7 @@ const storageService = api.getStorageService();
 
 await storageService.upload('bucket-name', 'file-key', Buffer.from('file-data'));
 const fileData = await storageService.download('bucket-name', 'file-key');
-```
+````
 
 ### Database Service
 
@@ -107,7 +250,7 @@ await dbService.delete('table-name', 1);
 ### Authentication Service
 
 ```typescript
-import { AuthService } from '@forgebase/api';
+import { AuthService } from '@forgebase-ts/api';
 
 const authService = new AuthService({
   enabled: true,

@@ -6,25 +6,6 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { forgeApi, type Context } from '@forgebase-ts/api';
-
-const api = forgeApi({
-  prefix: '/api',
-  services: {
-    db: {
-      provider: 'sqlite',
-      realtime: false,
-      enforceRls: false,
-      config: {
-        filename: './database.sqlite',
-      },
-    },
-    storage: {
-      provider: 'local',
-      config: {},
-    },
-  },
-});
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

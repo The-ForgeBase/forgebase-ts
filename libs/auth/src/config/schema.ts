@@ -79,7 +79,7 @@ export async function initializeAuthSchema(knex: Knex) {
     await knex.schema.createTable('sessions', (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
-      table.string('refresh_token').unique();
+      table.string('token').unique();
       table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
 
@@ -126,6 +126,28 @@ export async function initializeAuthSchema(knex: Knex) {
   const hasAccessTokens = await knex.schema.hasTable('access_tokens');
   if (!hasAccessTokens) {
     await knex.schema.createTable('access_tokens', (table) => {
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
+      table.uuid('user_id').notNullable();
+      table.string('token').notNullable();
+      table.timestamp('expires_at').notNullable();
+      table.timestamps(true, true);
+      // Foreign key to users table
+      table
+        .foreign('user_id')
+        .references('id')
+        .inTable('users')
+        .onDelete('CASCADE');
+      // Indexes for performance
+      table.index(['user_id']);
+      table.index(['token']);
+      table.index(['expires_at']);
+    });
+  }
+
+  //Refresh Tokens Table
+  const hasRefreshTokens = await knex.schema.hasTable('refresh_tokens');
+  if (!hasRefreshTokens) {
+    await knex.schema.createTable('refresh_tokens', (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').notNullable();

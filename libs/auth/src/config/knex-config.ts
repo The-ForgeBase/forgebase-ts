@@ -39,9 +39,9 @@ export class KnexConfigStore implements ConfigStore {
       const defaultConfig = AuthConfigSchema.parse({
         authPolicy: {
           allowEmailAuth: true,
-          allowPhoneAuth: false,
+          allowPhoneAuth: true,
           allowOAuthAuth: true,
-          requireEmailVerification: true,
+          requireEmailVerification: false,
           requirePhoneVerification: false,
         },
         passwordPolicy: {
@@ -52,8 +52,8 @@ export class KnexConfigStore implements ConfigStore {
           requireLowercase: true,
         },
         sessionSettings: {
-          accessTokenTTL: '3600', // 1 hour
-          refreshTokenTTL: '2592000', // 30 days
+          accessTokenTTL: '1h', // 1 hour
+          refreshTokenTTL: '30d', // 30 days
           cookieSecure: true,
           cookieSameSite: 'lax',
         },

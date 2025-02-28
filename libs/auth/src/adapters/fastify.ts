@@ -51,9 +51,34 @@ export class FastifyAuthAdapter<TUser extends User> {
     }
 
     try {
-      const user = await this.authManager.validateToken(token, 'local');
+      const { user, token: newToken } = await this.authManager.validateToken(
+        token,
+        'local'
+      );
       const config = this.authManager.getConfig();
       const mfaStatus = this.authManager.getMfaStatus();
+
+      if (!user || !newToken) {
+        return reply.code(401).send({ error: 'Invalid token' });
+      }
+
+      if (newToken) {
+        if (typeof newToken === 'object' && newToken !== null) {
+          reply.cookie('token', newToken.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+          reply.cookie('refreshToken', newToken.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        } else {
+          reply.cookie('token', newToken as string, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        }
+      }
 
       if (
         config.mfaSettings.required &&
@@ -103,7 +128,7 @@ export class FastifyAuthAdapter<TUser extends User> {
             .send({ error: 'Missing required OAuth parameters' });
         }
 
-        const { user, token } = await this.authManager.login(provider, {
+        const { user, token } = await this.authManager.oauthCallback(provider, {
           code,
           state,
         });

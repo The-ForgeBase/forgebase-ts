@@ -14,8 +14,10 @@ import {
   MfaRecoveryCodeInvalid,
   MFARequiredError,
   MfaService,
+  OAuthProviderNotExist,
   ProviderDoesNotSupportReg,
   ProviderNotEnabled,
+  ProviderNotExist,
   RateLimiter,
   RateLimitExceededError,
   SessionManager,
@@ -33,7 +35,6 @@ export class DynamicAuthManager<TUser extends User> {
   private configSubscription?: any;
   private mfa?: MfaService;
   private rateLimiter?: RateLimiter;
-  private verificationService?: VerificationService;
 
   constructor(
     private configStore: ConfigStore,
@@ -42,7 +43,8 @@ export class DynamicAuthManager<TUser extends User> {
     private userService: KnexUserService<TUser>,
     private refreshInterval = 5000,
     private enableConfigIntervalCheck = false,
-    private internalConfig: AuthInternalConfig<TUser>
+    private internalConfig: AuthInternalConfig<TUser>,
+    private verificationService?: VerificationService
   ) {
     this.watchConfig();
   }
@@ -69,55 +71,59 @@ export class DynamicAuthManager<TUser extends User> {
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
-    if (!this.config.enabledProviders.includes(provider)) {
-      throw new ProviderNotEnabled(provider);
+    try {
+      if (!this.config.enabledProviders.includes(provider)) {
+        throw new ProviderNotEnabled(provider);
+      }
+
+      if (this.rateLimiter) {
+        const limit = await this.rateLimiter.checkLimit(credentials.email);
+        if (!limit.allowed) throw new RateLimitExceededError();
+      }
+
+      const authProvider = this.providers[provider];
+      if (!authProvider) throw new InvalidProvider();
+      if (!authProvider.register) throw new ProviderDoesNotSupportReg(provider);
+
+      if (authProvider instanceof BaseOAuthProvider) {
+        const url = await authProvider.getAuthorizationUrl();
+
+        return { user: undefined, token: provider, url };
+      }
+
+      const user = await authProvider.register(credentials, password);
+
+      if (
+        this.config.authPolicy.loginAfterRegistration &&
+        !this.config.mfaSettings.required &&
+        (!this.config.authPolicy.emailVerificationRequired ||
+          !this.config.authPolicy.smsVerificationRequired)
+      ) {
+        const token = await this.sessionManager.createSession(user);
+        return { user, token };
+      }
+
+      if (
+        this.config.authPolicy.emailVerificationRequired &&
+        this.verificationService &&
+        this.verificationService.sendVerificationEmail
+      ) {
+        await this.verificationService.sendVerificationEmail(user.email);
+      }
+
+      if (
+        this.config.authPolicy.smsVerificationRequired &&
+        this.verificationService &&
+        this.verificationService.sendVerificationSms &&
+        user.phone
+      ) {
+        await this.verificationService.sendVerificationSms(user.phone);
+      }
+
+      return { user, token: '' };
+    } catch (error) {
+      throw error;
     }
-
-    if (this.rateLimiter) {
-      const limit = await this.rateLimiter.checkLimit(credentials.email);
-      if (!limit.allowed) throw new RateLimitExceededError();
-    }
-
-    const authProvider = this.providers[provider];
-    if (!authProvider) throw new InvalidProvider();
-    if (!authProvider.register) throw new ProviderDoesNotSupportReg(provider);
-
-    if (authProvider instanceof BaseOAuthProvider) {
-      const url = await authProvider.getAuthorizationUrl();
-
-      return { user: undefined, token: provider, url };
-    }
-
-    const user = await authProvider.register(credentials, password);
-
-    if (
-      this.config.authPolicy.loginAfterRegistration &&
-      !this.config.mfaSettings.required &&
-      (!this.config.authPolicy.emailVerificationRequired ||
-        !this.config.authPolicy.smsVerificationRequired)
-    ) {
-      const token = await this.sessionManager.createSession(user);
-      return { user, token };
-    }
-
-    if (
-      this.config.authPolicy.emailVerificationRequired &&
-      !this.verificationService &&
-      this.verificationService.sendVerificationEmail
-    ) {
-      await this.verificationService.sendVerificationEmail(user.email);
-    }
-
-    if (
-      this.config.authPolicy.smsVerificationRequired &&
-      !this.verificationService &&
-      this.verificationService.sendVerificationSms &&
-      user.phone
-    ) {
-      await this.verificationService.sendVerificationSms(user.phone);
-    }
-
-    return { user, token: '' };
   }
 
   getProviders() {
@@ -130,6 +136,51 @@ export class DynamicAuthManager<TUser extends User> {
 
   getProviderConfig(provider: string) {
     return this.providers[provider].getConfig();
+  }
+
+  async oauthCallback(
+    provider: string,
+    { code, state }: { code: string; state: string }
+  ): Promise<{
+    user?: TUser;
+    token: AuthToken | string | AuthRequiredType;
+  }> {
+    if (!this.config.enabledProviders.includes(provider)) {
+      throw new ProviderNotEnabled(provider);
+    }
+
+    // if (this.rateLimiter) {
+    //   const limit = await this.rateLimiter.checkLimit(credentials.email);
+    //   if (!limit.allowed) throw new RateLimitExceededError();
+    // }
+
+    const authProvider = this.providers[provider];
+    if (!authProvider) throw new InvalidProvider();
+
+    if (!(authProvider instanceof BaseOAuthProvider)) {
+      throw new OAuthProviderNotExist(provider);
+    }
+
+    const user = await authProvider.authenticate({ code, state });
+
+    if (
+      this.config.authPolicy.emailVerificationRequired &&
+      this.verificationService &&
+      !user.email_verified
+    ) {
+      throw new VerificationRequiredError('email');
+    }
+
+    if (
+      this.config.authPolicy.smsVerificationRequired &&
+      this.verificationService &&
+      !user.phone_verified
+    ) {
+      throw new VerificationRequiredError('sms');
+    }
+
+    const token = await this.sessionManager.createSession(user);
+    return { user, token };
   }
 
   async login(
@@ -166,7 +217,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.emailVerificationRequired &&
-      !this.verificationService &&
+      this.verificationService &&
       !user.email_verified
     ) {
       throw new VerificationRequiredError('email');
@@ -174,7 +225,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.smsVerificationRequired &&
-      !this.verificationService &&
+      this.verificationService &&
       !user.phone_verified
     ) {
       throw new VerificationRequiredError('sms');
@@ -199,7 +250,14 @@ export class DynamicAuthManager<TUser extends User> {
     return this.sessionManager.refreshSession(refreshToken);
   }
 
-  async validateToken(token: string, provider: string): Promise<TUser> {
+  async createToken(user: TUser): Promise<AuthToken | string> {
+    return this.sessionManager.createSession(user);
+  }
+
+  async validateToken(
+    token: string,
+    provider: string
+  ): Promise<{ user: TUser; token?: string | AuthToken }> {
     if (provider === 'passwordless') {
       const authProvider = this.providers[provider];
 
@@ -210,11 +268,13 @@ export class DynamicAuthManager<TUser extends User> {
         throw new UserNotFoundError(user.id);
       }
 
-      return user;
+      const fToken = await this.sessionManager.createSession(user);
+
+      return { user, token: fToken };
     }
 
     const user = await this.sessionManager.verifySession(token);
-    return user as TUser;
+    return user as { user: TUser; token?: string | AuthToken };
   }
 
   async logout(token: string): Promise<void> {

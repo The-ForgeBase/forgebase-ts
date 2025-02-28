@@ -1,29 +1,18 @@
 import { createGlobPatternsForDependencies } from '@nx/react/tailwind';
 import { join } from 'node:path';
 import TailwindAnimate from 'tailwindcss-animate';
-import { createPreset } from 'fumadocs-ui/tailwind-plugin';
 
 import type { Config } from 'tailwindcss';
 
 export function buildConfig(appDir: string): Config {
   return {
-    darkMode: 'class',
-    presets: [
-      createPreset({
-        preset: 'neutral',
-      }),
-    ],
+    darkMode: ['class'],
     content: [
       join(
         appDir,
-        '{src,pages,components,app,content,mdx-components}/**/*!(*.stories|*.spec).{ts,tsx,html,mdx,md}',
-        './components/**/*.{ts,tsx}',
-        './app/**/*.{ts,tsx}',
-        './content/**/*.{md,mdx}',
-        './mdx-components.{ts,tsx}'
+        '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
       ),
       ...createGlobPatternsForDependencies(appDir),
-      './node_modules/fumadocs-ui/dist/**/*.js',
     ],
     theme: {
       extend: {

@@ -139,7 +139,9 @@ export type AuthRequiredType =
 export interface SessionManager {
   createSession(user: User): Promise<AuthToken | string>;
   destroySession(token: string): Promise<void>;
-  verifySession(token: string): Promise<User>;
+  verifySession(
+    token: string
+  ): Promise<{ user: User; token?: string | AuthToken }>;
   refreshSession?(refreshToken: string): Promise<AuthToken | string>;
 }
 
@@ -200,6 +202,18 @@ export class InvalidProvider extends Error {
 export class ProviderNotEnabled extends Error {
   constructor(name: string) {
     super(`Provider ${name} is not enabled`);
+  }
+}
+
+export class ProviderNotExist extends Error {
+  constructor(name: string) {
+    super(`Provider ${name} does not exist`);
+  }
+}
+
+export class OAuthProviderNotExist extends Error {
+  constructor(name: string) {
+    super(`OAuth Provider ${name} does not exist`);
   }
 }
 

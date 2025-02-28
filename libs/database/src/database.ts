@@ -223,6 +223,8 @@ export class ForgeDatabase {
         try {
           const { data, tableName } = params;
 
+          console.log('data-db', data, tableName);
+
           // Handle both single record and array of records
           const isArray = Array.isArray(data);
           const records = isArray ? data : [data];
@@ -235,6 +237,7 @@ export class ForgeDatabase {
                 typeof record === 'object' && Object.keys(record).length > 0
             )
           ) {
+            console.log('Invalid request body', records);
             throw new Error('Invalid request body');
           }
 

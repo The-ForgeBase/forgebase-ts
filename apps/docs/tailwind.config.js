@@ -9,20 +9,12 @@ module.exports = {
   content: [
     join(
       __dirname,
-      '{src,pages,components,app,content,mdx-components}/**/*!(*.stories|*.spec).{ts,tsx,html,mdx}',
-      './src/components/**/*.{ts,tsx}',
-      './src/app/**/*.{ts,tsx}',
-      './src/content/**/*.{md,mdx}',
-      './src/mdx-components.{ts,tsx}'
+      '{src,pages,components,app,content,mdx-components}/**/*!(*.stories|*.spec).{ts,tsx,html,mdx}'
     ),
     ...createGlobPatternsForDependencies(__dirname),
     './node_modules/fumadocs-ui/dist/**/*.js',
   ],
-  presets: [
-    createPreset({
-      preset: 'neutral',
-    }),
-  ],
+  presets: [createPreset()],
   plugins: [require('tailwindcss-animate')],
   theme: {
     extend: {

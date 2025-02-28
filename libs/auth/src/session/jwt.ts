@@ -1,8 +1,6 @@
-import { AuthConfig, SessionManager, User } from '../types';
+import { AuthConfig, AuthToken, SessionManager, User } from '../types';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import { Knex } from 'knex';
-// import type { StringValue } from 'ms';
 import { timeStringToDate } from '@forgebase-ts/common';
 import { generateSessionId, generateSessionToken } from '../lib/osolo';
 
@@ -71,12 +69,47 @@ export class JwtSessionManager implements SessionManager {
     return this.createSession(user);
   }
 
-  async verifySession(token: string): Promise<User> {
+  async verifySession(
+    token: string
+  ): Promise<{ user: User; token?: string | AuthToken }> {
     const accessToken = await this.knex('access_tokens')
       .where({ token })
       .where('expires_at', '>', new Date())
       .first();
-    if (!accessToken) throw new Error('Invalid access token');
+
+    // if expired, unsign and verify
+    if (!accessToken) {
+      const decoded = jwt.verify(token, this.secret);
+      if (!decoded) throw new Error('Invalid access token');
+
+      // get the user refresh token
+      const refreshToken = await this.knex('refresh_tokens')
+        .where({ user_id: decoded.sub })
+        .where('expires_at', '>', new Date())
+        .first();
+      if (!refreshToken) throw new Error('Invalid access token');
+
+      // verify refresh token
+      const user = await this.knex('users').where({ id: decoded.sub }).first();
+
+      if (!user) throw new Error('Invalid access token');
+
+      // rotate refresh token
+      await this.knex('refresh_tokens')
+        .where({ token: refreshToken.token })
+        .delete();
+      // delete old access token
+      await this.knex('access_tokens')
+        .where('expires_at', '<=', new Date())
+        .delete();
+      await this.knex('refresh_tokens')
+        .where('expires_at', '<=', new Date())
+        .delete();
+
+      const fToken = await this.createSession(user);
+
+      return { user, token: fToken };
+    }
 
     const user = await this.knex('users')
       .where({ id: accessToken.user_id })

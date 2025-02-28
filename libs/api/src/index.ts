@@ -7,4 +7,5 @@ export function forgeApi(config?: Partial<BaaSConfig>): ForgeApi {
 
 export * from './types';
 export * from './frameworks/index';
-export * from './adapters/adapterFactory';
+export * from './adapters';
+export * from './core/api'

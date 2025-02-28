@@ -1,4 +1,5 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import './global.css';
 
 /**
  * Shared layout configurations
