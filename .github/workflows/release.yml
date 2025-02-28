@@ -43,32 +43,26 @@ jobs:
       - name: Determine version
         id: determine_version
         run: |
-          # Check if this is the first release
-          # if ! git tag | grep -q "v0"; then
-          #   # First release - use 0.0.0-alpha.1
-          #   echo "NEW_VERSION=0.0.0-alpha.1" >> $GITHUB_ENV
-          # else
-            # Get the latest version tag
-            LATEST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "v0.0.0-alpha.0")
+          # Get the latest version tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "v0.0.0-alpha.0")
             
-            # Extract version number without the 'v' prefix
-            LATEST_VERSION=${LATEST_TAG#v}
+          # Extract version number without the 'v' prefix
+          LATEST_VERSION=${LATEST_TAG#v}
             
-            # If it's an alpha version, increment the alpha number
-            if [[ $LATEST_VERSION == *"-alpha."* ]]; then
-              PREFIX=$(echo $LATEST_VERSION | cut -d'-' -f1)
-              ALPHA_NUM=$(echo $LATEST_VERSION | cut -d'.' -f3)
-              NEW_ALPHA_NUM=$((ALPHA_NUM + 1))
-              NEW_VERSION="$PREFIX-alpha.$NEW_ALPHA_NUM"
-            else
-              # If it's not an alpha version, increment the patch version and add alpha.1
-              IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_VERSION"
-              NEW_PATCH=$((PATCH + 1))
-              NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH-alpha.1"
-            fi
+          # If it's an alpha version, increment the alpha number
+          if [[ $LATEST_VERSION == *"-alpha."* ]]; then
+            PREFIX=$(echo $LATEST_VERSION | cut -d'-' -f1)
+            ALPHA_NUM=$(echo $LATEST_VERSION | cut -d'.' -f3)
+            NEW_ALPHA_NUM=$((ALPHA_NUM + 1))
+            NEW_VERSION="$PREFIX-alpha.$NEW_ALPHA_NUM"
+          else
+            # If it's not an alpha version, increment the patch version and add alpha.1
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_VERSION"
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH-alpha.1"
+          fi
             
-            echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          # fi
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
       
       - name: Generate Release Notes
         id: release_notes
