@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
+* Merge pull request #12 from The-ForgeBase/nest (3e4f57b)
+* Update release.yml (501ae7c)
+* docs: update changelog [skip ci] (bbc9263)
 * Merge pull request #11 from The-ForgeBase/nest (5a2b649)
 * Merge branch 'nest' of https://github.com/The-ForgeBase/forgebase-ts into nest (8085309)
 * Update release.yml (449d4d0)
