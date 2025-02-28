@@ -154,3 +154,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT
+
+
+<!-- # Create the tag
+git tag -a v0.0.0-alpha.2 -m "Release version 0.0.0-alpha.2"
+
+# Push the tag to remote repository
+git push origin v0.0.0-alpha.2 -->
