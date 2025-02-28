@@ -1,11 +1,11 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware, Inject } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ForgeApi } from '../../core/api';
 import { NestAdapter } from '../../adapters';
 
 @Injectable()
 export class ForgeBaseMiddleware implements NestMiddleware {
-  constructor(private readonly api: ForgeApi) {}
+  constructor(@Inject('FORGE_API') private readonly api: ForgeApi) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
    try {

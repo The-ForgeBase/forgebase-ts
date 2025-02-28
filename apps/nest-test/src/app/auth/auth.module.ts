@@ -18,6 +18,7 @@ import { db } from '../app.module';
         };
       },
       inject: [AuthConfigService],
+      imports: [AuthModule], // Include AuthModule to make AuthConfigService available
     }),
   ],
   providers: [AuthConfigService],

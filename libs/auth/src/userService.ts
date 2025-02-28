@@ -56,13 +56,24 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
     password?: string
   ): Promise<TUser> {
     const { ...rest } = userData;
+
+    // check if email is already taken
+    const existingUser = await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.email, userData.email)
+      .first();
+
+    if (existingUser) {
+      throw new Error('Email already taken');
+    }
+
     const hash = password ? await hashPassword(password) : null;
 
     if (!userData.email) {
       throw new Error('Email is required');
     }
 
-    return this.internalConfig
+    const user = await this.internalConfig
       .knex(this.table)
       .insert({
         ...rest,
@@ -70,21 +81,27 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
         [this.columns.createdAt]: this.internalConfig.knex.fn.now(),
         [this.columns.updatedAt]: this.internalConfig.knex.fn.now(),
       })
-      .returning('*')[0];
+      .returning('*');
+
+    // console.log(user);
+
+    return user[0];
   }
 
   async updateUser(
     userId: string,
     userData: Partial<Omit<TUser, keyof BaseUser>>
   ): Promise<TUser> {
-    return this.internalConfig
+    const user = await this.internalConfig
       .knex(this.table)
       .where(this.columns.id, userId)
       .update({
         ...userData,
         [this.columns.updatedAt]: this.internalConfig.knex.fn.now(),
       })
-      .returning('*')[0];
+      .returning('*');
+
+    return user[0];
   }
 
   async deleteUser(userId: string): Promise<void> {

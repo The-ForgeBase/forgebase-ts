@@ -21,7 +21,11 @@ export class AuthService<TUser extends User> {
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
-    return this.authManager.register(provider, credentials, password);
+    try {
+      return this.authManager.register(provider, credentials, password);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async login(

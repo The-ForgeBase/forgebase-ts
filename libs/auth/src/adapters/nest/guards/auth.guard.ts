@@ -4,6 +4,7 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request, Response } from 'express';
@@ -11,7 +12,7 @@ import { Request, Response } from 'express';
 @Injectable()
 export class AuthGuard<TUser extends User> implements CanActivate {
   constructor(
-    private authManager: DynamicAuthManager<TUser>,
+    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager<TUser>,
     private reflector: Reflector
   ) {}
 

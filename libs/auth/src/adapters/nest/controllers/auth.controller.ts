@@ -53,6 +53,25 @@ export class AuthController<TUser extends User> {
         return res.redirect(result.url.toString());
       }
 
+      if (result.token) {
+        // Set the token in the response headers
+        if (typeof result.token === 'object' && result.token !== null) {
+          res.cookie('token', result.token.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+          res.cookie('refreshToken', result.token.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        } else {
+          res.cookie('token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+        }
+      }
+
       return res.json(result);
     } catch (error) {
       return res.status(400).json({ error: error.message });

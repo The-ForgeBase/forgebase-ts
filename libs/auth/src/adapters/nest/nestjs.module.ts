@@ -12,13 +12,17 @@ export interface NestAuthModuleOptions<TUser extends User> {
 }
 
 export interface NestAuthModuleAsyncOptions<TUser extends User> {
-  useFactory: (...args: any[]) => Promise<NestAuthModuleOptions<TUser>> | NestAuthModuleOptions<TUser>;
+  useFactory: (
+    ...args: any[]
+  ) => Promise<NestAuthModuleOptions<TUser>> | NestAuthModuleOptions<TUser>;
   inject?: any[];
+  imports?: any[];
 }
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, AuthGuard]
+  providers: [AuthService, AuthGuard],
+  exports: [AuthService, AuthGuard],
 })
 export class NestAuthModule {
   static forRoot<TUser extends User>(
@@ -48,7 +52,7 @@ export class NestAuthModule {
   ): DynamicModule {
     return {
       module: NestAuthModule,
-      imports: [],
+      imports: options.imports || [],
       providers: [
         {
           provide: 'AUTH_OPTIONS',

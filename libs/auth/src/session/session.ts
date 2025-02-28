@@ -13,6 +13,7 @@ export class BasicSessionManager implements SessionManager {
 
   async createSession(user: User) {
     const token = generateSessionToken();
+
     const sessionToken = generateSessionId(token);
 
     const exixting = await this.knex('sessions')

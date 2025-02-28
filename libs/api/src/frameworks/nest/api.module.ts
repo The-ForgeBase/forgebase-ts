@@ -1,5 +1,11 @@
 import { BaaSConfig, forgeApi } from '@forgebase-ts/api';
-import { DynamicModule, Module, MiddlewareConsumer, NestModule, Inject } from '@nestjs/common';
+import {
+  DynamicModule,
+  Module,
+  MiddlewareConsumer,
+  NestModule,
+  Inject,
+} from '@nestjs/common';
 import { ForgeBaseMiddleware } from './middleware.adapter';
 
 export interface ForgeNestModuleOptions {
@@ -8,12 +14,15 @@ export interface ForgeNestModuleOptions {
 }
 
 @Module({
-    providers: [ForgeBaseMiddleware],
+  providers: [ForgeBaseMiddleware],
+  exports: [ForgeBaseMiddleware],
 })
 export class ForgeNestApiModule implements NestModule {
   private routeName: string;
 
-  constructor(@Inject('FORGE_OPTIONS') private options: ForgeNestModuleOptions) {
+  constructor(
+    @Inject('FORGE_OPTIONS') private options: ForgeNestModuleOptions
+  ) {
     this.routeName = options.prefix || 'api/*';
   }
 
