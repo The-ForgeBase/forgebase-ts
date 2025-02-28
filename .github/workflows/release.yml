@@ -128,6 +128,13 @@ jobs:
       #     # Publish packages
       #     find ./dist/libs -type d -maxdepth 1 -exec pnpm publish --access public --no-git-checks {} \;
 
+      - name: Setup Node.js with GitHub Package Registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@forgebase'
+      
       - name: Publish to GitHub Packages
         run: |
           for pkg in dist/libs/*; do
@@ -136,7 +143,7 @@ jobs:
               echo "Publishing $(basename $pkg)..."
               # Update package name to use GitHub Packages scope
               sed -i 's/"name": "@forgebase-ts\/\(.*\)"/"name": "@forgebase\/\1"/' package.json
-              npm publish --access public --registry https://npm.pkg.github.com
+              npm publish --access public
               cd -
             fi
           done
