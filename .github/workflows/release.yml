@@ -43,8 +43,9 @@ jobs:
       - name: Determine version
         id: determine_version
         run: |
-          # Get the latest version tag
-          LATEST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "v0.0.0-alpha.0")
+          # Get the latest version tag, ensuring we fetch all tags
+          git fetch --tags
+          LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1 || echo "v0.0.0-alpha.0")
             
           # Extract version number without the 'v' prefix
           LATEST_VERSION=${LATEST_TAG#v}
@@ -52,7 +53,7 @@ jobs:
           # If it's an alpha version, increment the alpha number
           if [[ $LATEST_VERSION == *"-alpha."* ]]; then
             PREFIX=$(echo $LATEST_VERSION | cut -d'-' -f1)
-            ALPHA_NUM=$(echo $LATEST_VERSION | cut -d'.' -f3)
+            ALPHA_NUM=$(echo $LATEST_VERSION | cut -d'.' -f4)
             NEW_ALPHA_NUM=$((ALPHA_NUM + 1))
             NEW_VERSION="$PREFIX-alpha.$NEW_ALPHA_NUM"
           else
