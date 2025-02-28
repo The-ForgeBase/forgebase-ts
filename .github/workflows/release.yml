@@ -44,10 +44,10 @@ jobs:
         id: determine_version
         run: |
           # Check if this is the first release
-          if ! git tag | grep -q "v0"; then
-            # First release - use 0.0.0-alpha.1
-            echo "NEW_VERSION=0.0.0-alpha.1" >> $GITHUB_ENV
-          else
+          # if ! git tag | grep -q "v0"; then
+          #   # First release - use 0.0.0-alpha.1
+          #   echo "NEW_VERSION=0.0.0-alpha.1" >> $GITHUB_ENV
+          # else
             # Get the latest version tag
             LATEST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "v0.0.0-alpha.0")
             
@@ -68,7 +68,7 @@ jobs:
             fi
             
             echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          fi
+          # fi
       
       - name: Generate Release Notes
         id: release_notes
