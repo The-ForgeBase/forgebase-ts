@@ -133,7 +133,7 @@ jobs:
         with:
           node-version: 20
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@forgebase'
+          scope: '@the-forgebase'
       
       - name: Publish to GitHub Packages
         run: |
@@ -142,7 +142,7 @@ jobs:
               cd "$pkg"
               echo "Publishing $(basename $pkg)..."
               # Update package name to use GitHub Packages scope
-              sed -i 's/"name": "@forgebase-ts\/\(.*\)"/"name": "@forgebase\/\1"/' package.json
+              sed -i 's/"name": "@forgebase-ts\/\(.*\)"/"name": "@the-forgebase\/\1"/' package.json
               npm publish --access public
               cd -
             fi
