@@ -136,7 +136,7 @@ jobs:
               echo "Publishing $(basename $pkg)..."
               # Update package name to use GitHub Packages scope
               sed -i 's/"name": "@forgebase-ts\/\(.*\)"/"name": "@forgebase\/\1"/' package.json
-              npm publish --access public
+              npm publish --access public --registry https://npm.pkg.github.com
               cd -
             fi
           done
