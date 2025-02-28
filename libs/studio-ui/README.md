@@ -1,18 +1,10 @@
 # ForgeBase Studio UI
 
-The ForgeBase Studio UI library provides a set of UI components that can be used across different packages and applications within the ForgeBase project.
+The ForgeBase Studio UI library provides a comprehensive set of UI components specifically designed for building the ForgeBase Studio admin interface. These components follow modern design principles and are built with accessibility and usability in mind.
 
-## Purpose of the Project
+## Purpose
 
-The BaaS Framework is an open-source Backend as a Service (BaaS) framework designed to provide backend functionality for a variety of backend frameworks across multiple languages, including but not limited to:
-
-- Go
-- TypeScript
-- Rust
-- PHP
-- Deno
-- Node.js
-- and more!
+This library serves as the foundation for the ForgeBase Studio application's user interface, providing consistent, reusable components that streamline the development of admin panels and dashboards. It offers a cohesive design language that ensures a professional and intuitive user experience across all ForgeBase administrative interfaces.
 
 ## Core Features
 

@@ -1,18 +1,10 @@
 # ForgeBase Studio UI Utils
 
-The ForgeBase Studio UI Utils library provides a set of utilities and shared code that can be used across different packages and applications within the ForgeBase project.
+The ForgeBase Studio UI Utils library provides utility functions and helper tools specifically designed to support the ForgeBase Studio UI components. It contains reusable logic that enhances the functionality of UI components without cluttering their implementation.
 
-## Purpose of the Project
+## Purpose
 
-The BaaS Framework is an open-source Backend as a Service (BaaS) framework designed to provide backend functionality for a variety of backend frameworks across multiple languages, including but not limited to:
-
-- Go
-- TypeScript
-- Rust
-- PHP
-- Deno
-- Node.js
-- and more!
+This library serves as a companion to the ForgeBase Studio UI library, offering utilities that simplify common UI tasks such as styling, formatting, validation, and state management. By separating these utilities from the UI components themselves, we maintain cleaner component code while ensuring consistent behavior across the ForgeBase Studio application.
 
 ## Core Features
 

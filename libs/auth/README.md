@@ -1,20 +1,10 @@
 # ForgeBase Auth
 
-A flexible authentication library for Node.js applications, providing multiple authentication strategies and framework adapters.
+A flexible authentication library for Node.js applications, providing multiple authentication strategies and framework adapters. This library is a core component of the ForgeBase ecosystem, enabling secure user authentication across various platforms and frameworks.
 
-> **Notice:** This documentation is now complete. All features and usage examples are listed below.
+## Purpose
 
-## Purpose of the Project
-
-The BaaS Framework is an open-source Backend as a Service (BaaS) framework designed to provide backend functionality for a variety of backend frameworks across multiple languages, including but not limited to:
-
-- Go
-- TypeScript
-- Rust
-- PHP
-- Deno
-- Node.js
-- and more!
+The ForgeBase Auth library simplifies the implementation of authentication in your applications by providing a unified interface for various authentication methods. It supports local authentication, OAuth providers, and custom authentication strategies, making it easy to secure your applications regardless of the underlying framework.
 
 ## Core Features
 

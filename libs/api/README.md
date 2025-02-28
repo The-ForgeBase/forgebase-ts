@@ -1,18 +1,10 @@
 # ForgeBase API
 
-The ForgeBase API library provides a comprehensive set of functionalities and integrations for building and managing APIs. It includes support for various services such as storage, database, and authentication.
+The ForgeBase API library provides a comprehensive set of functionalities and integrations for building and managing APIs within the ForgeBase ecosystem. It serves as the core interface layer between your application and ForgeBase services.
 
-## Purpose of the Project
+## Purpose
 
-The BaaS Framework is an open-source Backend as a Service (BaaS) framework designed to provide backend functionality for a variety of backend frameworks across multiple languages, including but not limited to:
-
-- Go
-- TypeScript
-- Rust
-- PHP
-- Deno
-- Node.js
-- and more!
+This library enables developers to easily integrate ForgeBase backend services into their applications by providing a clean, consistent API surface. It abstracts away the complexity of direct service interactions and provides a unified interface for working with authentication, database operations, storage management, and real-time features.
 
 ## Core Features
 

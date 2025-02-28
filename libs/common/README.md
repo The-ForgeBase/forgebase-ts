@@ -1,18 +1,10 @@
 # ForgeBase Common
 
-The ForgeBase Common library provides a set of utilities and shared code that can be used across different packages and applications within the ForgeBase project.
+The ForgeBase Common library provides a set of utilities, helpers, and shared code that can be used across different packages and applications within the ForgeBase ecosystem. It serves as the foundation for consistent functionality across all ForgeBase components.
 
-## Purpose of the Project
+## Purpose
 
-The BaaS Framework is an open-source Backend as a Service (BaaS) framework designed to provide backend functionality for a variety of backend frameworks across multiple languages, including but not limited to:
-
-- Go
-- TypeScript
-- Rust
-- PHP
-- Deno
-- Node.js
-- and more!
+This library aims to reduce code duplication and ensure consistency by providing reusable utilities and helper functions that are needed by multiple ForgeBase components. It includes common interfaces, type definitions, utility functions, and shared logic that simplifies development and maintenance of the ForgeBase ecosystem.
 
 ## Core Features
 
