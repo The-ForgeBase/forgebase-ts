@@ -101,12 +101,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build all libraries
-        run: pnpm exec nx run-many -t build --projects=api,auth,common,database,real-time,storage
-      
       - name: Update package versions
         run: |
           find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
+      
+      - name: Build all libraries
+        run: pnpm exec nx run-many -t build --projects=api,auth,common,database,real-time,storage
       
       - name: Setup GitHub Package Registry
         run: |
