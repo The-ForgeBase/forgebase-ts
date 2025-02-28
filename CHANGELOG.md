@@ -11,31 +11,14 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
+* Merge pull request #14 from The-ForgeBase/nest (2788961)
+* docs: update changelog [skip ci] (d7cef55)
 * Merge pull request #13 from The-ForgeBase/nest (2471655)
-* Update release.yml (c286bb5)
 * docs: update changelog [skip ci] (21cdc54)
 * Merge pull request #12 from The-ForgeBase/nest (3e4f57b)
-* Update release.yml (501ae7c)
 * docs: update changelog [skip ci] (bbc9263)
 * Merge pull request #11 from The-ForgeBase/nest (5a2b649)
-* Merge branch 'nest' of https://github.com/The-ForgeBase/forgebase-ts into nest (8085309)
-* Update release.yml (449d4d0)
 * docs: update changelog [skip ci] (042820a)
 * Merge pull request #10 from The-ForgeBase/nest (d3d23ea)
-* Merge branch 'main' into nest (09d6936)
-* Update release.yml (f57018e)
-* docs: update changelog [skip ci] (a393692)
-* Update release.yml (774ac99)
-* docs: update changelog [skip ci] (d3d6968)
-* Merge pull request #9 from The-ForgeBase/nest (9a6ee81)
-* Update release.yml (542ea63)
-* Update README.md (f0717fe)
-* docs: update changelog [skip ci] (2c9f857)
-* Merge pull request #8 from The-ForgeBase/nest (270e71c)
-* more workflow (13839ba)
-* Merge pull request #7 from The-ForgeBase/nest (51c8b2a)
-* Update nx.json (ca22524)
-* Merge pull request #6 from The-ForgeBase/nest (18d2c3a)
-* package release added (a899713)
 
 For changes in previous releases, please check the Git history.
