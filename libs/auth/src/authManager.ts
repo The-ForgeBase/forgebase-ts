@@ -29,12 +29,17 @@ import {
 } from './types';
 import { KnexUserService } from './userService';
 import crypto from 'crypto';
+import { PluginRegistry } from './plugins/registry';
+import { AuthPlugin } from './plugins/types';
+import { EventEmitter } from 'events';
 
 export class DynamicAuthManager<TUser extends User> {
   private config: AuthConfig;
   private configSubscription?: any;
   private mfa?: MfaService;
   private rateLimiter?: RateLimiter;
+  private pluginRegistry: PluginRegistry<TUser>;
+  private eventEmitter = new EventEmitter();
 
   constructor(
     private configStore: ConfigStore,
@@ -44,9 +49,15 @@ export class DynamicAuthManager<TUser extends User> {
     private refreshInterval = 5000,
     private enableConfigIntervalCheck = false,
     private internalConfig: AuthInternalConfig<TUser>,
-    private verificationService?: VerificationService
+    private verificationService?: VerificationService,
+    plugins: AuthPlugin<TUser>[] = []
   ) {
     this.watchConfig();
+
+    // Then initialize plugins (needs to be done asynchronously after construction)
+    this.initializePlugins(plugins).catch((err) => {
+      console.error('Error initializing plugins:', err);
+    });
   }
 
   private async watchConfig() {
@@ -60,6 +71,37 @@ export class DynamicAuthManager<TUser extends User> {
         }
       }, this.refreshInterval);
     }
+  }
+
+  private async initializePlugins(plugins: AuthPlugin<TUser>[]) {
+    for (const plugin of plugins) {
+      await this.pluginRegistry.register(plugin);
+      await plugin.initialize(this);
+    }
+
+    // Add providers from plugins to the existing providers
+    const pluginProviders = this.pluginRegistry.getAllProviders();
+    this.providers = { ...this.providers, ...pluginProviders };
+  }
+
+  private async executeHooks(event: string, data: any): Promise<void> {
+    const hooks = this.pluginRegistry.getHooks(event);
+    for (const hook of hooks) {
+      await hook(data);
+    }
+  }
+
+  async registerPlugin(plugin: AuthPlugin<TUser>): Promise<void> {
+    await this.pluginRegistry.register(plugin);
+    await plugin.initialize(this);
+
+    // Add new providers from this plugin
+    const pluginProviders = plugin.getProviders();
+    this.providers = { ...this.providers, ...pluginProviders };
+  }
+
+  getPlugins(): AuthPlugin<TUser>[] {
+    return this.pluginRegistry.getAllPlugins();
   }
 
   async register(
@@ -195,6 +237,8 @@ export class DynamicAuthManager<TUser extends User> {
       throw new ProviderNotEnabled(provider);
     }
 
+    await this.executeHooks('beforeLogin', { provider, credentials });
+
     if (this.rateLimiter) {
       const limit = await this.rateLimiter.checkLimit(credentials.email);
       if (!limit.allowed) throw new RateLimitExceededError();
@@ -206,12 +250,25 @@ export class DynamicAuthManager<TUser extends User> {
     if (authProvider instanceof BaseOAuthProvider) {
       const url = await authProvider.getAuthorizationUrl();
 
+      // Execute post-login hooks
+      await this.executeHooks('afterLogin', {
+        provider,
+        user,
+        token: provider,
+      });
+
       return { user: undefined, token: provider, url };
     }
 
     const user = await authProvider.authenticate(credentials);
 
     if (!user) {
+      // Execute post-login hooks
+      await this.executeHooks('afterLogin', {
+        provider,
+        user: undefined,
+        token: provider,
+      });
       return { token: provider };
     }
 
@@ -232,6 +289,8 @@ export class DynamicAuthManager<TUser extends User> {
     }
 
     const token = await this.sessionManager.createSession(user);
+    // Execute post-login hooks
+    await this.executeHooks('afterLogin', { provider, user, token });
     return { user, token };
   }
 

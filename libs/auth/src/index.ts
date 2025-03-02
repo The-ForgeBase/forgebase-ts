@@ -14,3 +14,4 @@ export * from './adapters';
 // Admin exports
 export { createInternalAdminManager, InternalAdminManager } from './admin';
 export * from './services';
+export * from './plugins';
