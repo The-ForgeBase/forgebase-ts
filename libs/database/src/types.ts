@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Knex } from 'knex';
 import type { KnexHooks } from './knex-hooks';
 import type { PermissionService } from './permissionService';

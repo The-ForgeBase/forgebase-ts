@@ -83,6 +83,10 @@ export interface UserService<TUser extends User> {
   createUser(user: Partial<TUser>, password?: string): Promise<TUser>;
   updateUser(userId: string, user: Partial<TUser>): Promise<TUser>;
   deleteUser(userId: string): Promise<void>;
+  findUserById(userId: string): Promise<TUser | null>;
+  findUserByEmail(email: string): Promise<TUser | null>;
+  findUserByPhone(phone: string): Promise<TUser | null>;
+  getConfig(): AuthConfig;
 }
 
 export interface VerificationService {
