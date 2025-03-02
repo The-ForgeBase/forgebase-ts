@@ -1,7 +1,7 @@
 import type { Knex } from 'knex';
 import SchemaInspector from '../knex-schema-inspector/lib/index';
 
-interface TableInfo {
+export interface TableInfo {
   columns: any;
   foreignKeys: any;
   //indexes: any;

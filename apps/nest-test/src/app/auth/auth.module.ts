@@ -7,13 +7,18 @@ import { db } from '../app.module';
   imports: [
     NestAuthModule.forRootAsync({
       useFactory: async (authConfigService: AuthConfigService) => {
-        const authManager = await authConfigService.initialize(db);
+        const { authManager, adminManager } =
+          await authConfigService.initialize(db);
         return {
           authManager,
+          adminManager,
+          adminConfig: {
+            basePath: '/admin',
+            cookieName: 'admin_token',
+          },
           config: {
-            loginPath: '/auth/login',
-            registerPath: '/auth/register',
-            logoutPath: '/auth/logout',
+            basePath: '/auth',
+            cookieName: 'auth_token',
           },
         };
       },

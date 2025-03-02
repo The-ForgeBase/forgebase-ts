@@ -1,7 +1,7 @@
 import type { Knex } from 'knex';
 import type { KnexHooks } from './knex-hooks';
 import type { PermissionService } from './permissionService';
-import type { DatabaseSchema } from './utils/inspector';
+import type { DatabaseSchema, TableInfo } from './utils/inspector';
 import { QueryParams } from './sdk/server';
 
 // Column definition for schema operations
@@ -150,7 +150,7 @@ export interface ModifySchemaParams {
   columns: ColumnDefinition[] | UpdateColumnDefinition[];
 }
 
-export interface DataQueryParams extends QueryParams {}
+export type DataQueryParams = QueryParams;
 
 export interface DataMutationParams {
   tableName: string;
@@ -185,6 +185,17 @@ export interface ForgeDatabaseEndpoints {
     addForeingKey: (params: AddForeignKeyParams) => Promise<any>;
     dropForeignKey: (params: DropForeignKeyParams) => Promise<any>;
     truncateTable: (tableName: string) => Promise<any>;
+    getTables: () => Promise<string[]>;
+    getTableSchema: (tableName: string) => Promise<{
+      name: string;
+      info: TableInfo;
+    }>;
+    getTablePermissions: (tableName: string) => Promise<TablePermissions>;
+    getTableSchemaWithPermissions: (tableName: string) => Promise<{
+      name: string;
+      info: TableInfo;
+      permissions: TablePermissions;
+    }>;
   };
   data: {
     query: <T>(

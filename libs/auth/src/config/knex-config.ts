@@ -91,6 +91,8 @@ export class KnexConfigStore implements ConfigStore {
     const current = await this.getConfig();
     const updated = AuthConfigSchema.parse({ ...current, ...update });
 
+    // console.log('Updating config in database:', updated);
+
     await this.knex(this.tableName)
       .where('id', current.id)
       .update({ config: updated, updated_at: this.knex.fn.now() });

@@ -1,4 +1,5 @@
-import { BaaSConfig, forgeApi } from '@forgebase-ts/api';
+import { BaaSConfig } from '../../types';
+import { forgeApi } from '../../index';
 import {
   DynamicModule,
   Module,

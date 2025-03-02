@@ -3,12 +3,14 @@ import knex from 'knex';
 import Client_Libsql from '@libsql/knex-libsql';
 import {
   ColumnDefinition,
+  DatabaseSchema,
   DataMutationParams,
   DataQueryParams,
   ForeignKey,
   ForgeDatabase,
   KnexHooks,
   PermissionService,
+  TableInfo,
   TablePermissions,
   UpdateColumnDefinition,
   UserContext,
@@ -101,16 +103,12 @@ export class DatabaseService {
     query: DataQueryParams,
     userContext: UserContext
   ): Promise<any[]> {
-    try {
-      const records = await this.forgeDatabase.endpoints.data.query<any>(
-        tableName,
-        query,
-        userContext
-      );
-      return records;
-    } catch (error) {
-      throw error;
-    }
+    const records = await this.forgeDatabase.endpoints.data.query<any>(
+      tableName,
+      query,
+      userContext
+    );
+    return records;
   }
 
   async insert(
@@ -135,15 +133,11 @@ export class DatabaseService {
     params: DataMutationParams,
     userContext: UserContext
   ): Promise<any> {
-    try {
-      const records = await this.forgeDatabase.endpoints.data.update(
-        params,
-        userContext
-      );
-      return records;
-    } catch (error) {
-      throw error;
-    }
+    const records = await this.forgeDatabase.endpoints.data.update(
+      params,
+      userContext
+    );
+    return records;
   }
 
   async delete(
@@ -151,24 +145,42 @@ export class DatabaseService {
     id: string | number,
     userContext: UserContext
   ): Promise<any> {
-    try {
-      const records = await this.forgeDatabase.endpoints.data.delete(
-        { tableName, id },
-        userContext
-      );
-      return records;
-    } catch (error) {
-      throw error;
-    }
+    const records = await this.forgeDatabase.endpoints.data.delete(
+      { tableName, id },
+      userContext
+    );
+    return records;
   }
 
-  async getSchema(): Promise<any> {
-    try {
-      const schema = await this.forgeDatabase.endpoints.schema.get();
-      return schema;
-    } catch (error) {
-      throw error;
-    }
+  async getSchema(): Promise<DatabaseSchema> {
+    const schema = await this.forgeDatabase.endpoints.schema.get();
+    return schema;
+  }
+
+  async getTables(): Promise<string[]> {
+    const tables = await this.forgeDatabase.endpoints.schema.getTables();
+    return tables;
+  }
+
+  async getTableSchema(tableName: string): Promise<{
+    name: string;
+    info: TableInfo;
+  }> {
+    const schema = await this.forgeDatabase.endpoints.schema.getTableSchema(
+      tableName
+    );
+    return schema;
+  }
+  async getTableSchemaWithPermissions(tableName: string): Promise<{
+    name: string;
+    info: TableInfo;
+    permissions: TablePermissions;
+  }> {
+    const schema =
+      await this.forgeDatabase.endpoints.schema.getTableSchemaWithPermissions(
+        tableName
+      );
+    return schema;
   }
 
   async createSchema(
@@ -179,125 +191,98 @@ export class DatabaseService {
     tablename: string;
     action: string;
   }> {
-    try {
-      const tb = await this.forgeDatabase.endpoints.schema.create({
-        tableName,
-        columns: columns as any,
-      });
-      return tb;
-    } catch (error) {
-      throw error;
-    }
+    const tb = await this.forgeDatabase.endpoints.schema.create({
+      tableName,
+      columns: columns as any,
+    });
+    return tb;
+  }
+
+  async deleteSchema(tableName: string): Promise<{
+    message: string;
+    tablename: string;
+    action: string;
+  }> {
+    const tb = await this.forgeDatabase.endpoints.schema.delete(tableName);
+    return tb;
   }
 
   async addColumn(
     tableName: string,
     columns: ColumnDefinition[] | UpdateColumnDefinition[]
   ): Promise<any> {
-    try {
-      const tb = await this.forgeDatabase.endpoints.schema.modify({
-        action: 'addColumn',
-        tableName,
-        columns,
-      });
-      return tb;
-    } catch (error) {
-      throw error;
-    }
+    const tb = await this.forgeDatabase.endpoints.schema.modify({
+      action: 'addColumn',
+      tableName,
+      columns,
+    });
+    return tb;
   }
 
   async deleteColumn(
     tableName: string,
     columns: ColumnDefinition[] | UpdateColumnDefinition[]
   ): Promise<any> {
-    try {
-      const tb = await this.forgeDatabase.endpoints.schema.modify({
-        action: 'deleteColumn',
-        tableName,
-        columns,
-      });
-      return tb;
-    } catch (error) {
-      throw error;
-    }
+    const tb = await this.forgeDatabase.endpoints.schema.modify({
+      action: 'deleteColumn',
+      tableName,
+      columns,
+    });
+    return tb;
   }
 
   async updateColumn(
     tableName: string,
     columns: UpdateColumnDefinition[]
   ): Promise<any> {
-    try {
-      const tb = await this.forgeDatabase.endpoints.schema.modify({
-        action: 'updateColumn',
-        tableName,
-        columns,
-      });
-      return tb;
-    } catch (error) {
-      throw error;
-    }
+    const tb = await this.forgeDatabase.endpoints.schema.modify({
+      action: 'updateColumn',
+      tableName,
+      columns,
+    });
+    return tb;
   }
 
   async addForeignKey(tableName: string, foreignKey: ForeignKey): Promise<any> {
-    try {
-      const fk = await this.forgeDatabase.endpoints.schema.addForeingKey({
-        tableName,
-        column: foreignKey.columnName,
-        foreignTableName: foreignKey.references.tableName,
-        foreignColumn: foreignKey.references.columnName,
-      });
-      return fk;
-    } catch (error) {
-      throw error;
-    }
+    const fk = await this.forgeDatabase.endpoints.schema.addForeingKey({
+      tableName,
+      column: foreignKey.columnName,
+      foreignTableName: foreignKey.references.tableName,
+      foreignColumn: foreignKey.references.columnName,
+    });
+    return fk;
   }
 
   async dropForeignKey(tableName: string, column: string): Promise<any> {
-    try {
-      const fk = await this.forgeDatabase.endpoints.schema.dropForeignKey({
-        tableName,
-        column,
-      });
-      return fk;
-    } catch (error) {
-      throw error;
-    }
+    const fk = await this.forgeDatabase.endpoints.schema.dropForeignKey({
+      tableName,
+      column,
+    });
+    return fk;
   }
 
   async truncateTable(tableName: string): Promise<any> {
-    try {
-      const tb = await this.forgeDatabase.endpoints.schema.truncateTable(
-        tableName
-      );
-      return tb;
-    } catch (error) {
-      throw error;
-    }
+    const tb = await this.forgeDatabase.endpoints.schema.truncateTable(
+      tableName
+    );
+    return tb;
   }
 
   async getPermissions(tableName: string): Promise<any> {
-    try {
-      const permissions = await this.permissionService.getPermissionsForTable(
-        tableName
-      );
-      return permissions;
-    } catch (error) {
-      throw error;
-    }
+    const permissions = await this.permissionService.getPermissionsForTable(
+      tableName
+    );
+    return permissions;
   }
 
   async setPermissions(
     tableName: string,
     permissions: TablePermissions
   ): Promise<any> {
-    try {
-      const result = await this.permissionService.setPermissionsForTable(
-        tableName,
-        permissions
-      );
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    const result = await this.permissionService.setPermissionsForTable(
+      tableName,
+      permissions
+    );
+    return result;
   }
 }

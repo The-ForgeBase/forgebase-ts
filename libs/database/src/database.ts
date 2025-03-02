@@ -92,99 +92,93 @@ export class ForgeDatabase {
   public endpoints: ForgeDatabaseEndpoints = {
     schema: {
       get: async (): Promise<DatabaseSchema> => {
-        try {
-          return await this.dbInspector.getDatabaseSchema();
-        } catch (error) {
-          throw error;
-        }
+        return await this.dbInspector.getDatabaseSchema();
       },
       create: async (payload: SchemaCreateParams) => {
-        try {
-          const { tableName, columns } = payload;
+        const { tableName, columns } = payload;
 
-          if (!tableName) {
-            throw new Error('Invalid request body');
-          }
-
-          const hasTable = await this.hooks
-            .getKnexInstance()
-            .schema.hasTable(tableName);
-          if (hasTable) {
-            console.log('Table already exists');
-            throw new Error('Table already exists');
-            // await this.hooks
-            //   .getKnexInstance()
-            //   .schema.dropTableIfExists(tableName);
-            // console.log("Table dropped");
-            // await this.permissionService.deletePermissionsForTable(tableName);
-            // console.log("Permissions deleted");
-          }
-
-          await this.hooks
-            .getKnexInstance()
-            .schema.createTable(tableName, (table) => {
-              columns.forEach((col: any) =>
-                createColumn(table, col, this.hooks.getKnexInstance())
-              );
-            });
-
-          this.permissionService.setPermissionsForTable(
-            tableName,
-            this.defaultPermissions
-          );
-          return {
-            message: 'Table created successfully',
-            tablename: tableName,
-            action: 'create',
-          };
-        } catch (error) {
-          throw error;
+        if (!tableName) {
+          throw new Error('Invalid request body');
         }
+
+        const hasTable = await this.hooks
+          .getKnexInstance()
+          .schema.hasTable(tableName);
+        if (hasTable) {
+          console.log('Table already exists');
+          throw new Error('Table already exists');
+          // await this.hooks
+          //   .getKnexInstance()
+          //   .schema.dropTableIfExists(tableName);
+          // console.log("Table dropped");
+          // await this.permissionService.deletePermissionsForTable(tableName);
+          // console.log("Permissions deleted");
+        }
+
+        await this.hooks
+          .getKnexInstance()
+          .schema.createTable(tableName, (table) => {
+            columns.forEach((col: any) =>
+              createColumn(table, col, this.hooks.getKnexInstance())
+            );
+          });
+
+        this.permissionService.setPermissionsForTable(
+          tableName,
+          this.defaultPermissions
+        );
+        return {
+          message: 'Table created successfully',
+          tablename: tableName,
+          action: 'create',
+        };
       },
       delete: async (tableName: string) => {
-        try {
-          await this.hooks
-            .getKnexInstance()
-            .schema.dropTableIfExists(tableName);
+        await this.hooks.getKnexInstance().schema.dropTableIfExists(tableName);
 
-          await this.permissionService.deletePermissionsForTable(tableName);
+        await this.permissionService.deletePermissionsForTable(tableName);
 
-          return {
-            message: 'Table deleted successfully',
-            tablename: tableName,
-            action: 'delete',
-          };
-        } catch (error) {
-          throw error;
-        }
+        return {
+          message: 'Table deleted successfully',
+          tablename: tableName,
+          action: 'delete',
+        };
       },
       modify: async (payload: ModifySchemaParams) => {
-        try {
-          return await modifySchema(this.hooks.getKnexInstance(), payload);
-        } catch (error) {
-          throw error;
-        }
+        return await modifySchema(this.hooks.getKnexInstance(), payload);
       },
       addForeingKey: async (payload: AddForeignKeyParams) => {
-        try {
-          return await addForeignKey(payload, this.hooks.getKnexInstance());
-        } catch (error) {
-          throw error;
-        }
+        return await addForeignKey(payload, this.hooks.getKnexInstance());
       },
       dropForeignKey: async (payload: DropForeignKeyParams) => {
-        try {
-          return await dropForeignKey(payload, this.hooks.getKnexInstance());
-        } catch (error) {
-          throw error;
-        }
+        return await dropForeignKey(payload, this.hooks.getKnexInstance());
       },
       truncateTable: async (tableName: string) => {
-        try {
-          return await truncateTable(tableName, this.hooks.getKnexInstance());
-        } catch (error) {
-          throw error;
-        }
+        return await truncateTable(tableName, this.hooks.getKnexInstance());
+      },
+      getTableSchema: async (tableName: string) => {
+        const tableInfo = await this.dbInspector.getTableInfo(tableName);
+        return {
+          name: tableName,
+          info: tableInfo,
+        };
+      },
+      getTables: async () => {
+        return await this.dbInspector.getTables();
+      },
+      getTablePermissions: async (tableName: string) => {
+        return await this.permissionService.getPermissionsForTable(tableName);
+      },
+      getTableSchemaWithPermissions: async (tableName: string) => {
+        const tableInfo = await this.dbInspector.getTableInfo(tableName);
+        const permissions = await this.permissionService.getPermissionsForTable(
+          tableName
+        );
+        return {
+          name: tableName,
+          info: tableInfo,
+          permissions,
+        };
       },
     },
 
@@ -194,164 +188,140 @@ export class ForgeDatabase {
         params: DataQueryParams,
         user?: UserContext
       ) => {
-        try {
-          const queryParams = this.parseQueryParams(params);
+        const queryParams = this.parseQueryParams(params);
 
-          const records = await this.hooks.query(
+        const records = await this.hooks.query(
+          tableName,
+          (query) => this.queryHandler.buildQuery(queryParams, query),
+          queryParams
+        );
+
+        if (this.config.enforceRls && user) {
+          return enforcePermissions(
             tableName,
-            (query) => this.queryHandler.buildQuery(queryParams, query),
-            queryParams
+            'SELECT',
+            records,
+            user,
+            this.permissionService
           );
-
-          if (this.config.enforceRls && user) {
-            return enforcePermissions(
-              tableName,
-              'SELECT',
-              records,
-              user,
-              this.permissionService
-            );
-          }
-
-          return records as any;
-        } catch (error) {
-          throw error;
         }
+
+        return records as any;
       },
 
       create: async (params: DataMutationParams, user?: UserContext) => {
-        try {
-          const { data, tableName } = params;
+        const { data, tableName } = params;
 
-          console.log('data-db', data, tableName);
+        console.log('data-db', data, tableName);
 
-          // Handle both single record and array of records
-          const isArray = Array.isArray(data);
-          const records = isArray ? data : [data];
+        // Handle both single record and array of records
+        const isArray = Array.isArray(data);
+        const records = isArray ? data : [data];
 
-          // Validate records
-          if (
-            !records.length ||
-            !records.every(
-              (record) =>
-                typeof record === 'object' && Object.keys(record).length > 0
-            )
-          ) {
-            console.log('Invalid request body', records);
-            throw new Error('Invalid request body');
-          }
-
-          if (this.config.enforceRls && user) {
-            return enforcePermissions(
-              tableName,
-              'INSERT',
-              records,
-              user,
-              this.permissionService
-            );
-          }
-
-          const result = this.hooks.mutate(
-            tableName,
-            'create',
-            async (query) => query.insert(records).returning('*'),
-            records
-          );
-
-          return result;
-        } catch (error) {
-          throw error;
+        // Validate records
+        if (
+          !records.length ||
+          !records.every(
+            (record) =>
+              typeof record === 'object' && Object.keys(record).length > 0
+          )
+        ) {
+          console.log('Invalid request body', records);
+          throw new Error('Invalid request body');
         }
+
+        if (this.config.enforceRls && user) {
+          return enforcePermissions(
+            tableName,
+            'INSERT',
+            records,
+            user,
+            this.permissionService
+          );
+        }
+
+        const result = this.hooks.mutate(
+          tableName,
+          'create',
+          async (query) => query.insert(records).returning('*'),
+          records
+        );
+
+        return result;
       },
 
       update: async (params: DataMutationParams, user?: UserContext) => {
-        try {
-          const { id, tableName, data } = params;
+        const { id, tableName, data } = params;
 
-          if (this.config.enforceRls && user) {
-            return enforcePermissions(
-              tableName,
-              'UPDATE',
-              data,
-              user,
-              this.permissionService
-            );
-          }
-
-          const result = this.hooks.mutate(
+        if (this.config.enforceRls && user) {
+          return enforcePermissions(
             tableName,
-            'update',
-            async (query) => query.where({ id }).update(data).returning('*'),
-
-            { id, ...data }
+            'UPDATE',
+            data,
+            user,
+            this.permissionService
           );
-
-          return result;
-        } catch (error) {
-          throw error;
         }
+
+        const result = this.hooks.mutate(
+          tableName,
+          'update',
+          async (query) => query.where({ id }).update(data).returning('*'),
+
+          { id, ...data }
+        );
+
+        return result;
       },
 
       delete: async (params: DataDeleteParams, user?: UserContext) => {
-        try {
-          const { id, tableName } = params;
+        const { id, tableName } = params;
 
-          // get the record to enforce permissions
-          const record = await this.hooks.query(
+        // get the record to enforce permissions
+        const record = await this.hooks.query(
+          tableName,
+          (query) => {
+            return query.where({ id });
+          },
+          { id }
+        );
+
+        if (this.config.enforceRls && user) {
+          return enforcePermissions(
             tableName,
-            (query) => {
-              return query.where({ id });
-            },
-            { id }
+            'DELETE',
+            record,
+            user,
+            this.permissionService
           );
-
-          if (this.config.enforceRls && user) {
-            return enforcePermissions(
-              tableName,
-              'DELETE',
-              record,
-              user,
-              this.permissionService
-            );
-          }
-
-          return this.hooks.mutate(
-            tableName,
-            'delete',
-            async (query) => query.where({ id }).delete(),
-            { id }
-          );
-        } catch (error) {
-          throw error;
         }
+
+        return this.hooks.mutate(
+          tableName,
+          'delete',
+          async (query) => query.where({ id }).delete(),
+          { id }
+        );
       },
     },
 
     permissions: {
       get: async (params: PermissionParams) => {
-        try {
-          const { tableName } = params;
-          return this.permissionService.getPermissionsForTable(tableName);
-        } catch (error) {
-          throw error;
-        }
+        const { tableName } = params;
+        return this.permissionService.getPermissionsForTable(tableName);
       },
 
       set: async (params: PermissionParams) => {
-        try {
-          const { tableName, permissions } = params;
+        const { tableName, permissions } = params;
 
-          if (!permissions) {
-            throw new Error('Permissions object is required');
-          }
-
-          return this.permissionService.setPermissionsForTable(
-            tableName,
-            permissions
-          );
-        } catch (error) {
-          throw error;
+        if (!permissions) {
+          throw new Error('Permissions object is required');
         }
+
+        return this.permissionService.setPermissionsForTable(
+          tableName,
+          permissions
+        );
       },
     },
   };

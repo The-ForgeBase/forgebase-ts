@@ -1,9 +1,5 @@
-import {
-  AuthRequiredType,
-  AuthToken,
-  DynamicAuthManager,
-  User,
-} from '@forgebase-ts/auth';
+import { AuthRequiredType, AuthToken, User } from '../../../types';
+import { DynamicAuthManager } from '../../../authManager';
 import { Injectable, Inject } from '@nestjs/common';
 
 @Injectable()
@@ -21,11 +17,7 @@ export class AuthService<TUser extends User> {
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
-    try {
-      return this.authManager.register(provider, credentials, password);
-    } catch (error) {
-      throw error;
-    }
+    return this.authManager.register(provider, credentials, password);
   }
 
   async login(
