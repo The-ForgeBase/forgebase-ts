@@ -22,11 +22,7 @@
       "@forgebase-ts/lib/utils": ["libs/studio-ui-utils/src"],
       "@forgebase-ts/lib/utils/*": ["libs/studio-ui-utils/src/*"],
       "@forgebase-ts/real-time": ["libs/real-time/src/index.ts"],
-      "@forgebase-ts/storage": ["libs/storage/src/index.ts"],
-      "@forgebase-ts/studio-ui": ["libs/studio-ui/src"],
-      "@forgebase-ts/studio-ui-utils": ["libs/studio-ui-utils/src"],
-      "@forgebase-ts/studio-ui-utils/*": ["libs/studio-ui-utils/src/*"],
-      "@forgebase-ts/studio-ui/*": ["libs/studio-ui/src/*"]
+      "@forgebase-ts/storage": ["libs/storage/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
