@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
+* Merge pull request #19 from The-ForgeBase/nest (151ef93)
+* Remove packageManager entry from package.json (37c7550)
+* docs: update changelog [skip ci] (54873af)
 * Merge pull request #18 from The-ForgeBase/nest (2dbcce7)
 * Refactor API and Auth modules: streamline exports, enhance NestJS integration, and improve SDK examples for safer SQL queries (33e93c2)
 * fixing sdk (ebde0c9)
