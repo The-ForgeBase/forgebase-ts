@@ -1,0 +1,140 @@
+import { Injectable, Inject } from '@nestjs/common';
+import { InternalAdmin, InternalAdminManager } from '../../../admin';
+
+@Injectable()
+export class AdminService {
+  constructor(
+    @Inject('ADMIN_MANAGER') private adminManager: InternalAdminManager
+  ) {}
+
+  /**
+   * Authenticate admin and create a session
+   */
+  async login(
+    email: string,
+    password: string
+  ): Promise<{ admin: InternalAdmin; token: string }> {
+    return this.adminManager.login(email, password);
+  }
+
+  /**
+   * Validate an admin session token
+   */
+  async validateToken(token: string): Promise<{ admin: InternalAdmin }> {
+    return this.adminManager.validateToken(token);
+  }
+
+  /**
+   * Logout an admin by destroying their session
+   */
+  async logout(token: string): Promise<void> {
+    return this.adminManager.logout(token);
+  }
+
+  /**
+   * Get an admin by ID
+   */
+  async getAdmin(adminId: string): Promise<InternalAdmin> {
+    const admin = await this.adminManager.findAdminById(adminId);
+    if (!admin) {
+      throw new Error(`Admin not found with ID: ${adminId}`);
+    }
+    return admin;
+  }
+
+  /**
+   * List all admins with pagination
+   */
+  async listAdmins(
+    page = 1,
+    limit = 10
+  ): Promise<{
+    admins: InternalAdmin[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    return this.adminManager.listAdmins(page, limit);
+  }
+
+  /**
+   * Create a new admin
+   */
+  async createAdmin(
+    adminData: Partial<InternalAdmin>,
+    password: string,
+    creatorId?: string
+  ): Promise<InternalAdmin> {
+    return this.adminManager.createAdmin(adminData, password, creatorId);
+  }
+
+  /**
+   * Update an existing admin
+   */
+  async updateAdmin(
+    adminId: string,
+    adminData: Partial<InternalAdmin>,
+    updaterId: string
+  ): Promise<InternalAdmin> {
+    return this.adminManager.updateAdmin(adminId, adminData, updaterId);
+  }
+
+  /**
+   * Delete an admin
+   */
+  async deleteAdmin(adminId: string, deleterId: string): Promise<void> {
+    return this.adminManager.deleteAdmin(adminId, deleterId);
+  }
+
+  /**
+   * Get audit logs with pagination
+   */
+  async getAuditLogs(
+    adminId?: string,
+    page = 1,
+    limit = 10
+  ): Promise<{
+    logs: any[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    return this.adminManager.getAuditLogs(adminId, page, limit);
+  }
+
+  /**
+   * Grant a permission to an admin
+   */
+  async grantPermission(
+    adminId: string,
+    permission: string,
+    granterId: string
+  ): Promise<void> {
+    return this.adminManager.grantPermission(adminId, permission, granterId);
+  }
+
+  /**
+   * Revoke a permission from an admin
+   */
+  async revokePermission(
+    adminId: string,
+    permission: string,
+    revokerId: string
+  ): Promise<void> {
+    return this.adminManager.revokePermission(adminId, permission, revokerId);
+  }
+
+  /**
+   * Get the current auth configuration
+   */
+  async getAuthConfig() {
+    return this.adminManager.getAuthConfig();
+  }
+
+  /**
+   * Update the auth configuration
+   */
+  async updateAuthConfig(config: any, adminId: string) {
+    return this.adminManager.updateAuthConfig(config, adminId);
+  }
+}

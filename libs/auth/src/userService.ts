@@ -51,6 +51,24 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
       .first();
   }
 
+  async findUserById(userId: string): Promise<TUser | null> {
+    return this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .first();
+  }
+
+  async findUserByEmail(email: string): Promise<TUser | null> {
+    return this.internalConfig
+      .knex(this.table)
+      .where(this.columns.email, email)
+      .first();
+  }
+
+  async findUserByPhone(phone: string): Promise<TUser | null> {
+    return this.internalConfig.knex(this.table).where('phone', phone).first();
+  }
+
   async createUser(
     userData: Partial<TUser>,
     password?: string

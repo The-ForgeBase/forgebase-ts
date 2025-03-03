@@ -1,5 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { BasicSessionManager, GoogleOAuthProvider, initializeAuthSchema, KnexConfigStore, KnexUserService, LocalAuthProvider, PasswordlessProvider, User } from '@forgebase-ts/auth';
+import {
+  BasicSessionManager,
+  GoogleOAuthProvider,
+  initializeAuthSchema,
+  KnexConfigStore,
+  KnexUserService,
+  LocalAuthProvider,
+  PasswordlessProvider,
+  User,
+  initializeNestAdminManager,
+} from '@forgebase-ts/auth';
 import { DynamicAuthManager } from '@forgebase-ts/auth';
 import { Knex } from 'knex';
 
@@ -21,7 +31,7 @@ export class AuthConfigService {
     await configStore.initialize();
 
     // Initialize auth config
-    const config = await configStore.getConfig();
+    let config = await configStore.getConfig();
 
     // Initialize user service
     const userService = new KnexUserService<AppUser>(config, {
@@ -52,12 +62,29 @@ export class AuthConfigService {
     };
 
     // Update config to enable providers
-    await configStore.updateConfig({
+    config = await configStore.updateConfig({
       enabledProviders: ['local', 'passwordless', 'google'],
+      adminFeature: {
+        enabled: true,
+        initialAdminEmail: 'admin@yourdomain.com',
+        initialAdminPassword: 'secure-password',
+        createInitialAdmin: true,
+      },
     });
 
     // Initialize session manager
     const sessionManager = new BasicSessionManager('my-secret-key', config, db);
+
+    const adminManager = await initializeNestAdminManager({
+      knex: db,
+      configStore,
+      jwtSecret: 'my-secret-key',
+      tokenExpiry: '1d',
+    });
+
+    if (!adminManager) {
+      throw new Error('Failed to initialize admin manager');
+    }
 
     // Initialize auth manager
     this.authManager = new DynamicAuthManager(
@@ -70,7 +97,7 @@ export class AuthConfigService {
       { knex: db }
     );
 
-    return this.authManager;
+    return { authManager: this.authManager, adminManager: adminManager };
   }
 
   getAuthManager() {

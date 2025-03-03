@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { hashPassword } from './lib/password';
 import { BaseOAuthProvider } from './providers';
 import {
@@ -12,12 +13,10 @@ import {
   InvalidProvider,
   MfaAlreadyEnabledError,
   MfaRecoveryCodeInvalid,
-  MFARequiredError,
   MfaService,
   OAuthProviderNotExist,
   ProviderDoesNotSupportReg,
   ProviderNotEnabled,
-  ProviderNotExist,
   RateLimiter,
   RateLimitExceededError,
   SessionManager,
@@ -29,12 +28,17 @@ import {
 } from './types';
 import { KnexUserService } from './userService';
 import crypto from 'crypto';
+import { PluginRegistry } from './plugins/registry';
+import { AuthPlugin } from './plugins/types';
+import { EventEmitter } from 'events';
 
 export class DynamicAuthManager<TUser extends User> {
   private config: AuthConfig;
   private configSubscription?: any;
   private mfa?: MfaService;
   private rateLimiter?: RateLimiter;
+  private pluginRegistry: PluginRegistry<TUser>;
+  private eventEmitter = new EventEmitter();
 
   constructor(
     private configStore: ConfigStore,
@@ -44,9 +48,19 @@ export class DynamicAuthManager<TUser extends User> {
     private refreshInterval = 5000,
     private enableConfigIntervalCheck = false,
     private internalConfig: AuthInternalConfig<TUser>,
-    private verificationService?: VerificationService
+    private verificationService?: VerificationService,
+    plugins: AuthPlugin<TUser>[] = []
   ) {
     this.watchConfig();
+
+    // Then initialize plugins (needs to be done asynchronously after construction)
+    this.initializePlugins(plugins).catch((err) => {
+      console.error('Error initializing plugins:', err);
+    });
+  }
+
+  getUserService() {
+    return this.userService;
   }
 
   private async watchConfig() {
@@ -62,6 +76,44 @@ export class DynamicAuthManager<TUser extends User> {
     }
   }
 
+  private async initializePlugins(plugins: AuthPlugin<TUser>[]) {
+    this.pluginRegistry = new PluginRegistry<TUser>();
+    for (const plugin of plugins) {
+      await this.pluginRegistry.register(plugin);
+      await plugin.initialize(this);
+    }
+
+    // Add providers from plugins to the existing providers
+    const pluginProviders = this.pluginRegistry.getAllProviders();
+    this.providers = { ...this.providers, ...pluginProviders };
+  }
+
+  // Add proper error handling for hooks
+  private async executeHooks(event: string, data: any): Promise<void> {
+    try {
+      const hooks = this.pluginRegistry.getHooks(event);
+      for (const hook of hooks) {
+        await hook(data);
+      }
+    } catch (error) {
+      // Proper error handling needed - should hooks fail silently or bubble up?
+      console.error(`Error executing hook for event ${event}:`, error);
+    }
+  }
+
+  async registerPlugin(plugin: AuthPlugin<TUser>): Promise<void> {
+    await this.pluginRegistry.register(plugin);
+    await plugin.initialize(this);
+
+    // Add new providers from this plugin
+    const pluginProviders = plugin.getProviders();
+    this.providers = { ...this.providers, ...pluginProviders };
+  }
+
+  getPlugins(): AuthPlugin<TUser>[] {
+    return this.pluginRegistry.getAllPlugins();
+  }
+
   async register(
     provider: string,
     credentials: Partial<TUser>,
@@ -71,59 +123,67 @@ export class DynamicAuthManager<TUser extends User> {
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
-    try {
-      if (!this.config.enabledProviders.includes(provider)) {
-        throw new ProviderNotEnabled(provider);
-      }
-
-      if (this.rateLimiter) {
-        const limit = await this.rateLimiter.checkLimit(credentials.email);
-        if (!limit.allowed) throw new RateLimitExceededError();
-      }
-
-      const authProvider = this.providers[provider];
-      if (!authProvider) throw new InvalidProvider();
-      if (!authProvider.register) throw new ProviderDoesNotSupportReg(provider);
-
-      if (authProvider instanceof BaseOAuthProvider) {
-        const url = await authProvider.getAuthorizationUrl();
-
-        return { user: undefined, token: provider, url };
-      }
-
-      const user = await authProvider.register(credentials, password);
-
-      if (
-        this.config.authPolicy.loginAfterRegistration &&
-        !this.config.mfaSettings.required &&
-        (!this.config.authPolicy.emailVerificationRequired ||
-          !this.config.authPolicy.smsVerificationRequired)
-      ) {
-        const token = await this.sessionManager.createSession(user);
-        return { user, token };
-      }
-
-      if (
-        this.config.authPolicy.emailVerificationRequired &&
-        this.verificationService &&
-        this.verificationService.sendVerificationEmail
-      ) {
-        await this.verificationService.sendVerificationEmail(user.email);
-      }
-
-      if (
-        this.config.authPolicy.smsVerificationRequired &&
-        this.verificationService &&
-        this.verificationService.sendVerificationSms &&
-        user.phone
-      ) {
-        await this.verificationService.sendVerificationSms(user.phone);
-      }
-
-      return { user, token: '' };
-    } catch (error) {
-      throw error;
+    if (!this.config.enabledProviders.includes(provider)) {
+      throw new ProviderNotEnabled(provider);
     }
+
+    if (this.rateLimiter) {
+      const limit = await this.rateLimiter.checkLimit(credentials.email);
+      if (!limit.allowed) throw new RateLimitExceededError();
+    }
+
+    const authProvider = this.providers[provider];
+    if (!authProvider) throw new InvalidProvider();
+    if (!authProvider.register) throw new ProviderDoesNotSupportReg(provider);
+
+    if (authProvider instanceof BaseOAuthProvider) {
+      const url = await authProvider.getAuthorizationUrl();
+
+      // Execute post-registration hooks
+      await this.executeHooks('afterRegister', {
+        user: undefined,
+        token: provider,
+        url,
+      });
+
+      return { user: undefined, token: provider, url };
+    }
+
+    const user = await authProvider.register(credentials, password);
+
+    if (
+      this.config.authPolicy.loginAfterRegistration &&
+      !this.config.mfaSettings.required &&
+      (!this.config.authPolicy.emailVerificationRequired ||
+        !this.config.authPolicy.smsVerificationRequired)
+    ) {
+      const token = await this.sessionManager.createSession(user);
+      // Execute post-login hooks
+      await this.executeHooks('afterLoginFromReg', { user, token });
+      return { user, token };
+    }
+
+    if (
+      this.config.authPolicy.emailVerificationRequired &&
+      this.verificationService &&
+      this.verificationService.sendVerificationEmail
+    ) {
+      await this.verificationService.sendVerificationEmail(user.email);
+    }
+
+    if (
+      this.config.authPolicy.smsVerificationRequired &&
+      this.verificationService &&
+      this.verificationService.sendVerificationSms &&
+      user.phone
+    ) {
+      await this.verificationService.sendVerificationSms(user.phone);
+    }
+
+    // Execute post-registration hooks
+    await this.executeHooks('afterRegister', { user, token: provider });
+
+    return { user, token: '' };
   }
 
   getProviders() {
@@ -195,6 +255,8 @@ export class DynamicAuthManager<TUser extends User> {
       throw new ProviderNotEnabled(provider);
     }
 
+    await this.executeHooks('beforeLogin', { provider, credentials });
+
     if (this.rateLimiter) {
       const limit = await this.rateLimiter.checkLimit(credentials.email);
       if (!limit.allowed) throw new RateLimitExceededError();
@@ -206,12 +268,25 @@ export class DynamicAuthManager<TUser extends User> {
     if (authProvider instanceof BaseOAuthProvider) {
       const url = await authProvider.getAuthorizationUrl();
 
+      // Execute post-login hooks
+      await this.executeHooks('afterLogin', {
+        provider,
+        user: undefined,
+        token: provider,
+      });
+
       return { user: undefined, token: provider, url };
     }
 
     const user = await authProvider.authenticate(credentials);
 
     if (!user) {
+      // Execute post-login hooks
+      await this.executeHooks('afterLogin', {
+        provider,
+        user: undefined,
+        token: provider,
+      });
       return { token: provider };
     }
 
@@ -232,6 +307,8 @@ export class DynamicAuthManager<TUser extends User> {
     }
 
     const token = await this.sessionManager.createSession(user);
+    // Execute post-login hooks
+    await this.executeHooks('afterLogin', { provider, user, token });
     return { user, token };
   }
 

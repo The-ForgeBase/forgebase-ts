@@ -9,15 +9,20 @@ import {
   UseGuards,
   UnauthorizedException,
   Param,
+  Inject,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { User, AuthToken } from '../../../types';
+import { User } from '../../../types';
 import { AuthGuard } from '../guards/auth.guard';
 import { AuthService } from '../services/auth.service';
+import { NestAuthConfig } from '..';
 
 @Controller('auth')
 export class AuthController<TUser extends User> {
-  constructor(private authService: AuthService<TUser>) {}
+  constructor(
+    private authService: AuthService<TUser>,
+    @Inject('AUTH_CONFIG') private adminConfig: NestAuthConfig
+  ) {}
 
   private extractToken(req: Request): string | null {
     if (req.headers.authorization?.startsWith('Bearer ')) {
@@ -59,15 +64,18 @@ export class AuthController<TUser extends User> {
           res.cookie('token', result.token.accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
+            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
           });
           res.cookie('refreshToken', result.token.refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
+            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
           });
         } else {
           res.cookie('token', result.token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
+            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
           });
         }
       }
@@ -185,15 +193,18 @@ export class AuthController<TUser extends User> {
         res.cookie('token', token.accessToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
+          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
         });
         res.cookie('refreshToken', token.refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
+          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
         });
       } else {
         res.cookie('token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
+          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
         });
       }
       return res.redirect(redirectUrl);
@@ -232,15 +243,18 @@ export class AuthController<TUser extends User> {
         res.cookie('token', token.accessToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
+          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
         });
         res.cookie('refreshToken', token.refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
+          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
         });
       } else {
         res.cookie('token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
+          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
         });
       }
     } catch (error) {

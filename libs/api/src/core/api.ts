@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import { DataMutationParams, DataQueryParams } from '@forgebase-ts/database';
 import { BaaSConfig, Context, Handler, ServerAdapter } from '../types';
 import { DatabaseService } from './database';
@@ -159,19 +160,15 @@ export class ForgeApi {
       throw new Error('No handler found');
     }
 
-    try {
-      // Add route params to context
-      context.req.params = { ...context.req.params, ...match.params };
-      await match.data(context);
+    // Add route params to context
+    context.req.params = { ...context.req.params, ...match.params };
+    await match.data(context);
 
-      if (!context.res.status) {
-        context.res.status = 200;
-      }
-
-      return { adapter, context };
-    } catch (error) {
-      throw error;
+    if (!context.res.status) {
+      context.res.status = 200;
     }
+
+    return { adapter, context };
   }
 
   getConfig(): BaaSConfig {
@@ -282,6 +279,30 @@ export class ForgeApi {
         ctx.res.status = 500;
         ctx.res.body = { error: 'Internal server error' };
       }
+    });
+
+    addRoute(
+      this.router,
+      'GET',
+      '/db/schema/tables/:tableName',
+      async (ctx) => {
+        const { tableName } = ctx.req.params;
+        ctx.res.body = await this.db.getTableSchema(tableName);
+      }
+    );
+
+    addRoute(
+      this.router,
+      'DELETE',
+      '/db/schema/tables/:tableName',
+      async (ctx) => {
+        const { tableName } = ctx.req.params;
+        ctx.res.body = await this.db.deleteSchema(tableName);
+      }
+    );
+
+    addRoute(this.router, 'GET', '/db/schema/tables', async (ctx) => {
+      ctx.res.body = await this.db.getTables();
     });
 
     addRoute(this.router, 'POST', '/db/schema', async (ctx) => {

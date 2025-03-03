@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { Knex } from 'knex';
 import { z } from 'zod';
 
@@ -30,6 +31,19 @@ export const AuthConfigSchema = z.object({
     required: z.boolean().default(false),
     allowedMethods: z.array(z.enum(['totp', 'sms', 'email'])).default(['totp']),
   }),
+  adminFeature: z
+    .object({
+      enabled: z.boolean().default(false),
+      createInitialAdmin: z.boolean().default(true),
+      initialAdminEmail: z.string().email().default('admin@example.com'),
+      initialAdminPassword: z.string().min(8).default('changeme123'),
+    })
+    .default({
+      enabled: false,
+      createInitialAdmin: true,
+      initialAdminEmail: 'admin@example.com',
+      initialAdminPassword: 'changeme123',
+    }),
   rateLimiting: z
     .record(
       z.object({
@@ -69,6 +83,10 @@ export interface UserService<TUser extends User> {
   createUser(user: Partial<TUser>, password?: string): Promise<TUser>;
   updateUser(userId: string, user: Partial<TUser>): Promise<TUser>;
   deleteUser(userId: string): Promise<void>;
+  findUserById(userId: string): Promise<TUser | null>;
+  findUserByEmail(email: string): Promise<TUser | null>;
+  findUserByPhone(phone: string): Promise<TUser | null>;
+  getConfig(): AuthConfig;
 }
 
 export interface VerificationService {
