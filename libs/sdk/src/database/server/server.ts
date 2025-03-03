@@ -100,6 +100,17 @@ interface RawExpression {
   bindings?: any[];
 }
 
+// Add SubQueryConfig interface for whereExists
+interface SubQueryConfig {
+  tableName: string;
+  params: QueryParams;
+  joinCondition?: {
+    leftField: string;
+    operator: WhereOperator;
+    rightField: string;
+  };
+}
+
 type GroupOperator = 'AND' | 'OR';
 
 interface WhereGroup {
@@ -134,7 +145,7 @@ interface QueryParams {
   whereNotNull?: string[];
   whereIn?: Record<string, any[]>;
   whereNotIn?: Record<string, any[]>;
-  whereExists?: RawExpression[];
+  whereExists?: SubQueryConfig[];
   whereGroups?: Array<{ type: 'AND' | 'OR'; clauses: WhereClause[] }>;
   orderBy?: OrderByClause[];
   groupBy?: string[];
@@ -301,9 +312,27 @@ export class QueryHandler {
 
     // Apply where exists
     if (params.whereExists) {
-      params.whereExists.forEach(({ sql, bindings }) => {
-        query = query.whereExists(function (this: any) {
-          this.raw(sql, bindings);
+      params.whereExists.forEach((subQueryConfig) => {
+        query = query.whereExists((builder) => {
+          // Create a new builder for the subquery
+          const subQuery = this.knex(subQueryConfig.tableName);
+
+          // Apply the subquery parameters
+          this.buildQuery(subQueryConfig.params, subQuery);
+
+          // If we have a join condition, add it to the subquery
+          if (subQueryConfig.joinCondition) {
+            const { leftField, operator, rightField } =
+              subQueryConfig.joinCondition;
+            // Use the parent table reference with knex.raw to create a proper correlated subquery
+            subQuery.where(
+              rightField,
+              operator,
+              this.knex.raw(`??`, [`${query['_single'].table}.${leftField}`])
+            );
+          }
+
+          return subQuery;
         });
       });
     }

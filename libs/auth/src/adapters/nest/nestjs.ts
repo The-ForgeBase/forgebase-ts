@@ -1,5 +1,5 @@
-import { ConfigStore } from '../types';
-import { InternalAdminManager, createInternalAdminManager } from '../admin';
+import { ConfigStore } from '../../types';
+import { InternalAdminManager, createInternalAdminManager } from '../../admin';
 import { Knex } from 'knex';
 
 /**

@@ -13,6 +13,31 @@
       "import": "./dist/index.js",
       "require": "./src/index.js",
       "default": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js",
+      "require": "./src/adapters/index.js",
+      "default": "./dist/adapters/index.js"
+    },
+    "./adapters/nest": {
+      "types": "./dist/adapters/nest/index.d.ts",
+      "import": "./dist/adapters/nest/index.js",
+      "require": "./src/adapters/nest/index.js",
+      "default": "./dist/adapters/nest/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/index.d.ts"
+      ],
+      "adapters": [
+        "./dist/adapters/index.d.ts"
+      ],
+      "adapters/nest": [
+        "./dist/adapters/nest/index.d.ts"
+      ]
     }
   },
   "files": [

@@ -8,7 +8,7 @@ import { AdminController } from './controllers/admin.controller';
 import { AdminGuard } from './guards/admin.guard';
 import { AdminService } from './services/admin.service';
 import { InternalAdminManager } from '../../admin';
-import { NestAuthConfig } from '..';
+import { NestAuthConfig } from '.';
 
 export interface NestAuthModuleOptions<TUser extends User> {
   authManager: DynamicAuthManager<TUser>;

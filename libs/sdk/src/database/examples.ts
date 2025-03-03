@@ -31,7 +31,9 @@ interface Product {
 }
 
 // Initialize SDK
-const db = new DatabaseSDK('http://localhost:3000');
+const db = new DatabaseSDK('http://localhost:3000', {
+  credentials: 'include',
+});
 
 // Helper function to run examples
 async function runExample(name: string, fn: () => Promise<any>) {
@@ -218,17 +220,29 @@ async function advancedFiltering() {
     .whereIn('department', ['IT', 'HR', 'Finance'])
     .execute();
 
-  // Where exists
-  // TODO: needs fixing in the sdk to prevent SQL injection
-  // const usersWithOrders = await db
-  //   .table<User>("users")
-  //   .whereExists(
-  //     "SELECT 1 FROM orders WHERE orders.user_id = users.id AND total > ?",
-  //     [1000]
-  //   )
-  //   .execute();
+  // Where exists with subquery builder - safe from SQL injection
+  const usersWithOrders = await db
+    .table<User>('users')
+    .whereExists((subquery) =>
+      subquery.table('orders').where('total', '>', 1000)
+    )
+    .execute();
 
-  return { filteredUsers, salaryRange, specificDepts };
+  // Where exists with join - more readable and safe approach
+  const usersWithExpensiveOrders = await db
+    .table<User>('users')
+    .whereExistsJoin('orders', 'id', 'user_id', (qb) =>
+      qb.where('total', '>', 1000)
+    )
+    .execute();
+
+  return {
+    filteredUsers,
+    salaryRange,
+    specificDepts,
+    usersWithOrders,
+    usersWithExpensiveOrders,
+  };
 }
 
 // CTEs (Common Table Expressions)

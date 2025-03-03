@@ -8,6 +8,7 @@ export * from './services/admin.service';
 export * from './controllers/admin.controller';
 export * from './guards/admin.guard';
 export * from './decorators/public.decorator';
+export * from './nestjs';
 
 export type NestAuthConfig = {
   basePath?: string;

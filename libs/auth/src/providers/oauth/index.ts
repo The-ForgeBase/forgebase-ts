@@ -1,7 +1,7 @@
 export * from './basic';
 export * from './google';
 export * from './github';
-export * from './microsoft';
+// export * from './microsoft';
 
 export interface OAuthUser {
   id: string;

@@ -150,7 +150,7 @@ export interface QueryParams<T extends Record<string, any>> {
   whereNotNull?: FieldKeys<T>[];
   whereIn?: { [K in FieldKeys<T>]?: any[] };
   whereNotIn?: { [K in FieldKeys<T>]?: any[] };
-  whereExists?: RawExpression[];
+  whereExists?: SubQueryConfig[];
   whereGroups?: WhereGroup<T>[];
   orderBy?: OrderByClause<T>[];
   groupBy?: FieldKeys<T>[];
@@ -168,6 +168,17 @@ export interface QueryParams<T extends Record<string, any>> {
   select?: FieldKeys<T>[];
 }
 
+// Add this interface for subquery configurations
+export interface SubQueryConfig {
+  tableName: string;
+  params: QueryParams<any>;
+  joinCondition?: {
+    leftField: string;
+    operator: WhereOperator;
+    rightField: string;
+  };
+}
+
 export interface QueryOptions {
   execute?: boolean;
 }
@@ -182,21 +193,53 @@ export interface ApiResponse<T extends Record<string, any>> {
 
 export class DatabaseSDK {
   private baseUrl: string;
+  private defaultFetchOptions: RequestInit;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, fetchOptions: RequestInit = {}) {
     this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+    this.defaultFetchOptions = fetchOptions;
+  }
+
+  /**
+   * Get the base URL used for API requests
+   * @returns The base URL string
+   */
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  /**
+   * Get the default fetch options
+   * @returns The default fetch options
+   */
+  getDefaultFetchOptions(): RequestInit {
+    return this.defaultFetchOptions;
+  }
+
+  /**
+   * Set or update default fetch options
+   * @param fetchOptions The fetch options to set
+   */
+  setDefaultFetchOptions(fetchOptions: RequestInit): void {
+    this.defaultFetchOptions = {
+      ...this.defaultFetchOptions,
+      ...fetchOptions,
+    };
   }
 
   /**
    * Fetches records from a specified table with filtering and pagination
    * @param tableName The name of the table to query
    * @param params Query parameters including filters and pagination
+   * @param options Query options
+   * @param fetchOptions Custom fetch options for this specific request
    * @returns Promise containing the fetched records
    */
   async getRecords<T extends Record<string, any>>(
     tableName: string,
     params: QueryParams<T> = {},
-    options: QueryOptions = { execute: true }
+    options: QueryOptions = { execute: true },
+    fetchOptions: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     // Build query parameters
     const queryParams = new URLSearchParams();
@@ -216,7 +259,7 @@ export class DatabaseSDK {
       queryParams.toString() ? `?${queryParams.toString()}` : ''
     }`;
 
-    return this.fetchApi<ApiResponse<T>>(url);
+    return this.fetchApi<ApiResponse<T>>(url, fetchOptions);
   }
 
   private serializeQueryParams<T extends Record<string, any>>(
@@ -238,10 +281,15 @@ export class DatabaseSDK {
 
   /**
    * Creates a new record in the specified table
+   * @param tableName The name of the table to create the record in
+   * @param data The data to create the record with
+   * @param fetchOptions Custom fetch options for this specific request
+   * @returns Promise containing the created record
    */
   async createRecord<T extends Record<string, any>>(
     tableName: string,
-    data: T
+    data: T,
+    fetchOptions: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
@@ -249,20 +297,28 @@ export class DatabaseSDK {
 
     return this.fetchApi<ApiResponse<T>>(url, {
       method: 'POST',
+      body: JSON.stringify({ data }),
+      ...fetchOptions,
       headers: {
         'Content-Type': 'application/json',
+        ...fetchOptions.headers,
       },
-      body: JSON.stringify({ data }),
     });
   }
 
   /**
    * Updates a record by ID in the specified table
+   * @param tableName The name of the table containing the record to update
+   * @param id The ID of the record to update
+   * @param data The data to update the record with
+   * @param fetchOptions Custom fetch options for this specific request
+   * @returns Promise containing the updated record
    */
   async updateRecord<T extends Record<string, any>>(
     tableName: string,
     id: number | string,
-    data: Partial<T>
+    data: Partial<T>,
+    fetchOptions: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
@@ -270,10 +326,12 @@ export class DatabaseSDK {
 
     return this.fetchApi<ApiResponse<T>>(url, {
       method: 'PUT',
+      body: JSON.stringify({ data }),
+      ...fetchOptions,
       headers: {
         'Content-Type': 'application/json',
+        ...fetchOptions.headers,
       },
-      body: JSON.stringify({ data }),
     });
   }
 
@@ -282,12 +340,17 @@ export class DatabaseSDK {
    */
   async deleteRecord(
     tableName: string,
-    id: number | string
+    id: number | string,
+    fetchOptions: RequestInit = {}
   ): Promise<ApiResponse<never>> {
     const url = `${this.baseUrl}/${tableName}/${id}`;
 
     return this.fetchApi<ApiResponse<never>>(url, {
       method: 'DELETE',
+      ...fetchOptions,
+      headers: {
+        ...fetchOptions.headers,
+      },
     });
   }
 
@@ -311,17 +374,22 @@ export class DatabaseSDK {
   /**
    * Generic API fetch method with error handling
    */
-  private async fetchApi<T>(url: string, options: any = {}): Promise<T> {
+  private async fetchApi<T>(
+    url: string,
+    options: RequestInit = {}
+  ): Promise<T> {
     try {
-      // console.log(url, options);
+      // Merge default fetch options with request-specific options
+      const mergedOptions: RequestInit = {
+        ...this.defaultFetchOptions,
+        ...options,
+        headers: {
+          ...this.defaultFetchOptions.headers,
+          ...options.headers,
+        },
+      };
 
-      // const cookies = authClient.getCookie();
-
-      // const response = await fetch(url, {
-      //   ...options,
-      //   Cookie: cookies,
-      // });
-      const response = await fetch(url, options);
+      const response = await fetch(url, mergedOptions);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -688,41 +756,135 @@ class QueryBuilder<T extends Record<string, any>> {
     operator: GroupOperator,
     callback: (query: QueryBuilder<T>) => void
   ): this {
+    // Create a new builder for the group to collect clauses
+    const groupBuilder = new QueryBuilder<T>(this.sdk, this.tableName);
+
+    // Execute the callback with the group builder to collect clauses
+    callback(groupBuilder);
+
+    // Create the where group with the collected clauses
     const group: WhereGroup<T> = {
       type: operator,
       clauses: [],
     };
 
-    const previousGroup = this.currentGroup;
-    this.currentGroup = group;
+    // Add all whereRaw clauses to the group
+    if (
+      groupBuilder.params.whereRaw &&
+      groupBuilder.params.whereRaw.length > 0
+    ) {
+      group.clauses.push(...groupBuilder.params.whereRaw);
+    }
 
-    callback(this);
+    // Add all where groups from the builder to our group
+    if (
+      groupBuilder.params.whereGroups &&
+      groupBuilder.params.whereGroups.length > 0
+    ) {
+      group.clauses.push(...groupBuilder.params.whereGroups);
+    }
 
-    this.currentGroup = previousGroup;
-
+    // Initialize the whereGroups array if it doesn't exist
     if (!this.params.whereGroups) {
       this.params.whereGroups = [];
     }
+
+    // Add the group to whereGroups array
     this.params.whereGroups.push(group);
 
     return this;
   }
 
   /**
-   * Add a where exists clause
+   * Add a where exists clause using a subquery
+   * @param subqueryBuilder A function that returns a configured query builder for the subquery
+   * @returns The query builder instance
+   * @example
+   * db.table<User>("users")
+   *   .whereExists((subquery) =>
+   *     subquery.table("orders")
+   *       .where("orders.user_id", "=", "users.id")
+   *       .where("total", ">", 1000)
+   *   )
+   *   .execute();
    */
-  //TODO: Add support for bindings to avoid SQL injection
-  //TODO: Add support for subqueries
-  // whereExists(rawSql: string, bindings?: any[]): this {
-  //   if (!this.params.whereExists) {
-  //     this.params.whereExists = [];
-  //   }
-  //   this.params.whereExists.push({
-  //     sql: rawSql,
-  //     bindings,
-  //   });
-  //   return this;
-  // }
+  whereExists(subqueryBuilder: (qb: DatabaseSDK) => QueryBuilder<any>): this {
+    if (!this.params.whereExists) {
+      this.params.whereExists = [];
+    }
+
+    // Create a new SDK instance for the subquery
+    const subquerySdk = new DatabaseSDK(this.sdk.getBaseUrl());
+
+    // Get the subquery builder
+    const subquery = subqueryBuilder(subquerySdk);
+
+    // Extract the table name and parameters
+    this.params.whereExists.push({
+      tableName: subquery.getTableName(),
+      params: subquery.getParams(),
+    });
+
+    return this;
+  }
+
+  /**
+   * Add a where exists clause with join conditions
+   * @param tableName The table to check for existence
+   * @param leftField The field from the main table
+   * @param rightField The field from the subquery table
+   * @param additionalConditions Additional conditions for the subquery
+   * @returns The query builder instance
+   * @example
+   * db.table<User>("users")
+   *   .whereExistsJoin("orders", "id", "user_id", (qb) =>
+   *     qb.where("total", ">", 1000)
+   *   )
+   *   .execute();
+   */
+  whereExistsJoin(
+    tableName: string,
+    leftField: FieldKeys<T>,
+    rightField: string,
+    additionalConditions?: (qb: QueryBuilder<any>) => void
+  ): this {
+    if (!this.params.whereExists) {
+      this.params.whereExists = [];
+    }
+
+    // Create a new SDK instance for the subquery
+    const subquerySdk = new DatabaseSDK(this.sdk.getBaseUrl());
+
+    // Build the subquery
+    const subQueryBuilder = subquerySdk.table(tableName);
+
+    // Apply additional conditions if provided
+    if (additionalConditions) {
+      additionalConditions(subQueryBuilder);
+    }
+
+    // Add the join condition
+    this.params.whereExists.push({
+      tableName,
+      params: subQueryBuilder.getParams(),
+      joinCondition: {
+        leftField: leftField as string,
+        operator: '=',
+        rightField,
+      },
+    });
+
+    return this;
+  }
+
+  // Helper methods for the whereExists functions
+  getTableName(): string {
+    return this.tableName;
+  }
+
+  getParams(): QueryParams<T> {
+    return this.params;
+  }
 
   /**
    * Add a raw expression
@@ -820,9 +982,16 @@ class QueryBuilder<T extends Record<string, any>> {
 
   /**
    * Execute with transformations
+   * @param fetchOptions Optional fetch options to be used for this request
+   * @returns Promise with the query results
    */
-  async execute(): Promise<ApiResponse<T>> {
-    const response = await this.sdk.getRecords<T>(this.tableName, this.params);
+  async execute(fetchOptions: RequestInit = {}): Promise<ApiResponse<T>> {
+    const response = await this.sdk.getRecords<T>(
+      this.tableName,
+      this.params,
+      { execute: true },
+      fetchOptions
+    );
 
     if (this.params.transforms && response.records) {
       return this.applyTransformations(response);

@@ -11,7 +11,60 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "default": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./frameworks": {
+      "types": "./dist/frameworks/index.d.ts",
+      "import": "./dist/frameworks/index.js",
+      "default": "./dist/frameworks/index.js",
+      "require": "./dist/frameworks/index.js"
+    },
+    "./frameworks/nest": {
+      "types": "./dist/frameworks/nest/index.d.ts",
+      "import": "./dist/frameworks/nest/index.js",
+      "default": "./dist/frameworks/nest/index.js",
+      "require": "./dist/frameworks/nest/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js",
+      "default": "./dist/adapters/index.js",
+      "require": "./dist/adapters/index.js"
+    },
+    "./core/nest": {
+      "types": "./dist/core/nest/index.d.ts",
+      "import": "./dist/core/nest/index.js",
+      "default": "./dist/core/nest/index.js",
+      "require": "./dist/core/nest/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "default": "./dist/core/index.js",
+      "require": "./dist/core/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/index.d.ts"
+      ],
+      "frameworks": [
+        "./dist/frameworks/index.d.ts"
+      ],
+      "frameworks/nest": [
+        "./dist/frameworks/nest/index.d.ts"
+      ],
+      "adapters": [
+        "./dist/adapters/index.d.ts"
+      ],
+      "core/nest": [
+        "./dist/core/nest/index.d.ts"
+      ],
+      "core": [
+        "./dist/core/index.d.ts"
+      ]
     }
   },
   "files": [

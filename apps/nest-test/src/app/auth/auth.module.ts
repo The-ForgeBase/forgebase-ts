@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthConfigService } from './auth.config.service';
-import { NestAuthModule } from '@forgebase-ts/auth';
+import { NestAuthModule } from '@forgebase-ts/auth/adapters/nest';
 import { db } from '../app.module';
 
 @Module({

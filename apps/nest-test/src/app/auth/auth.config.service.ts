@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   BasicSessionManager,
+  DynamicAuthManager,
   GoogleOAuthProvider,
   initializeAuthSchema,
   KnexConfigStore,
@@ -8,9 +9,8 @@ import {
   LocalAuthProvider,
   PasswordlessProvider,
   User,
-  initializeNestAdminManager,
 } from '@forgebase-ts/auth';
-import { DynamicAuthManager } from '@forgebase-ts/auth';
+import { initializeNestAdminManager } from '@forgebase-ts/auth/adapters/nest';
 import { Knex } from 'knex';
 
 export interface AppUser extends User {
