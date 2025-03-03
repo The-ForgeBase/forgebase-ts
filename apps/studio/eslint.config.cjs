@@ -1,22 +1,36 @@
-const { FlatCompat } = require('@eslint/eslintrc');
-const js = require('@eslint/js');
-const { fixupConfigRules } = require('@eslint/compat');
-const nx = require('@nx/eslint-plugin');
-const baseConfig = require('../../eslint.config.cjs');
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-});
-
-module.exports = [
-  ...fixupConfigRules(compat.extends('next')),
-
-  ...fixupConfigRules(compat.extends('next/core-web-vitals')),
-
-  ...baseConfig,
-  ...nx.configs['flat/react-typescript'],
-  {
-    ignores: ['.next/**/*'],
-  },
-];
+module.exports = {
+  extends: ['../../.eslint.config.cjs'],
+  ignorePatterns: ['!**/*'],
+  overrides: [
+    {
+      files: ['*.ts'],
+      extends: [
+        'plugin:@nx/angular',
+        'plugin:@angular-eslint/template/process-inline-templates',
+      ],
+      rules: {
+        '@angular-eslint/directive-selector': [
+          'error',
+          {
+            type: 'attribute',
+            prefix: 'Studio',
+            style: 'camelCase',
+          },
+        ],
+        '@angular-eslint/component-selector': [
+          'error',
+          {
+            type: 'element',
+            prefix: 'studio',
+            style: 'kebab-case',
+          },
+        ],
+      },
+    },
+    {
+      files: ['*.html'],
+      extends: ['plugin:@nx/angular-template'],
+      rules: {},
+    },
+  ],
+};

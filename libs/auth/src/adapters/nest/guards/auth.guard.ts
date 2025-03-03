@@ -1,4 +1,5 @@
-import { DynamicAuthManager, MFARequiredError, User } from '@forgebase-ts/auth';
+import { DynamicAuthManager } from '../../../authManager';
+import { MFARequiredError, User } from '../../../types';
 import {
   Injectable,
   CanActivate,

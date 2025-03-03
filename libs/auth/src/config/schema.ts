@@ -1,6 +1,7 @@
 import { Knex } from 'knex';
+import { AuthConfig } from '../types';
 
-export async function initializeAuthSchema(knex: Knex) {
+export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   // Auth Config Table
   const hasAuthConfig = await knex.schema.hasTable('auth_config');
   if (!hasAuthConfig) {
@@ -163,6 +164,116 @@ export async function initializeAuthSchema(knex: Knex) {
       table.index(['user_id']);
       table.index(['token']);
       table.index(['expires_at']);
+    });
+  }
+
+  // API Keys Table
+  const hasApiKeys = await knex.schema.hasTable('api_keys');
+  if (!hasApiKeys) {
+    await knex.schema.createTable('api_keys', (table) => {
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
+      table.uuid('user_id').notNullable();
+      table.string('key_prefix').notNullable();
+      table.string('key_hash').notNullable();
+      table.string('name').notNullable();
+      table.json('scopes').nullable();
+      table.timestamp('expires_at').nullable();
+      table.timestamp('last_used_at').nullable();
+      table.timestamps(true, true);
+
+      // Foreign key to users table
+      table
+        .foreign('user_id')
+        .references('id')
+        .inTable('users')
+        .onDelete('CASCADE');
+
+      // Composite index for faster lookups
+      table.unique(['key_prefix', 'key_hash']);
+
+      // Indexes for performance
+      table.index(['user_id']);
+      table.index(['key_prefix']);
+      table.index(['expires_at']);
+    });
+  }
+
+  // Only create admin tables if admin feature is enabled
+  if (config?.adminFeature?.enabled) {
+    await initializeAdminTables(knex);
+  }
+}
+
+/**
+ * Initialize admin-specific database tables
+ */
+export async function initializeAdminTables(knex: Knex): Promise<void> {
+  // Admins Table
+  const hasAdmins = await knex.schema.hasTable('internal_admins');
+  if (!hasAdmins) {
+    await knex.schema.createTable('internal_admins', (table) => {
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
+      table.string('email').unique().notNullable().index();
+      table.string('name').nullable();
+      table.string('password_hash').notNullable();
+      table.string('role').defaultTo('admin').notNullable();
+      table.json('permissions').nullable();
+      table.boolean('is_super_admin').defaultTo(false);
+      table.timestamp('last_login_at').nullable();
+      table.timestamps(true, true);
+    });
+  }
+
+  // Admin Sessions Table
+  const hasAdminSessions = await knex.schema.hasTable(
+    'internal_admin_sessions'
+  );
+  if (!hasAdminSessions) {
+    await knex.schema.createTable('internal_admin_sessions', (table) => {
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
+      table.uuid('admin_id').notNullable();
+      table.string('token').unique().notNullable();
+      table.timestamp('expires_at').notNullable();
+      table.timestamps(true, true);
+
+      // Foreign key to admins table
+      table
+        .foreign('admin_id')
+        .references('id')
+        .inTable('internal_admins')
+        .onDelete('CASCADE');
+
+      // Indexes for performance
+      table.index(['admin_id']);
+      table.index(['expires_at']);
+    });
+  }
+
+  // Admin Audit Logs Table
+  const hasAdminAuditLogs = await knex.schema.hasTable(
+    'internal_admin_audit_logs'
+  );
+  if (!hasAdminAuditLogs) {
+    await knex.schema.createTable('internal_admin_audit_logs', (table) => {
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
+      table.uuid('admin_id').notNullable();
+      table.string('action').notNullable();
+      table.json('details').nullable();
+      table.string('ip_address').nullable();
+      table.string('user_agent').nullable();
+      table.timestamps(true, true);
+
+      // Foreign key to admins table
+      table
+        .foreign('admin_id')
+        .references('id')
+        .inTable('internal_admins')
+        .onDelete('CASCADE');
+
+      // Indexes for performance
+      table.index(['admin_id']);
+      table.index(['action']);
+      table.index(['created_at']);
     });
   }
 }

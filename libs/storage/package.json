@@ -1,6 +1,7 @@
 {
   "name": "@forgebase-ts/storage",
   "version": "0.0.1",
+  "private": false,
   "type": "commonjs",
   "main": "./src/index.js",
   "module": "./dist/index.js",
@@ -21,6 +22,10 @@
     "access": "public"
   },
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "cloudinary": "^2.5.1",
+    "@google-cloud/storage": "^7.15.2",
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@aws-sdk/s3-request-presigner": "^3.750.0"
   }
 }

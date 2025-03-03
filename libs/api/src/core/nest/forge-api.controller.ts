@@ -15,6 +15,8 @@ import {
 import { Request, Response } from 'express';
 import { ForgeApiService } from './forge-api.service';
 import { DataMutationParams, DataQueryParams } from '@forgebase-ts/database';
+import { ApiAdmin } from './decorators/admin.decorator';
+import { ApiPublic } from './decorators/public.decorator';
 
 @Controller()
 export class ForgeApiController {
@@ -22,6 +24,7 @@ export class ForgeApiController {
 
   // Database endpoints
   @Post('db/:collection')
+  @ApiPublic()
   async createItem(
     @Param('collection') collection: string,
     @Body() body: any,
@@ -62,6 +65,7 @@ export class ForgeApiController {
   }
 
   @Get('db/:collection')
+  @ApiPublic()
   async queryItems(
     @Param('collection') collection: string,
     @Query() query: any,
@@ -81,6 +85,7 @@ export class ForgeApiController {
   }
 
   @Get('db/:collection/:id')
+  @ApiPublic()
   async getItemById(
     @Param('collection') collection: string,
     @Param('id') id: string | number,
@@ -88,7 +93,7 @@ export class ForgeApiController {
   ) {
     try {
       // Check if id is a number, then convert to number
-      let itemId = id;
+      const itemId = id;
 
       const query: DataQueryParams = { filter: { id: itemId }, select: ['*'] };
       return await this.forgeApiService
@@ -104,6 +109,7 @@ export class ForgeApiController {
   }
 
   @Put('db/:collection/:id')
+  @ApiPublic()
   async updateItem(
     @Param('collection') collection: string,
     @Param('id') id: string | number,
@@ -112,7 +118,7 @@ export class ForgeApiController {
   ) {
     try {
       let { data } = body;
-      let itemId = id;
+      const itemId = id;
 
       // Check if data is an object, then convert to object
       if (typeof data === 'string') {
@@ -139,13 +145,14 @@ export class ForgeApiController {
   }
 
   @Delete('db/:collection/:id')
+  @ApiPublic()
   async deleteItem(
     @Param('collection') collection: string,
     @Param('id') id: string | number,
     @Req() req: Request
   ) {
     try {
-      let itemId = id;
+      const itemId = id;
 
       await this.forgeApiService
         .getDatabaseService()
@@ -161,6 +168,7 @@ export class ForgeApiController {
   }
 
   @Get('db/schema')
+  @ApiAdmin()
   async getSchema() {
     try {
       return await this.forgeApiService.getDatabaseService().getSchema();
@@ -173,7 +181,70 @@ export class ForgeApiController {
     }
   }
 
+  @Get('db/schema/tables')
+  @ApiAdmin()
+  async getTables() {
+    try {
+      return await this.forgeApiService.getDatabaseService().getTables();
+    } catch (error) {
+      console.error('Error getting tables:', error);
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get('db/schema/tables/:tableName')
+  @ApiAdmin()
+  async getTableSchema(@Param('tableName') tableName: string) {
+    try {
+      return await this.forgeApiService
+        .getDatabaseService()
+        .getTableSchema(tableName);
+    } catch (error) {
+      console.error('Error getting table schema:', error);
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Delete('db/schema/tables/:tableName')
+  @ApiAdmin()
+  async deleteTable(@Param('tableName') tableName: string) {
+    try {
+      return await this.forgeApiService
+        .getDatabaseService()
+        .deleteSchema(tableName);
+    } catch (error) {
+      console.error('Error deleting table:', error);
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get('db/schema/tables/permission/:tableName')
+  @ApiAdmin()
+  async getTablePermission(@Param('tableName') tableName: string) {
+    try {
+      return await this.forgeApiService
+        .getDatabaseService()
+        .getTableSchemaWithPermissions(tableName);
+    } catch (error) {
+      console.error('Error getting table permission:', error);
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   @Post('db/schema')
+  @ApiAdmin()
   async createSchema(@Body() body: { tableName: string; columns: any[] }) {
     try {
       const { tableName, columns } = body;
@@ -190,6 +261,7 @@ export class ForgeApiController {
   }
 
   @Post('db/schema/column')
+  @ApiAdmin()
   async addColumn(@Body() body: { tableName: string; columns: any[] }) {
     try {
       const { tableName, columns } = body;
@@ -206,6 +278,7 @@ export class ForgeApiController {
   }
 
   @Delete('db/schema/column')
+  @ApiAdmin()
   async deleteColumn(@Body() body: { tableName: string; columns: any[] }) {
     try {
       const { tableName, columns } = body;
@@ -222,6 +295,7 @@ export class ForgeApiController {
   }
 
   @Put('db/schema/column')
+  @ApiAdmin()
   async updateColumn(@Body() body: { tableName: string; columns: any[] }) {
     try {
       const { tableName, columns } = body;
@@ -238,6 +312,7 @@ export class ForgeApiController {
   }
 
   @Post('db/schema/foreign_key')
+  @ApiAdmin()
   async addForeignKey(@Body() body: { tableName: string; foreignKey: any }) {
     try {
       const { tableName, foreignKey } = body;
@@ -254,6 +329,7 @@ export class ForgeApiController {
   }
 
   @Delete('db/schema/foreign_key')
+  @ApiAdmin()
   async dropForeignKey(@Body() body: { tableName: string; column: string }) {
     try {
       const { tableName, column } = body;
@@ -270,6 +346,7 @@ export class ForgeApiController {
   }
 
   @Delete('db/schema/truncate')
+  @ApiAdmin()
   async truncateTable(@Body() body: { tableName: string }) {
     try {
       const { tableName } = body;
@@ -286,6 +363,7 @@ export class ForgeApiController {
   }
 
   @Get('db/schema/permissions/:tableName')
+  @ApiAdmin()
   async getPermissions(@Param('tableName') tableName: string) {
     try {
       return await this.forgeApiService
@@ -301,6 +379,7 @@ export class ForgeApiController {
   }
 
   @Put('db/schema/permissions/:tableName')
+  @ApiAdmin()
   async setPermissions(
     @Param('tableName') tableName: string,
     @Body() body: { permissions: any }

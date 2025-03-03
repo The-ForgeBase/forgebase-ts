@@ -1,9 +1,55 @@
 {
   "name": "studio",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/studio",
   "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@analogjs/platform:vite",
+      "defaultConfiguration": "production",
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "sourcemap": false,
+          "mode": "production"
+        }
+      },
+      "outputs": [
+        "{options.outputPath}",
+        "{workspaceRoot}/dist/apps/studio/.nitro",
+        "{workspaceRoot}/dist/apps/studio/ssr",
+        "{workspaceRoot}/dist/apps/studio/analog"
+      ],
+      "options": {
+        "main": "apps/studio/src/main.ts",
+        "configFile": "apps/studio/vite.config.ts",
+        "outputPath": "dist/apps/studio/client",
+        "tsConfig": "apps/studio/tsconfig.app.json"
+      }
+    },
+    "serve": {
+      "executor": "@analogjs/platform:vite-dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "studio:build",
+        "port": 4200
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "studio:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "studio:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@analogjs/vitest-angular:test",
+      "outputs": ["{projectRoot}/coverage"]
+    }
+  },
   "tags": [],
-  "// targets": "to see all targets run: nx show project studio --web",
-  "targets": {}
+  "sourceRoot": "apps/studio/src"
 }
