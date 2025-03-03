@@ -109,14 +109,11 @@ export class MicrosoftOAuthProvider<
 
   async getUserProfile(accessToken: string): Promise<OAuthUser> {
     try {
-      const response = await axios(
-        'https://graph.microsoft.com/v1.0/me',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await axios('https://graph.microsoft.com/v1.0/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       const userData: MicrosoftUserAttributes = response.data;
 

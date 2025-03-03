@@ -7,3 +7,4 @@ export * from './rlsManager';
 export * from './schema';
 export * from './sdk/server';
 export * from './database';
+export * from './adapters';

@@ -1,4 +1,5 @@
-import { BaaSConfig, forgeApi } from '@forgebase-ts/api';
+import { BaaSConfig } from '../types';
+import { forgeApi } from '../index';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { ExpressAdapter } from '../adapters';
 
@@ -7,7 +8,9 @@ export interface ForgeExpressOptions {
   routes?: string[];
 }
 
-export function forgeExpressMiddleware(config: Partial<BaaSConfig>): RequestHandler {
+export function forgeExpressMiddleware(
+  config: Partial<BaaSConfig>
+): RequestHandler {
   const api = forgeApi(config);
 
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -23,9 +26,11 @@ export function forgeExpressMiddleware(config: Partial<BaaSConfig>): RequestHand
       if (handled.context.res.body !== null) {
         // Set any custom headers from the ForgeBase response
         if (handled.context.res.headers) {
-          Object.entries(handled.context.res.headers).forEach(([key, value]) => {
-            res.setHeader(key, value);
-          });
+          Object.entries(handled.context.res.headers).forEach(
+            ([key, value]) => {
+              res.setHeader(key, value);
+            }
+          );
         }
         res.status(handled.context.res.status).json(handled.context.res.body);
       } else {

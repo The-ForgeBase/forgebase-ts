@@ -22,6 +22,7 @@
       "@forgebase-ts/lib/utils": ["libs/studio-ui-utils/src"],
       "@forgebase-ts/lib/utils/*": ["libs/studio-ui-utils/src/*"],
       "@forgebase-ts/real-time": ["libs/real-time/src/index.ts"],
+      "@forgebase-ts/sdk": ["libs/sdk/src/index.ts"],
       "@forgebase-ts/storage": ["libs/storage/src/index.ts"]
     }
   },
