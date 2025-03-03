@@ -1,7 +1,7 @@
 {
   "name": "@forgebase-ts/sdk",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "type": "commonjs",
   "main": "./src/index.js",
   "module": "./dist/index.js",
@@ -12,9 +12,33 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/database/client/index.d.ts",
+      "import": "./dist/database/client/index.js",
+      "default": "./dist/database/client/index.js",
+      "require": "./dist/database/client/index.js"
+    },
+    "./server": {
+      "types": "./dist/database/server/index.d.ts",
+      "import": "./dist/database/server/index.js",
+      "default": "./dist/database/server/index.js",
+      "require": "./dist/database/server/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "client": [
+        "./dist/database/client/index.d.ts"
+      ],
+      "server": [
+        "./dist/database/server/index.d.ts"
+      ]
     }
   },
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "knex": "^3.1.0",
+    "@forgebase-ts/database": "0.0.1"
   }
 }
