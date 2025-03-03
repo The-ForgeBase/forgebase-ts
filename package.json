@@ -58,6 +58,7 @@
     "fumadocs-core": "^14.7.7",
     "fumadocs-mdx": "^11.3.1",
     "fumadocs-ui": "^14.7.7",
+    "h3": "^1.15.1",
     "hono": "^4.6.19",
     "jotai": "^2.11.1",
     "jsonwebtoken": "^9.0.2",
@@ -191,5 +192,6 @@
       "msgpackr-extract",
       "nx"
     ]
-  }
+  },
+  "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af"
 }
