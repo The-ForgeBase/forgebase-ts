@@ -181,37 +181,6 @@ type FormErrors =
 })
 export default class SigninComponent {
   errors = signal<FormErrors>(undefined);
-  email = signal<string>('admin@yourdomain.com');
-  password = signal<string>('secure-password');
-
-  async login() {
-    const emailValue = this.email();
-    const passwordValue = this.password();
-    if (!emailValue || !passwordValue) {
-      this.errors.set({
-        email: !emailValue ? 'Email is required' : undefined,
-        password: !passwordValue ? 'Password is required' : undefined,
-      });
-      return;
-    }
-    const res = await fetch('http://localhost:8000/api/admin/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: emailValue,
-        password: passwordValue,
-      }),
-      credentials: 'include',
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      this.onError(data);
-    } else {
-      this.onSuccess();
-    }
-  }
 
   onSuccess() {
     console.log('Form submitted successfully');
@@ -222,7 +191,7 @@ export default class SigninComponent {
   }
 
   getAdmins() {
-    fetch('http://localhost:8000/api/admin/admins', {
+    fetch('/api/v1/hello', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

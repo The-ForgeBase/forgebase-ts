@@ -13,8 +13,7 @@ export async function action({ event }: PageServerAction) {
     const email = body.get('email') as string;
     const password = body.get('password') as string;
 
-    console.log('email', email);
-    console.log('password', password);
+    // Removed logging of sensitive information
 
     if (!email) {
       return fail(422, { email: 'Email is required' });

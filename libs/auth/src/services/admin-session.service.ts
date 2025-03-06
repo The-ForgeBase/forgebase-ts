@@ -95,7 +95,7 @@ export class KnexAdminSessionManager implements AdminSessionManager {
       // Check if session exists in database
       const session = await this.knex(this.tableName)
         .where({ token })
-        // .where('expires_at', '>', this.knex.fn.now())
+        .where('expires_at', '>', this.knex.fn.now())
         .first();
 
       // console.log('Session:', session);

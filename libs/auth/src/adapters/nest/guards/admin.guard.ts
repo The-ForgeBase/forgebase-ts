@@ -22,7 +22,9 @@ export class AdminGuard implements CanActivate {
       return request.headers.authorization.substring(12);
     }
     // console.log('AdminGuard request.cookies:', request.cookies);
-    console.log('AdminGuard request.headers:', request.headers);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('AdminGuard request.headers:', request.headers);
+    }
 
     if (request.cookies && request.cookies.admin_token) {
       return request.cookies.admin_token;
@@ -44,7 +46,9 @@ export class AdminGuard implements CanActivate {
     const request = context.switchToHttp().getRequest() as Request;
     const path = request.path;
 
-    console.log('AdminGuard path:', path);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('AdminGuard path:', path);
+    }
 
     // Skip token validation for login endpoint
     if (path.endsWith('/admin/login')) {
