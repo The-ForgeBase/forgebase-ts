@@ -1,3 +1,5 @@
+@import 'primeicons/primeicons.css';
+
 @layer tailwind-base, primeng, tailwind-utilities;
 
 @layer tailwind-base {
@@ -9,8 +11,9 @@
   @tailwind utilities;
 }
 
+/* Global styles */
 html,
 body {
-  display: block;
   height: 100%;
+  margin: 0;
 }

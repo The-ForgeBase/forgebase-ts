@@ -21,6 +21,8 @@ export class AdminGuard implements CanActivate {
     if (request.headers.authorization?.startsWith('AdminBearer ')) {
       return request.headers.authorization.substring(12);
     }
+    // console.log('AdminGuard request.cookies:', request.cookies);
+    console.log('AdminGuard request.headers:', request.headers);
 
     if (request.cookies && request.cookies.admin_token) {
       return request.cookies.admin_token;
@@ -42,6 +44,8 @@ export class AdminGuard implements CanActivate {
     const request = context.switchToHttp().getRequest() as Request;
     const path = request.path;
 
+    console.log('AdminGuard path:', path);
+
     // Skip token validation for login endpoint
     if (path.endsWith('/admin/login')) {
       return true;
@@ -59,6 +63,7 @@ export class AdminGuard implements CanActivate {
       request['admin'] = admin;
       return true;
     } catch (error) {
+      // console.log('AdminGuard error:', error);
       if (error instanceof AdminFeatureDisabledError) {
         throw new UnauthorizedException('Admin feature is disabled');
       }

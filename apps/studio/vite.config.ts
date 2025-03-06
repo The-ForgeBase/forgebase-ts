@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       fs: {
-        allow: ['.'],
+        allow: ['.', '..', '../../node_modules/'],
       },
     },
     plugins: [analog(), nxViteTsPaths()],
