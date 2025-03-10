@@ -1,4 +1,11 @@
-import { Component, inject, effect, OnInit } from '@angular/core';
+import {
+  Component,
+  inject,
+  effect,
+  OnInit,
+  computed,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   Router,
@@ -12,12 +19,19 @@ import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
-import { SidebarService } from '../../services/sidebar.service';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
+import { BadgeModule } from 'primeng/badge';
+import { SidebarService } from '../../services/sidebar.service';
 
 /**
- * Multi-column sidebar component for navigation
+ * Modern multi-column sidebar component for navigation with dark mode support
  * Uses SidebarService for state management across components
+ *
+ * Features:
+ * - Dark mode compatible using CSS variables
+ * - Responsive design that adapts to different screen sizes
+ * - Smooth transitions and animations
+ * - Accessibility features
  *
  * @example
  * <app-sidebar></app-sidebar>
@@ -37,100 +51,86 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
     DividerModule,
     TooltipModule,
     ScrollPanelModule,
+    BadgeModule,
   ],
   template: `
-    <div class="flex h-screen">
+    <div class="sidebar-container h-screen flex">
       <!-- Primary Sidebar Column -->
-      <p-scrollPanel
-        class="bg-surface-50"
-        [style]="{ width: '70px', height: '100%' }"
-      >
-        <div
-          class="w-[70px] h-full bg-surface-50 border-right border-surface-200 flex flex-col items-center py-4 shadow-sm"
-        >
-          <div class="flex flex-col gap-4 w-full">
-            <div
-              *ngFor="let primaryItem of sidebarService.primaryNavItems()"
-              class="flex justify-center"
-            >
-              <button
-                pButton
-                [class.bg-primary-100]="
-                  sidebarService.activeSection() === primaryItem.id
-                "
-                [class.text-primary-700]="
-                  sidebarService.activeSection() === primaryItem.id
-                "
-                [class.bg-transparent]="
-                  sidebarService.activeSection() !== primaryItem.id
-                "
-                [pTooltip]="primaryItem.label"
-                tooltipPosition="right"
-                class="p-button-text p-button-rounded p-3"
-                (click)="selectSection(primaryItem.id)"
-              >
-                <i [class]="primaryItem.icon" class="text-xl"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="mt-auto flex flex-col gap-4 w-full">
-            <div
-              *ngFor="let bottomItem of sidebarService.bottomNavItems()"
-              class="flex justify-center"
-            >
-              <button
-                pButton
-                [class.bg-primary-100]="
-                  sidebarService.activeSection() === bottomItem.id
-                "
-                [class.text-primary-700]="
-                  sidebarService.activeSection() === bottomItem.id
-                "
-                [class.bg-transparent]="
-                  sidebarService.activeSection() !== bottomItem.id
-                "
-                [pTooltip]="bottomItem.label"
-                tooltipPosition="right"
-                class="p-button-text p-button-rounded p-3"
-                (click)="selectSection(bottomItem.id)"
-              >
-                <i [class]="bottomItem.icon" class="text-xl"></i>
-              </button>
-            </div>
+      <div class="primary-sidebar">
+        <div class="logo-container flex justify-center py-3">
+          <!-- App logo or branding here -->
+          <div
+            class="logo-placeholder flex items-center justify-center text-2xl"
+          >
+            <i class="pi pi-bolt"></i>
           </div>
         </div>
-      </p-scrollPanel>
+
+        <div class="flex flex-col gap-2 w-full px-1 py-2">
+          <div
+            *ngFor="let primaryItem of sidebarService.primaryNavItems()"
+            class="nav-item-container flex justify-center"
+          >
+            <button
+              pButton
+              [pTooltip]="primaryItem.label"
+              tooltipPosition="right"
+              [class]="getNavItemClasses(primaryItem.id)"
+              (click)="selectSection(primaryItem.id)"
+              [attr.aria-label]="primaryItem.label"
+            >
+              <i [class]="primaryItem.icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-auto flex flex-col gap-2 w-full px-1 py-2">
+          <div
+            *ngFor="let bottomItem of sidebarService.bottomNavItems()"
+            class="nav-item-container flex justify-center"
+          >
+            <button
+              pButton
+              [pTooltip]="bottomItem.label"
+              tooltipPosition="right"
+              [class]="getNavItemClasses(bottomItem.id)"
+              (click)="selectSection(bottomItem.id)"
+              [attr.aria-label]="bottomItem.label"
+            >
+              <i [class]="bottomItem.icon"></i>
+              <span
+                *ngIf="hasNotifications(bottomItem.id)"
+                pBadge
+                value="!"
+              ></span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Secondary Sidebar Column -->
-      <p-scrollPanel
-        class="bg-surface-0"
-        [style]="{ width: '250px', height: '100%' }"
-      >
-        <div
-          *ngIf="sidebarService.activeSectionData()"
-          class="w-[250px] h-full bg-surface-0 border-r border-surface-200 flex flex-col py-4 shadow-1"
-        >
-          <div class="px-3 mb-3">
-            <h3 class="text-lg font-medium m-0 p-0">
-              {{ sidebarService.activeSectionData()?.label }}
-            </h3>
-          </div>
+      <div *ngIf="sidebarService.activeSectionData()" class="secondary-sidebar">
+        <div class="section-header px-3 py-3">
+          <h3 class="section-title">
+            <i *ngIf="sectionIcon()" [class]="sectionIcon() + ' mr-2'"></i>
+            {{ sidebarService.activeSectionData()?.label }}
+          </h3>
+        </div>
 
-          <div class="flex flex-col gap-1 px-2">
-            <div *ngFor="let item of sidebarService.activeSectionData()?.items">
-              <a
-                [routerLink]="item.route"
-                routerLinkActive="bg-primary-50 text-primary-700"
-                class="flex items-center gap-2 px-3 py-2 no-underline text-secondary rounded-md hover:bg-surface-100 transition-colors transition-duration-150"
-              >
-                <i *ngIf="item.icon" [class]="item.icon" class="text-base"></i>
-                <span>{{ item.label }}</span>
-              </a>
-            </div>
+        <div class="menu-items">
+          <div *ngFor="let item of sidebarService.activeSectionData()?.items">
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="menu-item-active"
+              class="menu-item"
+              [attr.aria-label]="item.label"
+            >
+              <i *ngIf="item.icon" [class]="item.icon"></i>
+              <span>{{ item.label }}</span>
+            </a>
           </div>
         </div>
-      </p-scrollPanel>
+      </div>
     </div>
   `,
   styles: [
@@ -139,12 +139,179 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
         display: block;
         height: 100%;
       }
+
+      .sidebar-container {
+        --sidebar-bg-primary: var(--surface-card, #ffffff);
+        --sidebar-bg-secondary: var(--surface-section, #f8f9fa);
+        --sidebar-border-color: var(--surface-border, #dee2e6);
+        --sidebar-active-bg: var(--primary-50, #f5f9ff);
+        --sidebar-active-color: var(--primary-600, #3b82f6);
+        --sidebar-hover-bg: var(--surface-hover, #e9ecef);
+        --sidebar-text: var(--text-color, #495057);
+        --sidebar-icon-size: 1.25rem;
+        --transition-speed: 0.2s;
+      }
+
+      /* Dark mode support using CSS variables */
+      :host-context(.dark-theme) .sidebar-container {
+        --sidebar-bg-primary: var(--surface-900, #212529);
+        --sidebar-bg-secondary: var(--surface-800, #343a40);
+        --sidebar-border-color: var(--surface-700, #495057);
+        --sidebar-active-bg: var(--primary-900, #1e3a8a);
+        --sidebar-active-color: var(--primary-200, #93c5fd);
+        --sidebar-hover-bg: var(--surface-700, #495057);
+        --sidebar-text: var (--text-color, #e9ecef);
+      }
+
+      .primary-sidebar {
+        width: 4rem;
+        height: 100%;
+        background-color: var(--sidebar-bg-primary);
+        border-right: 1px solid var(--sidebar-border-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden;
+        transition: width var(--transition-speed) ease;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        z-index: 2;
+      }
+
+      .secondary-sidebar {
+        width: 240px;
+        height: 100%;
+        background-color: var(--sidebar-bg-secondary);
+        border-right: 1px solid var(--sidebar-border-color);
+        display: flex;
+        flex-direction: column;
+        transition: width var(--transition-speed) ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .logo-container {
+        height: 3.5rem;
+        width: 100%;
+        border-bottom: 1px solid var(--sidebar-border-color);
+      }
+
+      .logo-placeholder {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.5rem;
+        color: var(--primary-color);
+        background-color: var(--primary-50);
+      }
+
+      :host-context(.dark-theme) .logo-placeholder {
+        background-color: var(--primary-900);
+        color: var(--primary-200);
+      }
+
+      .section-header {
+        border-bottom: 1px solid var(--sidebar-border-color);
+      }
+
+      .section-title {
+        font-size: 1rem;
+        font-weight: 500;
+        margin: 0;
+        color: var(--sidebar-text);
+        display: flex;
+        align-items: center;
+      }
+
+      .menu-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0.5rem;
+      }
+
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: var(--sidebar-text);
+        border-radius: 0.375rem;
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: all var(--transition-speed) ease;
+      }
+
+      .menu-item:hover {
+        background-color: var(--sidebar-hover-bg);
+      }
+
+      .menu-item i {
+        font-size: var(--sidebar-icon-size);
+      }
+
+      .menu-item-active {
+        background-color: var(--sidebar-active-bg);
+        color: var(--sidebar-active-color);
+        font-weight: 500;
+      }
+
+      .nav-item-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.375rem;
+        color: var(--sidebar-text);
+        background-color: transparent;
+        border: none;
+        transition: all var(--transition-speed) ease;
+        position: relative;
+      }
+
+      .nav-item-button i {
+        font-size: var(--sidebar-icon-size);
+      }
+
+      .nav-item-button:hover {
+        background-color: var(--sidebar-hover-bg);
+      }
+
+      .nav-item-active {
+        background-color: var(--sidebar-active-bg) !important;
+        color: var(--sidebar-active-color) !important;
+      }
+
+      /* Responsive styles */
+      @media (max-width: 768px) {
+        .secondary-sidebar {
+          width: 200px;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .primary-sidebar {
+          width: 3.5rem;
+        }
+      }
     `,
   ],
 })
 export class SidebarComponent implements OnInit {
   private router = inject(Router);
   protected sidebarService = inject(SidebarService);
+
+  /**
+   * Computed property to get the icon of the current active section
+   */
+  protected sectionIcon = computed(() => {
+    const activeId = this.sidebarService.activeSection();
+    const primaryItem = this.sidebarService
+      .primaryNavItems()
+      .find((item) => item.id === activeId);
+    const bottomItem = this.sidebarService
+      .bottomNavItems()
+      .find((item) => item.id === activeId);
+    return primaryItem?.icon || bottomItem?.icon || '';
+  });
 
   constructor() {
     // Use effect to sync current route with appropriate section on navigation
@@ -166,6 +333,28 @@ export class SidebarComponent implements OnInit {
     if (sectionId) {
       this.sidebarService.setActiveSection(sectionId);
     }
+  }
+
+  /**
+   * Get CSS classes for navigation item based on its active state
+   * @param itemId - ID of the navigation item
+   * @returns string of CSS classes
+   */
+  getNavItemClasses(itemId: string): string {
+    const isActive = this.sidebarService.activeSection() === itemId;
+    return `nav-item-button p-button-text p-button-rounded ${
+      isActive ? 'nav-item-active' : ''
+    }`;
+  }
+
+  /**
+   * Check if a navigation item has notifications
+   * @param itemId - ID of the navigation item
+   * @returns boolean indicating if there are notifications
+   */
+  hasNotifications(itemId: string): boolean {
+    // Example implementation - replace with actual notification logic
+    return itemId === 'notifications';
   }
 
   /**

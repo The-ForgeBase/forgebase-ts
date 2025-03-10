@@ -2,7 +2,7 @@ import { defineEventHandler, getCookie, parseCookies } from 'h3';
 
 export default defineEventHandler(async (event) => {
   const cookies = parseCookies(event);
-  console.log('cookies hello', cookies);
+  // console.log('cookies hello', cookies);
   const res = await fetch('http://localhost:8000/api/admin/admins', {
     method: 'GET',
     headers: {

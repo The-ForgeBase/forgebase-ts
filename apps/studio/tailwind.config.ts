@@ -8,6 +8,7 @@ export default {
     join(__dirname, 'src/**/!(*.stories|*.spec).{ts,html,md,analog,ag}'),
     ...createGlobPatternsForDependencies(__dirname),
   ],
+  darkMode: 'class',
   theme: {
     extend: {},
   },

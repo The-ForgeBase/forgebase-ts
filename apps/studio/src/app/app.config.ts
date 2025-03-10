@@ -5,16 +5,19 @@ import {
   withInterceptors,
 } from '@angular/common/http';
 import { provideClientHydration } from '@angular/platform-browser';
-import { provideFileRouter, requestContextInterceptor } from '@analogjs/router';
+import {
+  provideFileRouter,
+  requestContextInterceptor,
+  withDebugRoutes,
+} from '@analogjs/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeng/themes/aura';
 
-
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideFileRouter(),
+    provideFileRouter(withDebugRoutes()),
     provideClientHydration(),
     provideHttpClient(
       withFetch(),
@@ -27,11 +30,11 @@ export const appConfig: ApplicationConfig = {
         preset: Aura,
         options: {
           cssLayer: {
-              name: 'primeng',
-              order: 'tailwind-base, primeng, tailwind-utilities'
-          }
-      }
-      }
-    })
+            name: 'primeng',
+            order: 'tailwind-base, primeng, tailwind-utilities',
+          },
+        },
+      },
+    }),
   ],
 };
