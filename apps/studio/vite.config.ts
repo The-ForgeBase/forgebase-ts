@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
       target: ['es2020'],
     },
     ssr: {
-      noExternal: ['primeng/**'],
+      noExternal: ['primeng/**', '@spartan-ng/**'],
     },
     server: {
       fs: {

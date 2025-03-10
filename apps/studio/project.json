@@ -37,7 +37,7 @@
       },
       "configurations": {
         "development": {
-          "buildTarget": "studio:build:development",
+          "buildTarget": "studio-old:build:development",
           "hmr": true
         },
         "production": {

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import PrimeUI from 'tailwindcss-primeui';
 
 export default {
+  presets: [require('@spartan-ng/brain/hlm-tailwind-preset')],
   content: [
     join(__dirname, 'src/**/!(*.stories|*.spec).{ts,html,md,analog,ag}'),
     ...createGlobPatternsForDependencies(__dirname),
