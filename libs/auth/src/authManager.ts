@@ -30,15 +30,12 @@ import { KnexUserService } from './userService';
 import crypto from 'crypto';
 import { PluginRegistry } from './plugins/registry';
 import { AuthPlugin } from './plugins/types';
-import { EventEmitter } from 'events';
 
 export class DynamicAuthManager<TUser extends User> {
   private config: AuthConfig;
-  private configSubscription?: any;
   private mfa?: MfaService;
   private rateLimiter?: RateLimiter;
   private pluginRegistry: PluginRegistry<TUser>;
-  private eventEmitter = new EventEmitter();
 
   constructor(
     private configStore: ConfigStore,
