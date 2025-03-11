@@ -6,14 +6,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
   standalone: true,
   imports: [RouterOutlet, ScrollPanelModule],
   template: `
-    <div class="flex h-screen w-full overflow-hidden">
-      <!-- Main Content Area -->
-      <p-scrollPanel [style]="{ width: '100%', height: '100vh' }">
-        <div class="p-4">
-          <router-outlet></router-outlet>
-        </div>
-      </p-scrollPanel>
-    </div>
+    <div class="flex h-screen w-full overflow-hidden">Database Layout</div>
   `,
 })
 export default class DatabaseLayoutComponent {}

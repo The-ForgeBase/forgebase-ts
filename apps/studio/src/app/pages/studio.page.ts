@@ -1,22 +1,44 @@
 import { Component } from '@angular/core';
+import { TopStudioMenuComponent } from './studio/components/top-menu.component';
+import { SideStudioMenuComponent } from './studio/components/side-menu/side-menu.component';
+
+import { CommonModule } from '@angular/common';
+import { NgScrollbarModule } from 'ngx-scrollbar';
+
 import { RouterOutlet } from '@angular/router';
-import { ScrollPanelModule } from 'primeng/scrollpanel';
-import { SidebarComponent } from '../components/sidebar/sidebar.component';
 
 @Component({
+  selector: 'spartan-music-example',
   standalone: true,
-  imports: [RouterOutlet, ScrollPanelModule, SidebarComponent],
-  template: `
-    <div class="flex h-screen w-full overflow-hidden">
-      <!-- Multi-column Sidebar -->
-      <app-sidebar></app-sidebar>
+  host: {
+    class: 'block max-h-screen',
+  },
+  imports: [
+    SideStudioMenuComponent,
+    TopStudioMenuComponent,
 
-      <!-- Main Content Area -->
-      <p-scrollPanel [style]="{ width: '100%', height: '100vh' }">
-        <div class="p-4">
-          <router-outlet></router-outlet>
+    NgScrollbarModule,
+
+    CommonModule,
+    RouterOutlet,
+  ],
+  template: `
+    <div class="flex h-screen flex-col overflow-hidden bg-background">
+      <studio-top-menu class="px-2 lg:px-4" />
+      <div class="border-border bg-background border-t h-full">
+        <div class="w-full flex h-full">
+          <studio-side-menu />
+          <ng-scrollbar hlm class="h-[100%] w-full pb-8" visibility="native">
+            <router-outlet />
+            <div class="w-full flex flex-col items-center justify-center mb-8">
+              <p class="text-center text-sm text-foreground">
+                Forgebase Studio
+                <span class="text-foreground/50">Version 0.0.1</span>
+              </p>
+            </div>
+          </ng-scrollbar>
         </div>
-      </p-scrollPanel>
+      </div>
     </div>
   `,
 })
