@@ -51,6 +51,6 @@ export const db = knex({
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CookieLoggerMiddleware).forRoutes('*'); // Apply to all routes
+    // consumer.apply(CookieLoggerMiddleware).forRoutes('*'); // Apply to all routes
   }
 }

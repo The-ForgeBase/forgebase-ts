@@ -135,7 +135,7 @@ export class InternalAdminManager {
       action: 'LOGIN',
       details: { email },
     });
-
+    delete admin.password_hash;
     return { admin, token };
   }
 

@@ -1,11 +1,12 @@
 // src/app/pages/newsletter.server.ts
+import { PageServerLoad } from '@analogjs/router';
 import {
   type PageServerAction,
   redirect,
   json,
   fail,
 } from '@analogjs/router/server/actions';
-import { readFormData, setCookie } from 'h3';
+import { readFormData, setCookie, sendRedirect } from 'h3';
 
 export async function action({ event }: PageServerAction) {
   try {
@@ -72,3 +73,21 @@ export async function action({ event }: PageServerAction) {
     return fail(500, { error: 'Authentication failed. Please try again.' });
   }
 }
+
+export const load = async ({
+  params, // params/queryParams from the request
+  req, // H3 Request
+  res, // H3 Response handler
+  fetch, // internal fetch for direct API calls,
+  event, // full request event
+}: PageServerLoad) => {
+  const user = event.context['auth'];
+
+  if (user) {
+    sendRedirect(event, '/studio', 302);
+  }
+
+  return {
+    loaded: true,
+  };
+};

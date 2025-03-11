@@ -1,5 +1,4 @@
 import { PageServerLoad } from '@analogjs/router';
-import { sendRedirect } from 'h3';
 
 export const load = async ({
   params, // params/queryParams from the request
@@ -8,10 +7,7 @@ export const load = async ({
   fetch, // internal fetch for direct API calls,
   event, // full request event
 }: PageServerLoad) => {
-  const user = event.context['auth'];
-  if (!user) {
-    sendRedirect(event, '/signin', 401);
-  }
+  // console.log('user');
   return {
     loaded: true,
   };

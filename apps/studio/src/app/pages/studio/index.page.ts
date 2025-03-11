@@ -30,11 +30,13 @@ import {
 } from '@spartan-ng/ui-menu-helm';
 import img from '/assets/music_img_fallback.svg';
 import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import { NgScrollbarModule } from 'ngx-scrollbar';
+import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
 
 @Component({
   standalone: true,
   host: {
-    class: 'block min-h-screen w-full',
+    class: 'block w-full h-[calc(100svh-5rem)] overflow-hidden',
   },
   imports: [
     HlmTabsComponent,
@@ -49,6 +51,9 @@ import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
     NgIcon,
     HlmIconDirective,
     BrnMenuTriggerDirective,
+    HlmScrollAreaDirective,
+
+    NgScrollbarModule,
 
     HlmMenuComponent,
     HlmMenuGroupComponent,
@@ -114,136 +119,141 @@ import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
         </hlm-menu-group>
       </hlm-menu>
     </ng-template>
-
-    <div class="h-full px-4 py-6 lg:px-8 w-full">
-      <hlm-tabs tab="music_tab" class="w-full">
-        <header
-          class="flex flex-col-reverse justify-between gap-y-10 align-baseline sm:flex-row"
-        >
-          <hlm-tabs-list class="inline-grid w-full grid-cols-3 sm:w-auto">
-            <button hlmTabsTrigger="music_tab">Music</button>
-            <button hlmTabsTrigger="podcast_tab">Podcasts</button>
-            <button
-              hlmTabsTrigger="live_tab"
-              [disabled]="true"
-              class="pointer-events-none cursor-pointer opacity-50"
-            >
-              Live
-            </button>
-          </hlm-tabs-list>
-          <button hlmBtn class="h-10 w-full sm:w-auto">
-            <ng-icon hlm size="sm" class="mr-2" name="lucideCirclePlus" />
-            Add Music
-          </button>
-        </header>
-
-        <div hlmTabsContent="music_tab" class="w-full">
-          <div class="mt-6 space-y-1">
-            <h2 class="text-2xl font-semibold tracking-tight">Listen Now</h2>
-            <p class="text-muted-foreground text-sm">
-              Top picks for you. Updated daily.
-            </p>
-          </div>
-          <brn-separator hlmSeparator />
-
-          <div class="mt-2">
-            <div
-              class="mt-2 grid grid-cols-2 gap-4 pb-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4"
-            >
-              @for (item of sectionData.listenNow; track item) {
-              <figure class="space-y-4" [brnCtxMenuTriggerFor]="contextMenu">
-                <picture
-                  class="group relative block w-full overflow-hidden rounded-md"
-                >
-                  <img
-                    [src]="item.img"
-                    [fallback]="imageFallback"
-                    class="bg-border aspect-square h-full w-full transform-gpu transition-transform group-hover:scale-110 md:aspect-[1/1.25]"
-                    alt="Music Image"
-                  />
-                </picture>
-                <figcaption class="space-y-1 text-sm">
-                  <h3 class="font-medium leading-none">
-                    {{ item.title }}
-                  </h3>
-                  <p class="text-muted-foreground text-xs">
-                    {{ item.subtitle }}
-                  </p>
-                </figcaption>
-              </figure>
-              }
-            </div>
-          </div>
-
-          <div class="mt-5 space-y-1">
-            <h2 class="text-2xl font-semibold tracking-tight">Made for You</h2>
-            <p class="text-muted-foreground text-sm">
-              Your personal playlists. Updated daily.
-            </p>
-          </div>
-
-          <brn-separator hlmSeparator />
-
-          <div class="mt-2 pb-4">
-            <div
-              class="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
-            >
-              @for (item of sectionData.madeForYou; track item) {
-              <figure class="space-y-4">
-                <picture
-                  class="group relative block w-full overflow-hidden rounded-md"
-                >
-                  <img
-                    [src]="item.img"
-                    fallback="imageFallback"
-                    class="bg-border aspect-square w-full object-cover transition-transform group-hover:scale-110"
-                    alt="Music Image"
-                  />
-                </picture>
-                <figcaption class="space-y-1 text-sm">
-                  <h3 class="font-medium leading-none">
-                    {{ item.title }}
-                  </h3>
-                  <p class="text-muted-foreground text-xs">
-                    {{ item.subtitle }}
-                  </p>
-                </figcaption>
-              </figure>
-              }
-            </div>
-          </div>
-        </div>
-        <div hlmTabsContent="podcast_tab" class="w-full space-y-6">
-          <div class="mt-6 space-y-2">
-            <h2 class="text-2xl font-semibold tracking-tight">New Episodes</h2>
-            <p class="text-muted-foreground text-sm">
-              Your favorite podcasts. Updated daily.
-            </p>
-          </div>
-          <brn-separator hlmSeparator />
-
-          <div
-            hlmCard
-            class="flex min-h-[450px] flex-col justify-center p-6 align-middle"
+    <ng-scrollbar hlm class="h-[100%] w-full" visibility="native">
+      <div class="h-full px-4 py-6 lg:px-8 w-full">
+        <hlm-tabs tab="music_tab" class="w-full">
+          <header
+            class="flex flex-col-reverse justify-between gap-y-10 align-baseline sm:flex-row"
           >
-            <div class="text-center">
-              <ng-icon
-                hlm
-                size="xl"
-                name="lucidePodcast"
-                class="text-muted-foreground"
-              />
-              <h2 class="mt-4 text-lg font-semibold">No episodes added</h2>
-              <p class="text-muted-foreground mb-4 mt-2 text-sm">
-                You have not added any podcasts. Add one below
+            <hlm-tabs-list class="inline-grid w-full grid-cols-3 sm:w-auto">
+              <button hlmTabsTrigger="music_tab">Music</button>
+              <button hlmTabsTrigger="podcast_tab">Podcasts</button>
+              <button
+                hlmTabsTrigger="live_tab"
+                [disabled]="true"
+                class="pointer-events-none cursor-pointer opacity-50"
+              >
+                Live
+              </button>
+            </hlm-tabs-list>
+            <button hlmBtn class="h-10 w-full sm:w-auto">
+              <ng-icon hlm size="sm" class="mr-2" name="lucideCirclePlus" />
+              Add Music
+            </button>
+          </header>
+
+          <div hlmTabsContent="music_tab" class="w-full">
+            <div class="mt-6 space-y-1">
+              <h2 class="text-2xl font-semibold tracking-tight">Listen Now</h2>
+              <p class="text-muted-foreground text-sm">
+                Top picks for you. Updated daily.
               </p>
-              <button hlmBtn class="h-8 text-xs">Add Podcast</button>
+            </div>
+            <brn-separator hlmSeparator />
+
+            <div class="mt-2">
+              <div
+                class="mt-2 grid grid-cols-2 gap-4 pb-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4"
+              >
+                @for (item of sectionData.listenNow; track item) {
+                <figure class="space-y-4" [brnCtxMenuTriggerFor]="contextMenu">
+                  <picture
+                    class="group relative block w-full overflow-hidden rounded-md"
+                  >
+                    <img
+                      [src]="item.img"
+                      [fallback]="imageFallback"
+                      class="bg-border aspect-square h-full w-full transform-gpu transition-transform group-hover:scale-110 md:aspect-[1/1.25]"
+                      alt="Music Image"
+                    />
+                  </picture>
+                  <figcaption class="space-y-1 text-sm">
+                    <h3 class="font-medium leading-none">
+                      {{ item.title }}
+                    </h3>
+                    <p class="text-muted-foreground text-xs">
+                      {{ item.subtitle }}
+                    </p>
+                  </figcaption>
+                </figure>
+                }
+              </div>
+            </div>
+
+            <div class="mt-5 space-y-1">
+              <h2 class="text-2xl font-semibold tracking-tight">
+                Made for You
+              </h2>
+              <p class="text-muted-foreground text-sm">
+                Your personal playlists. Updated daily.
+              </p>
+            </div>
+
+            <brn-separator hlmSeparator />
+
+            <div class="mt-2 pb-4">
+              <div
+                class="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
+              >
+                @for (item of sectionData.madeForYou; track item) {
+                <figure class="space-y-4">
+                  <picture
+                    class="group relative block w-full overflow-hidden rounded-md"
+                  >
+                    <img
+                      [src]="item.img"
+                      fallback="imageFallback"
+                      class="bg-border aspect-square w-full object-cover transition-transform group-hover:scale-110"
+                      alt="Music Image"
+                    />
+                  </picture>
+                  <figcaption class="space-y-1 text-sm">
+                    <h3 class="font-medium leading-none">
+                      {{ item.title }}
+                    </h3>
+                    <p class="text-muted-foreground text-xs">
+                      {{ item.subtitle }}
+                    </p>
+                  </figcaption>
+                </figure>
+                }
+              </div>
             </div>
           </div>
-        </div>
-        <div hlmTabsContent="live_tab" class="w-full space-y-6">live</div>
-      </hlm-tabs>
-    </div>
+          <div hlmTabsContent="podcast_tab" class="w-full space-y-6">
+            <div class="mt-6 space-y-2">
+              <h2 class="text-2xl font-semibold tracking-tight">
+                New Episodes
+              </h2>
+              <p class="text-muted-foreground text-sm">
+                Your favorite podcasts. Updated daily.
+              </p>
+            </div>
+            <brn-separator hlmSeparator />
+
+            <div
+              hlmCard
+              class="flex min-h-[450px] flex-col justify-center p-6 align-middle"
+            >
+              <div class="text-center">
+                <ng-icon
+                  hlm
+                  size="xl"
+                  name="lucidePodcast"
+                  class="text-muted-foreground"
+                />
+                <h2 class="mt-4 text-lg font-semibold">No episodes added</h2>
+                <p class="text-muted-foreground mb-4 mt-2 text-sm">
+                  You have not added any podcasts. Add one below
+                </p>
+                <button hlmBtn class="h-8 text-xs">Add Podcast</button>
+              </div>
+            </div>
+          </div>
+          <div hlmTabsContent="live_tab" class="w-full space-y-6">live</div>
+        </hlm-tabs>
+      </div>
+    </ng-scrollbar>
   `,
 })
 export default class HomePageComponent {
