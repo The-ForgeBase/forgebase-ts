@@ -12,6 +12,7 @@ import {
   InvalidMfaCodeError,
   InvalidProvider,
   MfaAlreadyEnabledError,
+  MfaNotEnabledError,
   MfaRecoveryCodeInvalid,
   MfaService,
   OAuthProviderNotExist,
@@ -359,6 +360,10 @@ export class DynamicAuthManager<TUser extends User> {
     userId: string,
     verificationCode: string
   ): Promise<{ user: TUser; token: AuthToken | string }> {
+    // Sanitize inputs
+    userId = userId.trim();
+    verificationCode = verificationCode.trim();
+
     const user = await this.userService.findUser(userId);
     if (!user) throw new UserNotFoundError(userId);
     const isValid = this.verificationService.verifyEmail(
@@ -416,12 +421,36 @@ export class DynamicAuthManager<TUser extends User> {
 
   //TODO: fix mfa required flow properly
   async verifyMfa(userId: string, code: string) {
+    // Sanitize inputs
+    userId = userId.trim();
+    code = code.trim();
+
     const user = await this.userService.findUser(userId);
+    if (!user) throw new UserNotFoundError(userId);
+
+    if (this.rateLimiter) {
+      const limit = await this.rateLimiter.checkLimit(user.id);
+      if (!limit.allowed) throw new RateLimitExceededError();
+    }
+
     const isValid = this.mfa.verifyCode(user.mfa_secret, code);
 
     if (!isValid) {
-      const validRecovery = user.mfa_recovery_codes.includes(code);
-      if (!validRecovery) throw new InvalidMfaCodeError();
+      // Check recovery codes
+      const recoveryCodeIndex = user.mfa_recovery_codes.findIndex(
+        (rc) => rc === code
+      );
+      if (recoveryCodeIndex === -1) {
+        throw new InvalidMfaCodeError();
+      }
+
+      // Remove used recovery code
+      const updatedRecoveryCodes = [...user.mfa_recovery_codes];
+      updatedRecoveryCodes.splice(recoveryCodeIndex, 1);
+      await this.userService.updateUser(user.id, {
+        ...user,
+        mfa_recovery_codes: updatedRecoveryCodes,
+      });
     }
 
     return this.sessionManager.createSession(user);
@@ -465,9 +494,13 @@ export class DynamicAuthManager<TUser extends User> {
   }
 
   async disableMfa(userId: string, code: string) {
+    // Sanitize inputs
+    userId = userId.trim();
+    code = code.trim();
+
     const user = await this.userService.findUser(userId);
     if (!user) throw new UserNotFoundError(userId);
-    if (!user.mfa_enabled) throw new MfaAlreadyEnabledError(userId);
+    if (!user.mfa_enabled) throw new MfaNotEnabledError();
     const isValid = this.mfa.verifyCode(user.mfa_secret, code);
 
     if (!isValid) {
