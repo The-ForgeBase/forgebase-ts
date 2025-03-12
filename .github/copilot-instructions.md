@@ -5,6 +5,10 @@
 - Use signals for reactive state management
 - Optimize content loading and SSR
 
+## Others
+
+- There are other things/lib within this workspace, it not just angular/analojs
+
 ## Documentation
 
 - Use JSDoc for public APIs with examples

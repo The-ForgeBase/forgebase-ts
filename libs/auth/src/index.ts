@@ -4,9 +4,20 @@ export * from './types';
 export * from './config';
 export * from './userService';
 export * from './session';
+export * from './session/session';
+export * from './session/jwt';
+export * from './session/jose-jwt'; // Export the new JoseJwtSessionManager
+export * from './controllers/jwks-controller'; // Export JwkController
+export * from './utils/token-verifier'; // Export TokenVerifier for external services
+export * from './lib/password';
 
 // Provider exports
 export * from './providers';
+
+// Export adapters
+export * from './adapters/express';
+export * from './adapters/hono';
+export * from './adapters/nest';
 
 // Admin exports
 export { createInternalAdminManager, InternalAdminManager } from './admin';

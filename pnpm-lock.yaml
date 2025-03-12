@@ -191,6 +191,9 @@ importers:
       hono:
         specifier: ^4.6.19
         version: 4.6.19
+      jose:
+        specifier: ^6.0.10
+        version: 6.0.10
       jotai:
         specifier: ^2.11.1
         version: 2.11.1(@types/react@18.3.1)(react@18.3.1)
@@ -10175,6 +10178,9 @@ packages:
 
   jose@5.9.6:
     resolution: {integrity: sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ==}
+
+  jose@6.0.10:
+    resolution: {integrity: sha512-skIAxZqcMkOrSwjJvplIPYrlXGpxTPnro2/QWTDCxAdWQrSTV5/KqspMWmi5WAx5+ULswASJiZ0a+1B/Lxt9cw==}
 
   jotai@2.11.1:
     resolution: {integrity: sha512-41Su098mpHIX29hF/XOpDb0SqF6EES7+HXfrhuBqVSzRkxX48hD5i8nGsEewWZNAsBWJCTTmuz8M946Ih2PfcQ==}
@@ -28699,6 +28705,8 @@ snapshots:
   jiti@2.4.2: {}
 
   jose@5.9.6: {}
+
+  jose@6.0.10: {}
 
   jotai@2.11.1(@types/react@18.3.1)(react@18.3.1):
     optionalDependencies:
