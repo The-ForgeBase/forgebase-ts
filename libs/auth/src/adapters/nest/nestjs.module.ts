@@ -208,6 +208,7 @@ export class NestAuthModuleWithJWKS {
         AdminGuard,
         AdminService,
       ],
+      controllers: [AuthController, AdminController],
       exports: [AuthService, AdminService, AuthGuard, AdminGuard],
     };
   }
