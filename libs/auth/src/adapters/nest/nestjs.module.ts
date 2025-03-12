@@ -114,9 +114,8 @@ export class NestAuthModule {
 }
 
 @Module({
-  providers: [AuthService, AdminService, AuthGuard, AdminGuard],
-  exports: [AuthService, AdminService, AuthGuard, AdminGuard],
-  controllers: [AuthController, AdminController],
+  providers: [AuthService, AdminService, JwksService, AuthGuard, AdminGuard],
+  exports: [AuthService, AdminService, JwksService, AuthGuard, AdminGuard],
 })
 export class NestAuthModuleWithJWKS {
   static forRoot<TUser extends User>(
@@ -208,8 +207,7 @@ export class NestAuthModuleWithJWKS {
         AdminGuard,
         AdminService,
       ],
-      controllers: [AuthController, AdminController],
-      exports: [AuthService, AdminService, AuthGuard, AdminGuard],
+      exports: [AuthService, AdminService, JwksService, AuthGuard, AdminGuard],
     };
   }
 }
