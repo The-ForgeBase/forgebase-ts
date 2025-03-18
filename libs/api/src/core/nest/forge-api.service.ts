@@ -10,7 +10,7 @@ export class ForgeApiService {
   constructor(
     @Inject('FORGE_CONFIG') config: Partial<BaaSConfig>,
     private readonly storage: StorageService,
-    private readonly db: DatabaseService,
+    private readonly db: DatabaseService
   ) {
     this.config = {
       prefix: '',
@@ -36,6 +36,7 @@ export class ForgeApiService {
     };
 
     this.config = this.mergeConfigs(this.config, config);
+    console.log('Initializing Forge API with config:', this.config);
   }
 
   private mergeConfigs(
@@ -70,11 +71,7 @@ export class ForgeApiService {
     return this.db;
   }
 
-
-
   getConfig(): BaaSConfig {
     return this.config;
   }
-
-
 }

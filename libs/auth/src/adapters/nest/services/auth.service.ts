@@ -1,12 +1,28 @@
 import { AuthRequiredType, AuthToken, User } from '../../../types';
 import { DynamicAuthManager } from '../../../authManager';
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+import { JoseJwtSessionManager } from '@forgebase-ts/auth/session/jose-jwt';
+import { JwksResponse } from '@forgebase-ts/auth/controllers/jwks-controller';
 
 @Injectable()
 export class AuthService<TUser extends User> {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
-    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager<TUser>
-  ) {}
+    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager<TUser>,
+    @Inject('JOSE_JWT_MANAGER')
+    @Optional()
+    private joseJwtManager: JoseJwtSessionManager
+  ) {
+    // Log initialization state for debugging
+    if (!joseJwtManager) {
+      this.logger.error(
+        'JwksService instantiated with undefined JoseJwtSessionManager'
+      );
+    } else {
+      this.logger.log('JwksService initialized successfully');
+    }
+  }
 
   async register(
     provider: string,
@@ -95,5 +111,85 @@ export class AuthService<TUser extends User> {
 
   getProviderConfig(provider: string) {
     return this.authManager.getProviderConfig(provider);
+  }
+
+  /**
+   * Get the JSON Web Key Set containing the public key for token verification
+   *
+   * @returns {JwksResponse} JWKS response object
+   */
+  getJwks(): JwksResponse {
+    try {
+      // Add validation to handle potential initialization issues
+      if (!this.joseJwtManager) {
+        this.logger.error('JoseJwtSessionManager is not initialized');
+        return { keys: [] };
+      }
+
+      const publicJwk = this.joseJwtManager.getPublicJwk();
+
+      if (!publicJwk) {
+        this.logger.warn('Public JWK is null or undefined');
+      }
+
+      return {
+        keys: publicJwk ? [publicJwk] : [],
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error getting JWKS: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return { keys: [] };
+    }
+  }
+
+  /**
+   * Get the public key in PEM format
+   *
+   * @returns {Promise<string | null>} Public key in PEM format
+   */
+  async getPublicKeyPem(): Promise<string | null> {
+    try {
+      if (!this.joseJwtManager) {
+        this.logger.error('JoseJwtSessionManager is not initialized');
+        return null;
+      }
+
+      return await this.joseJwtManager.getPublicKeyPem();
+    } catch (error) {
+      this.logger.error(
+        `Error getting public key PEM: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Rotate the keys manually
+   * Useful for admin operations or scheduled key rotation
+   *
+   * @returns {Promise<void>}
+   */
+  async rotateKeys(): Promise<void> {
+    try {
+      if (!this.joseJwtManager) {
+        this.logger.error('JoseJwtSessionManager is not initialized');
+        throw new Error('JoseJwtSessionManager is not initialized');
+      }
+
+      await this.joseJwtManager.rotateKeys();
+      this.logger.log('Key rotation completed successfully');
+    } catch (error) {
+      this.logger.error(
+        `Error rotating keys: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      throw error;
+    }
   }
 }

@@ -59,6 +59,7 @@ export class InternalAdminManager {
 
     // Create initial admin if not exists
     if (config.adminFeature?.createInitialAdmin) {
+      console.log('Initializing admin manager...');
       await this.ensureInitialAdmin(
         config.adminFeature.initialAdminEmail,
         config.adminFeature.initialAdminPassword

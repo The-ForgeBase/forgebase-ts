@@ -39,6 +39,8 @@ export class ForgeApi {
 
     this.config = this.mergeConfigs(this.config, config);
 
+    console.log('Initializing Forge API with config:', this.config);
+
     // Initialize services based on configuration
     this.storage = new StorageService(this.config.services?.storage);
     this.db = new DatabaseService(this.config.services?.db);

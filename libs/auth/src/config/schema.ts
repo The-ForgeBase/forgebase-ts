@@ -3,6 +3,7 @@ import { AuthConfig } from '../types';
 
 export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   // Auth Config Table
+  console.log('Initializing auth schema...');
   const hasAuthConfig = await knex.schema.hasTable('auth_config');
   if (!hasAuthConfig) {
     await knex.schema.createTable('auth_config', (table) => {
@@ -48,6 +49,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table.index(['phone_verified']);
       table.index(['mfa_enabled']);
     });
+    console.log('Users table created');
   }
 
   // OAuth Accounts Table

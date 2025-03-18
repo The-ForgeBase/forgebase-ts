@@ -4,6 +4,7 @@ import {
   AdminController,
   AuthController,
   JwksController,
+  JwksService,
   NestAuthModuleWithJWKS,
 } from '@forgebase-ts/auth/adapters/nest';
 import { db } from '../app.module';
@@ -31,16 +32,12 @@ import { CustomJwksController } from './jwks/custom-jwks.controller';
         };
       },
       inject: [AuthConfigService],
-      imports: [AuthModule], // Include AuthModule to make AuthConfigService available
+      imports: [AuthModule],
+      controllers: [AuthController, AdminController, JwksController],
     }),
   ],
   providers: [AuthConfigService],
-  controllers: [
-    AuthController,
-    AdminController,
-    JwksController,
-    CustomJwksController,
-  ],
+  controllers: [CustomJwksController],
   exports: [AuthConfigService],
 })
 export class AuthModule {}

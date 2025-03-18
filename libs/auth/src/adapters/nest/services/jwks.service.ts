@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { JoseJwtSessionManager } from '../../../session/jose-jwt';
 import { JwksResponse } from '../../../controllers/jwks-controller';
 
@@ -11,7 +11,8 @@ export class JwksService {
 
   constructor(
     @Inject('JOSE_JWT_MANAGER')
-    private readonly joseJwtManager: JoseJwtSessionManager
+    @Optional()
+    private joseJwtManager: JoseJwtSessionManager
   ) {
     // Log initialization state for debugging
     if (!joseJwtManager) {

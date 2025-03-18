@@ -35,12 +35,11 @@ export class DatabaseService {
     };
     let knexDb: knex.Knex;
 
-    console.log(
-      `Initializing database service with provider: ${this.config.provider}`
-    );
+    console.log(`Initializing database service with provider: ${this.config}`);
 
     if (this.config.knex) {
       knexDb = this.config.knex;
+      console.log('Using knex instance from config');
     } else {
       if (this.config.provider === 'sqlite') {
         knexDb = knex({
@@ -51,6 +50,7 @@ export class DatabaseService {
           useNullAsDefault: true,
           ...this.config.config,
         });
+        console.log('Using sqlite3');
       } else if (this.config.provider === 'postgres') {
         knexDb = knex({
           client: 'pg',

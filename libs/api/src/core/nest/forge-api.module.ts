@@ -14,8 +14,20 @@ export class ForgeApiModule {
         useValue: config,
       },
       ForgeApiService,
-      DatabaseService,
-      StorageService,
+      {
+        provide: DatabaseService,
+        useFactory: (config: Partial<BaaSConfig>) => {
+          return new DatabaseService(config?.services?.db);
+        },
+        inject: ['FORGE_CONFIG'],
+      },
+      {
+        provide: StorageService,
+        useFactory: (config: Partial<BaaSConfig>) => {
+          return new StorageService(config?.services?.storage);
+        },
+        inject: ['FORGE_CONFIG'],
+      },
     ];
 
     return {

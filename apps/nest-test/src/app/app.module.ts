@@ -32,9 +32,7 @@ export const db = knex({
           provider: 'sqlite',
           realtime: false,
           enforceRls: false,
-          config: {
-            filename: './database.sqlite',
-          },
+          config: {},
           knex: db,
         },
         storage: {
@@ -43,7 +41,6 @@ export const db = knex({
         },
       },
     }),
-    // Import AuthModule first to ensure it's fully initialized
     AuthModule,
   ],
   controllers: [AppController],
