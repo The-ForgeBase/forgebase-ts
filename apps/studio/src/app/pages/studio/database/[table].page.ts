@@ -25,12 +25,40 @@ import {
   BrnTableModule,
   PaginatorState,
   useBrnColumnManager,
-} from '@spartan-ng/brain/table';
+} from './utils/src';
 import { HlmTableModule } from '@spartan-ng/ui-table-helm';
 import { BrnSelectModule } from '@spartan-ng/brain/select';
 import { HlmSelectModule } from '@spartan-ng/ui-select-helm';
 import { debounceTime, map } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
+
+interface TableColumn {
+  name: string;
+  table: string;
+  data_type: string;
+  default_value: string | null;
+  max_length: number | null;
+  numeric_precision: number | null;
+  numeric_scale: number | null;
+  is_generated: boolean;
+  generation_expression: string | null;
+  is_nullable: boolean;
+  is_unique: boolean;
+  is_primary_key: boolean;
+  has_auto_increment: boolean;
+  foreign_key_column: string | null;
+  foreign_key_table: string | null;
+}
+
+interface TableInfo {
+  columns: TableColumn[];
+  foreignKeys: any[];
+}
+
+interface TableSchema {
+  name: string;
+  info: TableInfo;
+}
 
 @Component({
   standalone: true,
@@ -63,7 +91,13 @@ import { ActivatedRoute } from '@angular/router';
           </div>
         </div>
       </div>
-
+      @if (loading()) {
+      <div class="flex justify-center items-center h-64">
+        <div
+          class="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-gray-200"
+        ></div>
+      </div>
+      } @else {
       <div class="flex flex-col justify-between gap-4 sm:flex-row">
         <input
           hlmInput
@@ -79,15 +113,15 @@ import { ActivatedRoute } from '@angular/router';
         </button>
         <ng-template #menu>
           <hlm-menu class="w-32">
-            @for (column of _brnColumnManager.allColumns; track column) {
+            @for (column of _brnColumnManager.allColumns; track column.name) {
             <button
               hlmMenuItemCheckbox
-              [disabled]="_brnColumnManager.isColumnDisabled(column)"
-              [checked]="_brnColumnManager.isColumnVisible(column)"
-              (triggered)="_brnColumnManager.toggleVisibility(column)"
+              [disabled]="_brnColumnManager.isColumnDisabled(column.name)"
+              [checked]="_brnColumnManager.isColumnVisible(column.name)"
+              (triggered)="_brnColumnManager.toggleVisibility(column.name)"
             >
               <hlm-menu-item-check />
-              <span>{{ column }}</span>
+              <span>{{ column.label }}</span>
             </button>
             }
           </hlm-menu>
@@ -116,9 +150,8 @@ import { ActivatedRoute } from '@angular/router';
             />
           </hlm-td>
         </brn-column-def>
-
-        @for (column of tableSchema?.columns || []; track column) {
-        <brn-column-def [name]="column.name">
+        @for (column of tableSchema()!.info.columns; track column.name) {
+        <brn-column-def [dynamic]="true" [name]="column.name">
           <hlm-th *brnHeaderDef>
             <button
               hlmBtn
@@ -223,13 +256,17 @@ import { ActivatedRoute } from '@angular/router';
           </div>
         </div>
       </div>
+      }
     </div>
   `,
 })
 export default class TablesComponentPage {
   private route = inject(ActivatedRoute);
   tableName = this.route.snapshot.params['table'];
-  tableSchema: any;
+  tableSchema = signal<TableSchema | null>(null);
+  loading = computed(() => {
+    return !this.tableSchema();
+  });
 
   protected readonly _rawFilterInput = signal('');
   protected readonly _filter = signal('');
@@ -251,9 +288,21 @@ export default class TablesComponentPage {
     }
   );
 
-  protected readonly _brnColumnManager = useBrnColumnManager<
-    Record<string, any>
-  >({});
+  private readonly _columnConfig = computed(() => {
+    const schema = this.tableSchema();
+    if (!schema) return {};
+
+    return schema.info.columns.reduce((acc, column) => {
+      acc[column.name] = { visible: true, label: column.name };
+      return acc;
+    }, {} as Record<string, { visible: boolean; label: string }>);
+  });
+
+  protected readonly _brnColumnManager = useBrnColumnManager({
+    select: { visible: true, label: 'Select' },
+    actions: { visible: true, label: 'Actions' },
+    ...this._columnConfig(),
+  });
   protected readonly _allDisplayedColumns = computed<any[]>(() => [
     'select',
     ...this._brnColumnManager.displayedColumns(),
@@ -282,6 +331,8 @@ export default class TablesComponentPage {
     const start = this._displayedIndices().start;
     const end = this._displayedIndices().end + 1;
     const data = this._filteredData();
+
+    // console.log('data', data);
 
     if (!sort || !column) {
       return data.slice(start, end);
@@ -312,8 +363,12 @@ export default class TablesComponentPage {
     return noneSelected ? false : allSelectedOrIndeterminate;
   });
 
-  protected readonly _trackBy: TrackByFunction<any> = (_: number, row: any) =>
-    row.id;
+  protected readonly _trackBy: TrackByFunction<any> = (_: number, row: any) => {
+    const primaryKey = this.tableSchema()?.info.columns.find(
+      (col) => col.is_primary_key
+    )?.name;
+    return primaryKey ? row[primaryKey] : row;
+  };
   protected readonly _totalElements = computed(
     () => this._filteredData().length
   );
@@ -325,32 +380,40 @@ export default class TablesComponentPage {
 
   constructor() {
     this.loadTableSchema();
-    this.loadTableData();
 
     effect(() => {
       const debouncedFilter = this._debouncedFilter();
       this._filter.set(debouncedFilter ?? '');
     });
+
+    effect(() => {
+      const schema = this.tableSchema();
+      if (!schema) return;
+      const columnConfig = schema.info.columns.reduce((acc, column) => {
+        acc[column.name] = { visible: true, label: column.name };
+        return acc;
+      }, {} as Record<string, { visible: boolean; label: string }>);
+
+      // setTimeout(() => {
+      this._brnColumnManager.resetVisibility(columnConfig as any);
+      // }, 10000);
+    });
   }
 
   async loadTableSchema() {
+    const data = await fetch(`http://localhost:8000/api/db/${this.tableName}`, {
+      credentials: 'include',
+    });
     const response = await fetch(
       `http://localhost:8000/api/db/schema/tables/${this.tableName}`,
       {
         credentials: 'include',
       }
     );
-    this.tableSchema = await response.json();
-  }
-
-  async loadTableData() {
-    const response = await fetch(
-      `http://localhost:8000/api/db/${this.tableName}`,
-      {
-        credentials: 'include',
-      }
-    );
-    this._data.set(await response.json());
+    const schema = await response.json();
+    // console.log(schema);
+    this._data.set(await data.json());
+    this.tableSchema.set(schema);
   }
 
   protected toggleRow(row: any) {
