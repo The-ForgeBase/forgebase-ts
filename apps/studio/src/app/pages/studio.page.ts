@@ -23,7 +23,7 @@ import { RouterOutlet } from '@angular/router';
       <studio-top-menu class="px-2 lg:px-4" />
       <div class="border-border bg-background border-t w-full flex flex-1">
         <studio-side-menu />
-        <div class="w-full flex flex-col flex-1">
+        <div class="w-full flex flex-col flex-1 max-w-[100%]">
           <router-outlet />
           <div class="w-full h-[5rem] flex-1 flex items-center justify-center">
             <p class="text-center text-sm text-foreground">

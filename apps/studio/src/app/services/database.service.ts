@@ -3,6 +3,7 @@ import { Injectable, signal } from '@angular/core';
 @Injectable()
 export class DatabaseService {
   private tables = signal<string[]>([]);
+  containerWidth = signal<number>(0);
 
   getTables() {
     return this.tables();
@@ -14,5 +15,9 @@ export class DatabaseService {
 
   removeTable(table: string) {
     this.tables.update((tables) => tables.filter((t) => t !== table));
+  }
+
+  setContainerWidth(width: any) {
+    this.containerWidth.set(width);
   }
 }
