@@ -61,14 +61,89 @@ interface TableSchema {
     HlmButtonModule,
   ],
   providers: [MessageService],
+  styles: [
+    `
+      :host ::ng-deep .p-datatable {
+        border: none;
+      }
+      :host ::ng-deep .p-datatable .p-datatable-header {
+        border: none;
+        padding: 0;
+        background: transparent;
+      }
+      :host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+        background-color: var(--surface-card, #ffffff);
+        border-bottom: 1px solid var(--surface-border, #dee2e6);
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        color: var(--text-color-secondary, #6c757d);
+        transition: box-shadow 0.2s;
+      }
+      :host ::ng-deep .p-datatable .p-datatable-tbody > tr {
+        background-color: var(--surface-card, #ffffff);
+        transition: all 0.12s ease-in-out;
+      }
+      :host
+        ::ng-deep
+        .p-datatable
+        .p-datatable-tbody
+        > tr:not(.p-highlight):hover {
+        background-color: var(--surface-hover, #f1f5f9);
+      }
+      :host
+        ::ng-deep
+        .p-datatable
+        .p-datatable-tbody
+        > tr.p-rowgroup-header
+        > td {
+        border-bottom: none;
+      }
+      :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+        border-bottom: 1px solid var(--surface-border, #f1f1f1);
+        padding: 0.5rem 1rem;
+      }
+      :host ::ng-deep .p-datatable .p-datatable-tbody > tr.row-editing {
+        background-color: rgba(59, 130, 246, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.16);
+      }
+      :host ::ng-deep .p-paginator {
+        background-color: transparent;
+        border: none;
+        padding: 0.75rem 0;
+      }
+      :host ::ng-deep .p-paginator .p-paginator-element {
+        color: var(--text-color-secondary, #6c757d);
+      }
+    `,
+  ],
   template: `
-    <div class="flex flex-col justify-between gap-4 sm:flex-row">
+    <div class="flex flex-col justify-between gap-4 sm:flex-row mb-6">
       <div class="flex justify-between items-center w-full">
         <h2 class="text-2xl font-bold">{{ tableName() }} Table</h2>
         <div class="flex gap-2">
-          <button hlmBtn variant="outline">Add Record</button>
-          <button hlmBtn variant="outline">Import Data</button>
-          <button hlmBtn variant="outline">Export Data</button>
+          <button
+            hlmBtn
+            variant="outline"
+            class="text-sm font-medium shadow-sm"
+          >
+            Add Record
+          </button>
+          <button
+            hlmBtn
+            variant="outline"
+            class="text-sm font-medium shadow-sm"
+          >
+            Import Data
+          </button>
+          <button
+            hlmBtn
+            variant="outline"
+            class="text-sm font-medium shadow-sm"
+          >
+            Export Data
+          </button>
         </div>
       </div>
     </div>
@@ -77,68 +152,83 @@ interface TableSchema {
 
     @if (loading()) {
     <div class="flex justify-center items-center h-64">
-      <p-progressSpinner></p-progressSpinner>
+      <p-progressSpinner
+        strokeWidth="4"
+        fill="var(--surface-ground)"
+        animationDuration=".7s"
+      ></p-progressSpinner>
     </div>
     } @else {
     <div
-      class="rounded-md border shadow-sm inline-block"
+      class="rounded-xl border shadow-sm bg-card h-fit"
       style="width:{{ tableWidth() }}px"
     >
       <p-table
         [value]="_data()"
         [tableStyle]="{ width: '100%', height: '100%' }"
         [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[5, 10, 20, 50]"
+        [rows]="pageSize()"
+        [rowsPerPageOptions]="pageSizeOptions()"
         [showCurrentPageReport]="true"
+        currentPageReportTemplate="{first} to {last} of {totalRecords}"
         dataKey="id"
         editMode="row"
         [loading]="loading()"
         [scrollable]="true"
-        styleClass="min-w-full max-w-[100%]"
+        styleClass="p-datatable-sm"
+        [scrollHeight]="'calc(100vh - 250px)'"
       >
         <ng-template #header>
-          <tr class="bg-muted/50">
+          <tr class="sticky top-0 z-10 bg-card shadow-sm">
             @for (col of tableSchema()!.info.columns; track col) { @if(col.name
             === 'id'){
             <th
-              class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
-              style="width:80px"
+              class="px-4 py-3 text-left align-middle text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b"
+              style="width:50px"
             >
               {{ col.name }}
             </th>
             } @else {
             <th
-              class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
-              style="min-width:120px; max-width:200px"
+              class="px-4 py-3 text-left align-middle text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b"
+              style="min-width:150px; max-width:250px"
             >
               {{ col.name }}
             </th>
             } }
             <th
-              class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+              class="px-4 py-3 text-left align-middle text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-l shadow-sm sticky right-0 bg-card"
               style="width:80px"
-            ></th>
+            >
+              Actions
+            </th>
           </tr>
         </ng-template>
 
         <ng-template #body let-row let-editing="editing" let-ri="rowIndex">
           <tr
-            class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+            class="border-b transition-colors hover:bg-muted/30"
+            [ngClass]="{
+              'row-editing bg-blue-50/80 dark:bg-blue-900/10': editing
+            }"
             [pEditableRow]="row"
           >
             @for (col of tableSchema()!.info.columns; track col) { @if(col.name
             === 'id'){
             <td
-              class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
-              style="width:80px"
+              class="px-4 py-3 align-middle text-sm overflow-hidden truncate"
+              style="width:50px"
             >
-              {{ row[col.name] }}
+              <p
+                class="font-medium text-primary inline-block truncate overflow-hidden"
+              >
+                {{ row[col.name] }}
+              </p>
             </td>
             } @else {
             <td
-              class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
-              style="min-width:120px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+              class="px-4 py-3 align-middle text-sm"
+              style="min-width:150px; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
             >
               <p-cellEditor>
                 <ng-template pTemplate="input">
@@ -146,20 +236,22 @@ interface TableSchema {
                     pInputText
                     type="text"
                     [(ngModel)]="row[col.name]"
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                 </ng-template>
                 <ng-template pTemplate="output">
-                  <div class="truncate">{{ row[col.name] }}</div>
+                  <p class="truncate font-mono text-sm">
+                    {{ row[col.name] }}
+                  </p>
                 </ng-template>
               </p-cellEditor>
             </td>
             } }
             <td
-              class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+              class="px-4 py-3 align-middle text-center border-l shadow-sm sticky right-0 bg-card"
               style="width:80px"
             >
-              <div class="flex items-center justify-center gap-2">
+              <div class="flex items-center justify-center gap-1">
                 <button
                   *ngIf="!editing"
                   pButton
@@ -168,7 +260,8 @@ interface TableSchema {
                   pInitEditableRow
                   icon="pi pi-pencil"
                   (click)="onRowEditInit(row)"
-                  class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 p-0"
+                  class="p-button-rounded p-button-text p-button-sm"
+                  aria-label="Edit"
                 ></button>
                 <button
                   *ngIf="editing"
@@ -178,7 +271,8 @@ interface TableSchema {
                   pSaveEditableRow
                   icon="pi pi-check"
                   (click)="onRowEditSave(row)"
-                  class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10 p-0"
+                  class="p-button-rounded p-button-success p-button-sm"
+                  aria-label="Save"
                 ></button>
                 <button
                   *ngIf="editing"
@@ -188,7 +282,8 @@ interface TableSchema {
                   pCancelEditableRow
                   icon="pi pi-times"
                   (click)="onRowEditCancel(row, ri)"
-                  class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 w-10 p-0"
+                  class="p-button-rounded p-button-danger p-button-sm"
+                  aria-label="Cancel"
                 ></button>
               </div>
             </td>
@@ -214,6 +309,59 @@ export default class TablesComponentPage {
   });
   _data = signal<any[]>([]);
   clonedData: { [s: string]: any } = {};
+
+  /**
+   * Dynamically generated page size options for the data table.
+   * Calculated based on the data size and best practices for pagination.
+   * @returns An array of number options for rows per page.
+   */
+  pageSizeOptions = computed(() => {
+    const totalRecords = this._data()?.length || 0;
+
+    // Base options always available
+    const baseOptions = [10, 20, 50];
+
+    // For smaller tables (<50 records), don't need large page sizes
+    if (totalRecords < 50) {
+      return baseOptions.filter((size) => size <= totalRecords || size === 10);
+    }
+
+    // For medium tables, include standard options
+    if (totalRecords < 200) {
+      return [...baseOptions, 100];
+    }
+
+    // For large tables, include larger page size options
+    const largeOptions = [...baseOptions, 100];
+
+    // Add "all" option (represented by the total record count)
+    // only if reasonable (less than 1000 records)
+    if (totalRecords < 1000) {
+      largeOptions.push(totalRecords);
+    } else {
+      // For very large datasets, add some larger increments
+      largeOptions.push(250, 500);
+    }
+
+    return largeOptions;
+  });
+
+  /**
+   * Default page size for the data table.
+   * Uses a sensible default based on the dataset size.
+   */
+  pageSize = computed(() => {
+    const totalRecords = this._data()?.length || 0;
+
+    // For very small datasets, show all records
+    if (totalRecords <= 10) return totalRecords || 10;
+
+    // For small to medium datasets
+    if (totalRecords < 100) return 20;
+
+    // Default for large datasets
+    return 50;
+  });
 
   constructor() {
     this.loadTableSchema();

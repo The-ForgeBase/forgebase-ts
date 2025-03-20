@@ -12,7 +12,7 @@ import {
 } from '@analogjs/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeng/themes/aura';
+import Lara from '@primeng/themes/lara';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,7 +27,7 @@ export const appConfig: ApplicationConfig = {
     providePrimeNG({
       ripple: true,
       theme: {
-        preset: Aura,
+        preset: Lara,
         options: {
           cssLayer: {
             name: 'primeng',
