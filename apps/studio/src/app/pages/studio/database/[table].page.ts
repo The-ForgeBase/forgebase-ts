@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  PLATFORM_ID,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
@@ -229,7 +237,6 @@ interface TableSchema {
         backdrop-filter: blur(8px);
         border-radius: 0.75rem;
         padding: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
       }
 
       :host ::ng-deep .p-button.p-button-sm {
@@ -273,7 +280,7 @@ interface TableSchema {
     `,
   ],
   template: `
-    <div @fadeIn class="space-y-8">
+    <div *ngIf="isBrowser()" @fadeIn class="space-y-8">
       <div
         class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
@@ -285,8 +292,8 @@ interface TableSchema {
             >
           </h1>
 
-          <div *ngIf="_data()?.length" class="data-pill">
-            {{ _data()?.length }} Records
+          <div *ngIf="_data().length" class="data-pill">
+            {{ _data().length }} Records
           </div>
         </div>
 
@@ -352,6 +359,71 @@ interface TableSchema {
         </div>
       </div>
 
+      <div class="w-full flex gap-3">
+        <button hlmBtn variant="outline" class="text-sm font-medium h-9">
+          Table Settings
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="ml-2"
+          >
+            <path d="M4 6h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 18h16"></path>
+            <path d="M4 6v12"></path>
+            <path d="M20 6v12"></path>
+            <path d="M4 6h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 18h16"></path>
+            <path d="M4 6v12"></path>
+            <path d="M20 6v12"></path>
+            <path d="M4 6h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 18h16"></path>
+            <path d="M4 6v12"></path>
+            <path d="M20 6v12"></path>
+            <path d="M4 6h16"></path>
+          </svg>
+        </button>
+        <button hlmBtn variant="outline" class="text-sm font-medium h-9">
+          Table Permissions
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="ml-2"
+          >
+            <path d="M4 6h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 18h16"></path>
+            <path d="M4 6v12"></path>
+            <path d="M20 6v12"></path>
+            <path d="M4 6h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 18h16"></path>
+            <path d="M4 6v12"></path>
+            <path d="M20 6v12"></path>
+            <path d="M4 6h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 18h16"></path>
+            <path d="M4 6v12"></path>
+          </svg>
+        </button>
+      </div>
+
       <p-toast position="top-right" styleClass="custom-toast"></p-toast>
 
       @if (loading()) {
@@ -394,10 +466,31 @@ interface TableSchema {
               @for (col of tableSchema()!.info.columns; track col) {
               @if(col.name === 'id') {
               <th
-                class="px-5 py-3.5 text-left align-middle text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b"
-                style="width:50px"
+                class="px-5 py-3.5 text-left align-middle text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b flex items-center gap-1.5"
+                style="min-width:150px; max-width:250px"
               >
-                {{ col.name }}
+                <span>{{ col.name }}</span>
+                @if(col.is_primary_key) {
+                <span
+                  class="text-primary text-[10px] bg-primary/10 px-1.5 py-0.5 rounded-full"
+                  >PK</span
+                >
+                } @if (col.has_auto_increment) {
+                <span
+                  class="text-green-600 text-[10px] bg-green-50 dark:bg-green-950/30 px-1.5 py-0.5 rounded-full"
+                  >AUTO</span
+                >
+                } @if(col.is_unique) {
+                <span
+                  class="text-orange-600 text-[10px] bg-orange-50 dark:bg-orange-950/30 px-1.5 py-0.5 rounded-full"
+                  >UNIQUE</span
+                >
+                } @if(col.foreign_key_table) {
+                <span
+                  class="text-violet-600 text-[10px] bg-violet-50 dark:bg-violet-950/30 px-1.5 py-0.5 rounded-full"
+                  >FK</span
+                >
+                }
               </th>
               } @else {
               <th
@@ -411,15 +504,20 @@ interface TableSchema {
                     class="text-primary text-[10px] bg-primary/10 px-1.5 py-0.5 rounded-full"
                     >PK</span
                   >
-                  } @else if(col.is_unique) {
+                  } @if(col.is_unique) {
                   <span
                     class="text-orange-600 text-[10px] bg-orange-50 dark:bg-orange-950/30 px-1.5 py-0.5 rounded-full"
                     >UNIQUE</span
                   >
-                  } @else if(col.foreign_key_table) {
+                  } @if(col.foreign_key_table) {
                   <span
                     class="text-violet-600 text-[10px] bg-violet-50 dark:bg-violet-950/30 px-1.5 py-0.5 rounded-full"
                     >FK</span
+                  >
+                  } @if (col.has_auto_increment) {
+                  <span
+                    class="text-green-600 text-[10px] bg-green-50 dark:bg-green-950/30 px-1.5 py-0.5 rounded-full"
+                    >AUTO</span
                   >
                   }
                 </div>
@@ -427,7 +525,7 @@ interface TableSchema {
               } }
               <th
                 class="px-5 py-3.5 text-center align-middle text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-l shadow-sm sticky right-0 bg-card"
-                style="width:80px"
+                style="width:120px"
               >
                 Actions
               </th>
@@ -445,13 +543,16 @@ interface TableSchema {
               @for (col of tableSchema()!.info.columns; track col) {
               @if(col.name === 'id') {
               <td
-                class="px-5 py-3.5 align-middle text-sm overflow-hidden truncate"
-                style="width:50px"
+                class="px-5 py-3.5 align-middle text-sm"
+                style="min-width:150px; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
               >
                 <p
-                  class="font-medium text-primary inline-block truncate overflow-hidden"
+                  class="font-medium text-primary flex items-center truncate overflow-hidden"
                 >
                   {{ row[col.name] }}
+                  <span class="type-badge hidden sm:inline-block">{{
+                    col.data_type
+                  }}</span>
                 </p>
               </td>
               } @else {
@@ -495,7 +596,7 @@ interface TableSchema {
               } }
               <td
                 class="px-4 py-2 align-middle text-center border-l shadow-sm sticky right-0 bg-card"
-                style="width:80px"
+                style="width:120px"
               >
                 <div class="flex items-center justify-center gap-1">
                   <button
@@ -530,6 +631,14 @@ interface TableSchema {
                     (click)="onRowEditCancel(row, ri)"
                     class="p-button-rounded p-button-danger p-button-sm"
                     aria-label="Cancel"
+                  ></button>
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    icon="pi pi-trash"
+                    class="p-button-rounded p-button-danger p-button-sm"
+                    aria-label="Delete"
                   ></button>
                 </div>
               </td>
@@ -613,10 +722,11 @@ export default class TablesComponentPage {
   private route = inject(ActivatedRoute);
   private messageService = inject(MessageService);
   private databaseService = inject(DatabaseService);
+  private platformId = inject(PLATFORM_ID);
 
   tableName = signal<string>(this.route.snapshot.params['table']);
   tableWidth = computed(() => {
-    return this.databaseService.containerWidth() - 50;
+    return this.databaseService.containerWidth() - 60;
   });
   tableSchema = signal<TableSchema | null>(null);
   loading = computed(() => {
@@ -624,6 +734,8 @@ export default class TablesComponentPage {
   });
   _data = signal<any[]>([]);
   clonedData: { [s: string]: any } = {};
+
+  isBrowser = signal<boolean>(isPlatformBrowser(this.platformId));
 
   /**
    * Tracks if data has been successfully fetched, even if the result is empty.
@@ -702,11 +814,11 @@ export default class TablesComponentPage {
       this.loadTableSchema();
     });
 
-    // Set up toast styling for notifications
-    effect(() => {
-      if (document) {
-        const style = document.createElement('style');
-        style.innerHTML = `
+    // Only run in browser environment
+    if (isPlatformBrowser(this.platformId)) {
+      this.isBrowser.set(true);
+      const style = document.createElement('style');
+      style.innerHTML = `
           .custom-toast .p-toast-message {
             border-radius: 0.5rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -727,9 +839,8 @@ export default class TablesComponentPage {
             color: #991b1b;
           }
         `;
-        document.head.appendChild(style);
-      }
-    });
+      document.head.appendChild(style);
+    }
   }
 
   /**
@@ -767,6 +878,7 @@ export default class TablesComponentPage {
       // Update component state with fetched data and schema
       this._data.set(data);
       this.tableSchema.set(schema);
+      //console.log('Table schema:', schema);
 
       // Mark fetch as complete, regardless of whether data is empty or not
       this.dataFetchComplete.set(true);
