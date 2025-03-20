@@ -116,6 +116,12 @@ interface TableSchema {
       :host ::ng-deep .p-paginator .p-paginator-element {
         color: var(--text-color-secondary, #6c757d);
       }
+      :host ::ng-deep .p-datatable-emptymessage td {
+        text-align: center;
+        padding: 3rem 0;
+        background-color: transparent !important;
+        border: none !important;
+      }
     `,
   ],
   template: `
@@ -289,6 +295,48 @@ interface TableSchema {
             </td>
           </tr>
         </ng-template>
+
+        <!-- Empty state template -->
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td [attr.colspan]="(tableSchema()!.info.columns.length || 0) + 1">
+              <div class="flex flex-col items-center justify-center py-12 px-4">
+                <div class="bg-muted/30 rounded-full p-4 mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="text-muted-foreground h-8 w-8"
+                  >
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-medium mb-2">No Records Found</h3>
+                <p
+                  class="text-sm text-muted-foreground text-center mb-6 max-w-md"
+                >
+                  {{
+                    hasDataBeenFetched()
+                      ? 'The table is empty. Add a new record to get started.'
+                      : 'There was a problem fetching data from this table.'
+                  }}
+                </p>
+                <button hlmBtn variant="default" class="text-sm font-medium">
+                  Add First Record
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
       </p-table>
     </div>
     }
@@ -309,6 +357,19 @@ export default class TablesComponentPage {
   });
   _data = signal<any[]>([]);
   clonedData: { [s: string]: any } = {};
+
+  /**
+   * Tracks if data has been successfully fetched, even if the result is empty.
+   * Used to differentiate between an intentionally empty table and a fetch failure.
+   */
+  private dataFetchComplete = signal<boolean>(false);
+
+  /**
+   * Indicates whether data has been successfully fetched, regardless of result.
+   * This helps determine if the table is truly empty vs failed to fetch.
+   * @returns {boolean} True if data has been fetched, otherwise false
+   */
+  hasDataBeenFetched = computed(() => this.dataFetchComplete());
 
   /**
    * Dynamically generated page size options for the data table.
@@ -372,8 +433,15 @@ export default class TablesComponentPage {
     });
   }
 
+  /**
+   * Loads the table schema and data from the API
+   * Sets dataFetchComplete signal to true when complete, even if the fetch returns empty data
+   */
   async loadTableSchema() {
     try {
+      // Reset fetch status when starting a new load
+      this.dataFetchComplete.set(false);
+
       const [dataResponse, schemaResponse] = await Promise.all([
         fetch(`http://localhost:8000/api/db/${this.tableName()}`, {
           credentials: 'include',
@@ -397,15 +465,20 @@ export default class TablesComponentPage {
         throw new Error('Failed to load table data');
       }
 
-      // console.log(data);
+      // Update component state with fetched data and schema
       this._data.set(data);
       this.tableSchema.set(schema);
+
+      // Mark fetch as complete, regardless of whether data is empty or not
+      this.dataFetchComplete.set(true);
     } catch (error) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
         detail: 'Failed to load table data',
       });
+      // Even on error, we've attempted the fetch
+      this.dataFetchComplete.set(true);
     }
   }
 
