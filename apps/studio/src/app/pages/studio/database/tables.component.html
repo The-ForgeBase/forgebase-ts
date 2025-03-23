@@ -1,4 +1,4 @@
-<div *useClient @fadeIn class="space-y-8">
+<div class="space-y-8">
   <div
     class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
   >
@@ -240,6 +240,7 @@
 
   <!-- Data Table -->
   <div
+    *useClient
     @fadeInTable
     class="rounded-xl border bg-card shadow-sm overflow-hidden"
     [style.width]="tableWidth() + 'px'"

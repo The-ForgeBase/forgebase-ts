@@ -7,8 +7,28 @@ import {
   AfterViewInit,
   signal,
   computed,
+  viewChild,
 } from '@angular/core';
 import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
+import {
+  BrnSheetComponent,
+  BrnSheetContentDirective,
+  BrnSheetTriggerDirective,
+} from '@spartan-ng/brain/sheet';
+import {
+  HlmSheetComponent,
+  HlmSheetContentComponent,
+  HlmSheetDescriptionDirective,
+  HlmSheetFooterComponent,
+  HlmSheetHeaderComponent,
+  HlmSheetTitleDirective,
+} from '@spartan-ng/ui-sheet-helm';
+import { provideIcons } from '@ng-icons/core';
+import { lucideCross } from '@ng-icons/lucide';
+import { HlmButtonDirective } from '@spartan-ng/ui-button-helm';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import { HlmInputDirective } from '@spartan-ng/ui-input-helm';
+import { HlmLabelDirective } from '@spartan-ng/ui-label-helm';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { injectLoad } from '@analogjs/router';
@@ -25,6 +45,7 @@ import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
 import { InputTextModule } from 'primeng/inputtext';
 import { animate, style, transition, trigger } from '@angular/animations';
+import { NewTableComponent } from './components/table/new-table.component';
 
 import { load } from './database.server';
 
@@ -62,6 +83,14 @@ interface TableItem {
     RouterOutlet,
     TooltipModule,
     InputTextModule,
+    BrnSheetTriggerDirective,
+    BrnSheetContentDirective,
+    HlmSheetComponent,
+    HlmSheetContentComponent,
+    HlmSheetHeaderComponent,
+    HlmSheetTitleDirective,
+    HlmSheetDescriptionDirective,
+    NewTableComponent,
   ],
   animations: [
     trigger('fadeInOut', [
@@ -80,7 +109,7 @@ interface TableItem {
       ]),
     ]),
   ],
-  providers: [DatabaseService],
+  providers: [DatabaseService, provideIcons({ lucideCross })],
   template: `
     <div
       class="grid h-screen w-full overflow-hidden max-w-[100%] grid-cols-1 md:grid-cols-[280px_1fr] gap-0"
@@ -96,25 +125,44 @@ interface TableItem {
               <h2 class="text-lg font-semibold tracking-tight">
                 Database Tables
               </h2>
-              <button
-                class="rounded-full h-7 w-7 flex items-center justify-center hover:bg-muted transition-colors"
-                [pTooltip]="'Create new table'"
-                tooltipPosition="bottom"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+              <hlm-sheet class="bg-white" #createTableSheetRef side="right">
+                <button
+                  class="rounded-full h-7 w-7 flex items-center justify-center hover:bg-muted transition-colors"
+                  [pTooltip]="'Create new table'"
+                  tooltipPosition="bottom"
+                  brnSheetTrigger
                 >
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+                <hlm-sheet-content
+                  class="h-full bg-background w-[600px] !max-w-[100%]"
+                  *brnSheetContent="let ctx"
+                >
+                  <hlm-sheet-header>
+                    <h3 hlmSheetTitle>Create a new Table</h3>
+                    <p hlmSheetDescription>Fill in the details below:</p>
+                  </hlm-sheet-header>
+                  <div class="py-4 grid gap-4">
+                    <studio-new-table
+                      (close)="closeSheet()"
+                      [showSystemTables]="showSystemTables()"
+                      [tables]="tables()"
+                    ></studio-new-table>
+                  </div>
+                </hlm-sheet-content>
+              </hlm-sheet>
             </div>
 
             <div class="relative">
@@ -338,6 +386,9 @@ export default class DatabaseLayoutComponent implements OnInit, AfterViewInit {
   database = inject(DatabaseService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  public viewchildSheetRef = viewChild<BrnSheetComponent>(
+    'createTableSheetRef'
+  );
 
   /** Tracks the search query for filtering tables */
   searchQuery = signal('');
@@ -451,5 +502,9 @@ export default class DatabaseLayoutComponent implements OnInit, AfterViewInit {
       this.containerWidth.next(width);
       this.database.setContainerWidth(width);
     }
+  }
+
+  closeSheet() {
+    this.viewchildSheetRef()?.close({});
   }
 }

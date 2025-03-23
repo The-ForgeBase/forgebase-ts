@@ -221,6 +221,7 @@ export default class TablesComponentPage {
     this.loadTableSchema();
 
     this.route.params.subscribe((params) => {
+      this.addRecordDialogVisible.set(false);
       this.tableName.set(params['table']);
       this.loadTableSchema();
     });
@@ -287,9 +288,9 @@ export default class TablesComponentPage {
       }
 
       // Update component state with fetched data and schema
-      this._data.set(data);
       this.tableSchema.set(schema);
-      //console.log('Table schema:', schema);
+      this._data.set(data);
+      console.log('Table schema:', schema);
 
       // Mark fetch as complete, regardless of whether data is empty or not
       this.dataFetchComplete.set(true);

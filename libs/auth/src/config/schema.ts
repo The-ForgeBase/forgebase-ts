@@ -31,7 +31,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   if (!hasUsers) {
     await knex.schema.createTable('users', (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
-      table.string('email').unique().index();
+      table.string('email').index().unique().notNullable();
       table.string('phone').unique().nullable();
       table.string('name').nullable();
       table.string('picture').nullable();
@@ -215,7 +215,7 @@ export async function initializeAdminTables(knex: Knex): Promise<void> {
   if (!hasAdmins) {
     await knex.schema.createTable('internal_admins', (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
-      table.string('email').unique().notNullable().index();
+      table.string('email').index().unique().notNullable();
       table.string('name').nullable();
       table.string('password_hash').notNullable();
       table.string('role').defaultTo('admin').notNullable();
