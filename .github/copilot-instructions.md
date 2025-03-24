@@ -4,7 +4,7 @@
 - Use standalone components and zoneless change detection
 - Use signals for reactive state management
 - use spartan/ui and primeng as the component lib
-- Priotize spartan/ui more than primeng (use spartan/ui everywhere possible)
+- Prioritize spartan/ui more than primeng (use spartan/ui everywhere possible)
 - Optimize content loading and SSR
 
 ## Others
