@@ -36,6 +36,7 @@ import {
   lucideDatabase,
   lucideColumns2,
 } from '@ng-icons/lucide';
+import { DatabaseService } from '../../../../services/database.service';
 
 @Component({
   selector: 'studio-new-table',
@@ -303,6 +304,7 @@ import {
 })
 export class NewTableComponent {
   private fb = inject(FormBuilder);
+  private dbService = inject(DatabaseService);
 
   close = output();
   tables = input.required<TableItem[]>();
@@ -380,6 +382,8 @@ export class NewTableComponent {
         })
       );
     });
+
+    console.log('Tables:', this.dbService.getTables());
   }
 
   get columnsFormArray() {
@@ -433,8 +437,57 @@ export class NewTableComponent {
 
       console.log('Table Name:', tableName);
       console.log('Columns:', columns);
+
+      if (!tableName || !columns) {
+        console.error('Invalid table name or columns');
+        alert('Invalid table name or columns. Please check your input.');
+        return;
+      }
+
+      // Check if table name already exists
+      const existingTable = this.tables().find(
+        (table) => table.name === tableName
+      );
+      if (existingTable) {
+        console.error('Table name already exists');
+        alert('Table name already exists. Please choose a different name.');
+        return;
+      }
+
+      const requestBody = {
+        action: 'create',
+        tableName,
+        columns,
+      };
+
+      fetch('http://localhost:8000/api/db/schema', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody),
+      })
+        .then((response) => {
+          const res = response.json();
+          if (!response.ok) {
+            console.error('Error creating table:', res);
+            throw new Error('Network response was not ok');
+          }
+          return res;
+        })
+        .then((data) => {
+          console.log('Table created successfully:', data);
+          this.dbService.addTable(tableName);
+          this.onClose();
+        })
+        .catch((error) => {
+          console.error('Error creating table:', error);
+          alert('Error creating table. Please try again.');
+        });
     } else {
       console.error('Form is invalid');
+      alert('Invalid table name or columns. Please check your input.');
     }
   }
 

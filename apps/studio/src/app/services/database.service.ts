@@ -6,7 +6,7 @@ export class DatabaseService {
   containerWidth = signal<number>(0);
 
   getTables() {
-    return this.tables();
+    return this.tables.asReadonly();
   }
 
   addTable(table: string) {
@@ -15,6 +15,10 @@ export class DatabaseService {
 
   removeTable(table: string) {
     this.tables.update((tables) => tables.filter((t) => t !== table));
+  }
+
+  setTables(tables: string[]) {
+    this.tables.set(tables);
   }
 
   setContainerWidth(width: any) {

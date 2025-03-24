@@ -387,25 +387,27 @@ export default class DatabaseLayoutComponent implements OnInit, AfterViewInit {
 
   /** All tables with metadata */
   tables = computed(() => {
-    return this.data().tables.map((name: string) => {
-      // Identify system tables (starting with underscore or pg_ prefix)
-      const isSystem =
-        name.startsWith('_') ||
-        name.startsWith('pg_') ||
-        [
-          'table_permissions',
-          'internal_admin_audit_logs',
-          'internal_admin_sessions',
-          'internal_admins',
-          'auth_config',
-        ].includes(name);
+    return this.database
+      .getTables()()
+      .map((name: string) => {
+        // Identify system tables (starting with underscore or pg_ prefix)
+        const isSystem =
+          name.startsWith('_') ||
+          name.startsWith('pg_') ||
+          [
+            'table_permissions',
+            'internal_admin_audit_logs',
+            'internal_admin_sessions',
+            'internal_admins',
+            'auth_config',
+          ].includes(name);
 
-      return {
-        name,
-        type: isSystem ? 'system' : 'user',
-        icon: isSystem ? 'system' : 'table',
-      } as TableItem;
-    });
+        return {
+          name,
+          type: isSystem ? 'system' : 'user',
+          icon: isSystem ? 'system' : 'table',
+        } as TableItem;
+      });
   });
 
   /** Filtered tables based on search query and system table preference */
@@ -443,10 +445,7 @@ export default class DatabaseLayoutComponent implements OnInit, AfterViewInit {
    */
   ngOnInit(): void {
     // Add tables to the database service
-    this.data().tables.forEach((table: string) => {
-      this.database.addTable(table);
-    });
-
+    this.database.setTables(this.data().tables);
     // Extract and set current table from URL
     this.updateCurrentTableFromUrl();
   }
