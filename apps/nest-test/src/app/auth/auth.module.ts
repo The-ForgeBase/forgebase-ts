@@ -4,7 +4,6 @@ import {
   AdminController,
   AuthController,
   JwksController,
-  JwksService,
   NestAuthModuleWithJWKS,
 } from '@forgebase-ts/auth/adapters/nest';
 import { db } from '../app.module';

@@ -186,9 +186,45 @@ export class ForgeDatabase {
       query: async (
         tableName: string,
         params: DataQueryParams,
-        user?: UserContext
+        user?: UserContext,
+        isSystem = false
       ) => {
         const queryParams = this.parseQueryParams(params);
+
+        if (!this.config.enforceRls || isSystem) {
+          return this.hooks.query(
+            tableName,
+            (query) => this.queryHandler.buildQuery(queryParams, query),
+            queryParams
+          );
+        }
+
+        if (!user && !isSystem && this.config.enforceRls) {
+          throw new Error('User is required to query a record');
+        }
+
+        const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
+          await enforcePermissions(
+            tableName,
+            'SELECT',
+            user,
+            this.permissionService
+          );
+
+        if (!initialStatus && !initialHasFieldCheck) {
+          throw new Error(
+            `User does not have permission to query table "${tableName}"`
+          );
+        }
+
+        if (initialStatus) {
+          // If the user has permission to query, proceed with the query
+          return this.hooks.query(
+            tableName,
+            (query) => this.queryHandler.buildQuery(queryParams, query),
+            queryParams
+          );
+        }
 
         const records = await this.hooks.query(
           tableName,
@@ -196,23 +232,35 @@ export class ForgeDatabase {
           queryParams
         );
 
-        if (this.config.enforceRls && user) {
-          return enforcePermissions(
-            tableName,
-            'SELECT',
-            records,
-            user,
-            this.permissionService
+        if (!records.length) {
+          return records;
+        }
+
+        const { status, row } = await enforcePermissions(
+          tableName,
+          'SELECT',
+          user,
+          this.permissionService,
+          records
+        );
+
+        if (!status) {
+          throw new Error(
+            `User does not have permission to query table "${tableName}"`
           );
         }
 
-        return records as any;
+        return row as any;
       },
 
-      create: async (params: DataMutationParams, user?: UserContext) => {
+      create: async (
+        params: DataMutationParams,
+        user?: UserContext,
+        isSystem = false
+      ) => {
         const { data, tableName } = params;
 
-        console.log('data-db', data, tableName);
+        // console.log('data-db', data, tableName);
 
         // Handle both single record and array of records
         const isArray = Array.isArray(data);
@@ -230,36 +278,128 @@ export class ForgeDatabase {
           throw new Error('Invalid request body');
         }
 
-        if (this.config.enforceRls && user) {
-          return enforcePermissions(
+        if (!this.config.enforceRls || isSystem) {
+          return this.hooks.mutate(
+            tableName,
+            'create',
+            async (query) => query.insert(records).returning('*'),
+            records
+          );
+        }
+
+        if (!user && !isSystem && this.config.enforceRls) {
+          throw new Error('User is required to create a record');
+        }
+
+        const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
+          await enforcePermissions(
             tableName,
             'INSERT',
-            records,
             user,
             this.permissionService
+          );
+
+        if (!initialStatus && !initialHasFieldCheck) {
+          throw new Error(
+            `User does not have permission to create record in table "${tableName}"`
+          );
+        }
+
+        if (initialStatus) {
+          // If the user has permission to create, proceed with the creation
+          return this.hooks.mutate(
+            tableName,
+            'create',
+            async (query) => query.insert(records).returning('*'),
+            records
+          );
+        }
+
+        const { status, row } = await enforcePermissions(
+          tableName,
+          'INSERT',
+          user,
+          this.permissionService,
+          records
+        );
+
+        if (!status) {
+          throw new Error(
+            `User does not have permission to create record in table "${tableName}"`
           );
         }
 
         const result = this.hooks.mutate(
           tableName,
           'create',
-          async (query) => query.insert(records).returning('*'),
-          records
+          async (query) => query.insert(row).returning('*'),
+          row
         );
 
         return result;
       },
 
-      update: async (params: DataMutationParams, user?: UserContext) => {
+      update: async (
+        params: DataMutationParams,
+        user?: UserContext,
+        isSystem = false
+      ) => {
         const { id, tableName, data } = params;
 
-        if (this.config.enforceRls && user) {
-          return enforcePermissions(
+        if (!this.config.enforceRls || isSystem) {
+          const result = this.hooks.mutate(
             tableName,
-            'UPDATE',
-            data,
+            'update',
+            async (query) => query.where({ id }).update(data).returning('*'),
+
+            { id, ...data }
+          );
+
+          return result;
+        }
+
+        if (!user && !isSystem && this.config.enforceRls) {
+          throw new Error('User is required to update a record');
+        }
+
+        const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
+          await enforcePermissions(
+            tableName,
+            'DELETE',
             user,
             this.permissionService
+          );
+
+        if (!initialStatus && !initialHasFieldCheck) {
+          throw new Error(
+            `User does not have permission to delete record with id ${id}`
+          );
+        }
+
+        if (initialStatus) {
+          // If the user has permission to delete, proceed with the deletion
+          const result = this.hooks.mutate(
+            tableName,
+            'update',
+            async (query) => query.where({ id }).update(data).returning('*'),
+
+            { id, ...data }
+          );
+
+          return result;
+        }
+
+        const { status } = await enforcePermissions(
+          tableName,
+          'UPDATE',
+          user,
+          this.permissionService,
+          data
+        );
+
+        if (!status) {
+          throw new Error(
+            `User does not have permission to update record with id ${id}`
           );
         }
 
@@ -274,8 +414,49 @@ export class ForgeDatabase {
         return result;
       },
 
-      delete: async (params: DataDeleteParams, user?: UserContext) => {
+      delete: async (
+        params: DataDeleteParams,
+        user?: UserContext,
+        isSystem = false
+      ) => {
         const { id, tableName } = params;
+
+        if (!this.config.enforceRls || isSystem) {
+          return this.hooks.mutate(
+            tableName,
+            'delete',
+            async (query) => query.where({ id }).delete(),
+            { id }
+          );
+        }
+
+        if (!user && !isSystem && this.config.enforceRls) {
+          throw new Error('User is required to delete a record');
+        }
+
+        const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
+          await enforcePermissions(
+            tableName,
+            'DELETE',
+            user,
+            this.permissionService
+          );
+
+        if (!initialStatus && !initialHasFieldCheck) {
+          throw new Error(
+            `User does not have permission to delete record with id ${id}`
+          );
+        }
+
+        if (initialStatus) {
+          // If the user has permission to delete, proceed with the deletion
+          return this.hooks.mutate(
+            tableName,
+            'delete',
+            async (query) => query.where({ id }).delete(),
+            { id }
+          );
+        }
 
         // get the record to enforce permissions
         const record = await this.hooks.query(
@@ -286,13 +467,16 @@ export class ForgeDatabase {
           { id }
         );
 
-        if (this.config.enforceRls && user) {
-          return enforcePermissions(
-            tableName,
-            'DELETE',
-            record,
-            user,
-            this.permissionService
+        const { status } = await enforcePermissions(
+          tableName,
+          'DELETE',
+          user,
+          this.permissionService,
+          record
+        );
+        if (!status) {
+          throw new Error(
+            `User does not have permission to delete record with id ${id}`
           );
         }
 

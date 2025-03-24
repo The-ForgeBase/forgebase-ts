@@ -101,12 +101,14 @@ export class DatabaseService {
   async query(
     tableName: string,
     query: DataQueryParams,
-    userContext: UserContext
+    userContext: UserContext,
+    isSystem = false
   ): Promise<any[]> {
     const records = await this.forgeDatabase.endpoints.data.query<any>(
       tableName,
       query,
-      userContext
+      userContext,
+      isSystem
     );
     return records;
   }
@@ -114,13 +116,15 @@ export class DatabaseService {
   async insert(
     tableName: string,
     data: DataMutationParams,
-    userContext: UserContext
+    userContext: UserContext,
+    isSystem = false
   ): Promise<any> {
     try {
       console.log('Inserting data', data, { ...data, tableName });
       const records = await this.forgeDatabase.endpoints.data.create(
         { ...data, tableName },
-        userContext
+        userContext,
+        isSystem
       );
       return records;
     } catch (error) {
@@ -131,11 +135,13 @@ export class DatabaseService {
 
   async update(
     params: DataMutationParams,
-    userContext: UserContext
+    userContext: UserContext,
+    isSystem = false
   ): Promise<any> {
     const records = await this.forgeDatabase.endpoints.data.update(
       params,
-      userContext
+      userContext,
+      isSystem
     );
     return records;
   }
@@ -143,11 +149,13 @@ export class DatabaseService {
   async delete(
     tableName: string,
     id: string | number,
-    userContext: UserContext
+    userContext: UserContext,
+    isSystem = false
   ): Promise<any> {
     const records = await this.forgeDatabase.endpoints.data.delete(
       { tableName, id },
-      userContext
+      userContext,
+      isSystem
     );
     return records;
   }

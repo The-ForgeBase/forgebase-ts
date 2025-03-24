@@ -1,4 +1,9 @@
-import type { PermissionRule, UserContext, UserContextFields } from './types';
+import type {
+  PermissionRule,
+  TablePermissions,
+  UserContext,
+  UserContextFields,
+} from './types';
 import { PermissionService } from './permissionService';
 
 export function evaluatePermission(
@@ -125,59 +130,120 @@ type Row = Record<string, any>;
 export async function enforcePermissions(
   tableName: string,
   operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE',
-  rows: Row | Row[],
   userContext: UserContext,
-  permissionService: PermissionService
-): Promise<Row | Row[]> {
-  const tablePermissions = await permissionService.getPermissionsForTable(
+  permissionService: PermissionService,
+  rows?: Row | Row[]
+): Promise<{
+  row?: Row | Row[];
+  status: boolean;
+  message?: string;
+  hasFieldCheck: boolean;
+}> {
+  const tablePermissions = (await permissionService.getPermissionsForTable(
     tableName
-  );
+  )) as TablePermissions;
 
   if (!tablePermissions) {
-    throw new Error(`Permission for Table "${tableName}" not found`);
+    return {
+      row: rows,
+      status: false,
+      message: `No permissions defined for table "${tableName}"`,
+      hasFieldCheck: false,
+    };
   }
 
   if (!tablePermissions?.operations?.[operation]) {
-    throw new Error(
-      `Operation "${operation}" not allowed on table "${tableName}"`
-    );
+    return {
+      row: rows,
+      status: false,
+      message: `No permissions defined for operation "${operation}" on table "${tableName}"`,
+      hasFieldCheck: false,
+    };
   }
 
   const rules = tablePermissions.operations[operation];
 
-  // if rules are empty, allow access
+  // Early return if no rules
   if (!rules || rules.length === 0) {
-    return rows;
+    return { row: rows, status: true, hasFieldCheck: false };
   }
 
-  // if the rules does not include a fieldCheck, just evaluate the rules against the userContext
-  if (!rules.some((rule: PermissionRule) => rule.allow === 'fieldCheck')) {
-    const access = evaluatePermission(rules, userContext, {});
-    if (!access) {
-      throw new Error(
-        `User does not have permission to perform operation "${operation}" on table "${tableName}"`
-      );
-    }
-    return rows;
-  }
+  // Separate rules into fieldCheck and non-fieldCheck
+  const fieldCheckRules = rules.filter((rule) => rule.allow === 'fieldCheck');
+  const nonFieldCheckRules = rules.filter(
+    (rule) => rule.allow !== 'fieldCheck'
+  );
 
-  if (Array.isArray(rows)) {
-    const result: Row[] = [];
-    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-      const chunk = rows.slice(i, i + CHUNK_SIZE);
-      const filteredChunk = chunk.filter((row) =>
-        evaluatePermission(rules, userContext, row)
-      );
-      result.push(...filteredChunk);
-    }
-    return result;
-  }
-
-  const access = evaluatePermission(rules, userContext, rows);
-  if (!access) {
-    throw new Error(
-      `User does not have permission to perform operation "${operation}" on table "${tableName}"`
+  // First check non-fieldCheck rules
+  if (nonFieldCheckRules.length > 0) {
+    const hasAccess = nonFieldCheckRules.some((rule) =>
+      evaluatePermission([rule], userContext, {})
     );
+    if (hasAccess) {
+      return {
+        row: rows,
+        status: true,
+        hasFieldCheck: false,
+      };
+    }
   }
-  return rows;
+
+  // If we reach here, no non-fieldCheck rules passed
+  // Check if we have fieldCheck rules
+  if (fieldCheckRules.length > 0) {
+    // If no rows provided but we need to check fields, return early
+    if (!rows) {
+      return {
+        row: undefined,
+        status: true,
+        hasFieldCheck: true,
+        message: 'Field-level check required, please provide row data',
+      };
+    }
+
+    // Handle array of rows
+    if (Array.isArray(rows)) {
+      const result: Row[] = [];
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        const filteredChunk = chunk.filter((row) => {
+          return fieldCheckRules.some((rule) =>
+            evaluatePermission([rule], userContext, row)
+          );
+        });
+        result.push(...filteredChunk);
+      }
+      return {
+        row: result,
+        status: result.length > 0,
+        hasFieldCheck: false,
+        message:
+          result.length === 0
+            ? 'No rows matched the field-level permission rules'
+            : undefined,
+      };
+    }
+
+    // Handle single row
+    const hasFieldAccess = fieldCheckRules.some((rule) =>
+      evaluatePermission([rule], userContext, rows)
+    );
+
+    return {
+      row: rows,
+      status: hasFieldAccess,
+      hasFieldCheck: false,
+      message: !hasFieldAccess
+        ? `User does not have field-level permission to perform operation "${operation}" on table "${tableName}"`
+        : undefined,
+    };
+  }
+
+  // If we reach here, no rules passed
+  return {
+    row: rows,
+    status: false,
+    hasFieldCheck: false,
+    message: `User does not have permission to perform operation "${operation}" on table "${tableName}"`,
+  };
 }

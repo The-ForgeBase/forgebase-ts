@@ -32,7 +32,7 @@ export class KnexAdminService implements AdminService {
    */
   async findAdminById(id: string): Promise<InternalAdmin | null> {
     const admin = await this.knex(this.tableName).where({ id }).first();
-    console.log('findAdminById', id, admin);
+    // console.log('findAdminById', id, admin);
     return admin || null;
   }
 

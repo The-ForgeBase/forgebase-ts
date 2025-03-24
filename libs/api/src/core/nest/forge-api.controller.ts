@@ -8,17 +8,19 @@ import {
   Query,
   Body,
   Req,
-  Res,
   HttpStatus,
   HttpException,
+  UseGuards,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { ForgeApiService } from './forge-api.service';
 import { DataMutationParams, DataQueryParams } from '@forgebase-ts/database';
 import { ApiAdmin } from './decorators/admin.decorator';
 import { ApiPublic } from './decorators/public.decorator';
+import { AdminGuard } from './guards/admin.guard';
 
 @Controller()
+@UseGuards(AdminGuard)
 export class ForgeApiController {
   constructor(private readonly forgeApiService: ForgeApiService) {}
 
@@ -292,7 +294,8 @@ export class ForgeApiController {
           tableName: collection,
           data,
         },
-        (req as any).user
+        req['user'],
+        req['isSystem']
       );
 
       return { id };
@@ -315,7 +318,7 @@ export class ForgeApiController {
     try {
       return await this.forgeApiService
         .getDatabaseService()
-        .query(collection, query, (req as any).user);
+        .query(collection, query, req['user'], req['isSystem']);
     } catch (error) {
       console.error('Error querying items:', error);
       throw new HttpException(
@@ -339,7 +342,7 @@ export class ForgeApiController {
       const query: DataQueryParams = { filter: { id: itemId }, select: ['*'] };
       return await this.forgeApiService
         .getDatabaseService()
-        .query(collection, query, (req as any).user);
+        .query(collection, query, req['user'], req['isSystem']);
     } catch (error) {
       console.error('Error getting item by id:', error);
       throw new HttpException(
@@ -374,7 +377,7 @@ export class ForgeApiController {
 
       await this.forgeApiService
         .getDatabaseService()
-        .update(params, (req as any).user);
+        .update(params, req['user'], req['isSystem']);
       return { success: true };
     } catch (error) {
       console.error('Error updating item:', error);
@@ -397,7 +400,7 @@ export class ForgeApiController {
 
       await this.forgeApiService
         .getDatabaseService()
-        .delete(collection, itemId, (req as any).user);
+        .delete(collection, itemId, req['user'], req['isSystem']);
       return { success: true };
     } catch (error) {
       console.error('Error deleting item:', error);

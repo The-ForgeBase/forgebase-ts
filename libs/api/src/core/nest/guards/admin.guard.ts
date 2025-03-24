@@ -6,7 +6,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { BaaSConfig } from '../../../types';
 
 @Injectable()
@@ -22,20 +22,22 @@ export class AdminGuard implements CanActivate {
       context.getHandler()
     );
 
-    if (isPublic) {
-      return true;
-    }
-
     const request = context.switchToHttp().getRequest() as Request;
 
-    if (!this.config.api.adminReqName) {
-      return true;
+    const adminReqName = this.config.api?.adminReqName || 'admin';
+
+    const token = request[adminReqName];
+
+    //TODO: Add proper way to verify the token from any auth system
+
+    if (!token && !isPublic) {
+      throw new UnauthorizedException('No admin token provided');
     }
 
-    const token = request.get(this.config.api.adminReqName || 'x-admin-token');
-
-    if (!token) {
-      throw new UnauthorizedException('No admin token provided');
+    //TODO: Add proper way to get the isSystem flag
+    if (token) {
+      request['isSystem'] = true;
+      request['isAdmin'] = true;
     }
 
     return true;

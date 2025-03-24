@@ -3,10 +3,9 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
-  Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { AdminFeatureDisabledError } from '../../../types/admin';
 import { AdminService } from '../services/admin.service';
 

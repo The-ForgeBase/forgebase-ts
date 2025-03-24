@@ -13,10 +13,25 @@ export function forgeExpressMiddleware(
 ): RequestHandler {
   const api = forgeApi(config);
 
+  // Get the configured admin request header name or use default
+  const adminReqHeaderName = config.api?.adminReqName || 'x-forge-admin';
+  const adminSecret = process.env.FORGE_ADMIN_SECRET;
+
+  if (!adminSecret) {
+    console.warn(
+      'FORGE_ADMIN_SECRET not set. System-level requests will be disabled.'
+    );
+  }
+
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const adapter = new ExpressAdapter(req);
-      const handled = await api.handle(adapter);
+      //TODO: Add proper way to get the isSystem flag
+      // Check for system-level request
+      const isSystem =
+        adminSecret && req.headers[adminReqHeaderName] === adminSecret;
+
+      const handled = await api.handle(adapter, isSystem);
 
       if (!handled) {
         next();
