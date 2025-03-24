@@ -50,6 +50,22 @@ export class ForgeApiController {
     }
   }
 
+  @Get('db/schema/tables/permission/:tableName')
+  @ApiAdmin()
+  async getTablePermission(@Param('tableName') tableName: string) {
+    try {
+      return await this.forgeApiService
+        .getDatabaseService()
+        .getTableSchemaWithPermissions(tableName);
+    } catch (error) {
+      console.error('Error getting table permission:', error);
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   @Get('db/schema/tables/:tableName')
   @ApiAdmin()
   async getTableSchema(@Param('tableName') tableName: string) {
@@ -75,22 +91,6 @@ export class ForgeApiController {
         .deleteSchema(tableName);
     } catch (error) {
       console.error('Error deleting table:', error);
-      throw new HttpException(
-        error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-
-  @Get('db/schema/tables/permission/:tableName')
-  @ApiAdmin()
-  async getTablePermission(@Param('tableName') tableName: string) {
-    try {
-      return await this.forgeApiService
-        .getDatabaseService()
-        .getTableSchemaWithPermissions(tableName);
-    } catch (error) {
-      console.error('Error getting table permission:', error);
       throw new HttpException(
         error.message || 'Internal server error',
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -233,14 +233,24 @@ export class ForgeApiController {
     }
   }
 
-  @Put('db/schema/permissions/:tableName')
+  @Post('db/schema/permissions/:tableName')
   @ApiAdmin()
   async setPermissions(
     @Param('tableName') tableName: string,
-    @Body() body: { permissions: any }
+    @Body() body: any
   ) {
     try {
-      const { permissions } = body;
+      let permissions = body;
+      // Check if permissions is a string, then convert to object
+      if (typeof permissions === 'string') {
+        permissions = JSON.parse(permissions);
+      }
+      if (!permissions || typeof permissions !== 'object') {
+        throw new HttpException(
+          'Invalid permissions provided',
+          HttpStatus.BAD_REQUEST
+        );
+      }
       return await this.forgeApiService
         .getDatabaseService()
         .setPermissions(tableName, permissions);

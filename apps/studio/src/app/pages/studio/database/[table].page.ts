@@ -5,6 +5,8 @@ import {
   inject,
   signal,
   PLATFORM_ID,
+  ViewChild,
+  viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +30,22 @@ import { DatabaseService } from '../../../services/database.service';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { DynamicInputComponent } from '../../../components/dynamic-input/dynamic-input.component';
 import { UseClientDirective } from '../../../shared/directives';
-import { TableSchema } from '../../../shared/types/database';
+import { TablePermissions, TableSchema } from '../../../shared/types/database';
+import {
+  BrnSheetComponent,
+  BrnSheetContentDirective,
+  BrnSheetTriggerDirective,
+} from '@spartan-ng/brain/sheet';
+import { TablePermissionsComponent } from '../components/table/table-permissions.component';
+import {
+  HlmSheetComponent,
+  HlmSheetContentComponent,
+  HlmSheetDescriptionDirective,
+  HlmSheetHeaderComponent,
+  HlmSheetTitleDirective,
+} from '@spartan-ng/ui-sheet-helm';
+import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
+import { NgScrollbarModule } from 'ngx-scrollbar';
 
 /**
  * TablesComponentPage displays and manages database table data in a modern, interactive UI.
@@ -65,6 +82,15 @@ import { TableSchema } from '../../../shared/types/database';
     DynamicInputComponent,
     HlmLabelDirective,
     UseClientDirective,
+    TablePermissionsComponent,
+    HlmScrollAreaDirective,
+    NgScrollbarModule,
+    BrnSheetContentDirective,
+    HlmSheetComponent,
+    HlmSheetContentComponent,
+    HlmSheetHeaderComponent,
+    HlmSheetTitleDirective,
+    HlmSheetDescriptionDirective,
   ],
   providers: [MessageService],
   animations: [
@@ -113,8 +139,9 @@ export default class TablesComponentPage {
     return this.databaseService.containerWidth() - 60;
   });
   tableSchema = signal<TableSchema | null>(null);
+  tablePermissions = signal<TablePermissions | undefined>(undefined);
   loading = computed(() => {
-    return !this.tableSchema();
+    return !this.tableSchema() && !this.tablePermissions();
   });
   _data = signal<any[]>([]);
   clonedData: { [s: string]: any } = {};
@@ -237,37 +264,50 @@ export default class TablesComponentPage {
       // Reset fetch status when starting a new load
       this.dataFetchComplete.set(false);
 
-      const [dataResponse, schemaResponse] = await Promise.all([
-        fetch(`http://localhost:8000/api/db/${this.tableName()}`, {
-          credentials: 'include',
-        }),
-        fetch(
-          `http://localhost:8000/api/db/schema/tables/${this.tableName()}`,
-          {
+      const [dataResponse, schemaResponse, permissionsResponse] =
+        await Promise.all([
+          fetch(`http://localhost:8000/api/db/${this.tableName()}`, {
             credentials: 'include',
-          }
-        ),
-      ]);
+          }),
+          fetch(
+            `http://localhost:8000/api/db/schema/tables/${this.tableName()}`,
+            {
+              credentials: 'include',
+            }
+          ),
+          fetch(
+            `http://localhost:8000/api/db/schema/permissions/${this.tableName()}`,
+            {
+              credentials: 'include',
+            }
+          ),
+        ]);
 
-      const [data, schema] = await Promise.all([
+      const [data, schema, permissions] = await Promise.all([
         dataResponse.json(),
         schemaResponse.json(),
+        permissionsResponse.json(),
       ]);
 
-      if (!dataResponse.ok || !schemaResponse.ok) {
+      if (!dataResponse.ok || !schemaResponse.ok || !permissionsResponse.ok) {
         console.log(data);
         console.log(schema);
+        console.log(permissions);
         throw new Error('Failed to load table data');
       }
 
       // Update component state with fetched data and schema
       this.tableSchema.set(schema);
       this._data.set(data);
+      this.tablePermissions.set(permissions);
       // console.log('Table schema:', schema);
+      // console.log('Table data:', data);
+      // console.log('Table permissions:', permissions);
 
       // Mark fetch as complete, regardless of whether data is empty or not
       this.dataFetchComplete.set(true);
     } catch (error) {
+      console.error('Error loading table schema:', error);
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
@@ -397,5 +437,59 @@ export default class TablesComponentPage {
       summary: 'Info',
       detail: 'Edit cancelled',
     });
+  }
+
+  public permissionsSheetRef = viewChild<BrnSheetComponent>(
+    'permissionsSheetRef'
+  );
+
+  openPermissionsSheet() {
+    this.permissionsSheetRef()?.open();
+  }
+
+  async closePermissionsSheet(event: TablePermissions | null) {
+    if (!event) {
+      this.permissionsSheetRef()?.close({});
+      return;
+    }
+    console.log('Permissions:', event);
+    try {
+      const pres = await fetch(
+        `http://localhost:8000/api/db/schema/permissions/${this.tableName()}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(event),
+        }
+      );
+
+      const res = await pres.json();
+      if (pres.ok) {
+        console.log('Permissions updated:', res);
+        this.tablePermissions.set(res);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Permissions updated successfully',
+        });
+        this.permissionsSheetRef()?.close({});
+      } else {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: res.error,
+        });
+      }
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to update permissions',
+      });
+    }
   }
 }

@@ -278,7 +278,7 @@ export class DatabaseService {
   async setPermissions(
     tableName: string,
     permissions: TablePermissions
-  ): Promise<any> {
+  ): Promise<TablePermissions> {
     const result = await this.permissionService.setPermissionsForTable(
       tableName,
       permissions

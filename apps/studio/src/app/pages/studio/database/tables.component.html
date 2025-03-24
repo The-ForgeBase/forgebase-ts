@@ -108,7 +108,12 @@
         <path d="M4 6h16"></path>
       </svg>
     </button>
-    <button hlmBtn variant="outline" class="text-sm font-medium h-9">
+    <button
+      hlmBtn
+      variant="outline"
+      class="text-sm font-medium h-9"
+      (click)="openPermissionsSheet()"
+    >
       Table Permissions
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -128,6 +133,29 @@
         <path d="M4 6v12"></path>
       </svg>
     </button>
+
+    <!-- Permissions Sheet -->
+    <hlm-sheet #permissionsSheetRef side="right">
+      <hlm-sheet-content
+        class="h-full bg-background w-[100%] !max-w-[600px]"
+        *brnSheetContent="let ctx"
+      >
+        <hlm-sheet-header>
+          <h3 hlmSheetTitle>Table Permissions</h3>
+          <p hlmSheetDescription>
+            Configure access permissions for this table:
+          </p>
+        </hlm-sheet-header>
+        <div class="py-4 grid gap-4 overflow-hidden w-full">
+          <ng-scrollbar hlm class="h-[calc(100svh-5rem)]">
+            <studio-table-permissions
+              (close)="closePermissionsSheet($event)"
+              [permissions]="tablePermissions()"
+            ></studio-table-permissions>
+          </ng-scrollbar>
+        </div>
+      </hlm-sheet-content>
+    </hlm-sheet>
   </div>
 
   <p-toast position="top-right" styleClass="custom-toast"></p-toast>
