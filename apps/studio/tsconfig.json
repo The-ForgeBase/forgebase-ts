@@ -14,13 +14,6 @@
       "path": "./tsconfig.editor.json"
     }
   ],
-  "paths": {
-    "@studio/*": ["src/app/*"],
-    "@studio/assets/*": ["src/assets/*"],
-    "@studio/environments/*": ["src/environments/*"],
-    "@studio/i18n/*": ["src/i18n/*"],
-    "@studio/shared/*": ["src/app/shared/*"]
-  },
   "compilerOptions": {
     "target": "es2020",
     "forceConsistentCasingInFileNames": true,

@@ -19,16 +19,11 @@ import {
   HlmSheetComponent,
   HlmSheetContentComponent,
   HlmSheetDescriptionDirective,
-  HlmSheetFooterComponent,
   HlmSheetHeaderComponent,
   HlmSheetTitleDirective,
 } from '@spartan-ng/ui-sheet-helm';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCross } from '@ng-icons/lucide';
-import { HlmButtonDirective } from '@spartan-ng/ui-button-helm';
-import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
-import { HlmInputDirective } from '@spartan-ng/ui-input-helm';
-import { HlmLabelDirective } from '@spartan-ng/ui-label-helm';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { injectLoad } from '@analogjs/router';
@@ -48,18 +43,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { NewTableComponent } from './components/table/new-table.component';
 
 import { load } from './database.server';
-
-/**
- * Interface representing a database table with additional metadata
- */
-interface TableItem {
-  /** Name of the table */
-  name: string;
-  /** Type of the table (system or user) */
-  type: 'system' | 'user';
-  /** Icon to display next to the table name */
-  icon: string;
-}
+import { TableItem } from '../../shared/types/database';
 
 /**
  * DatabaseLayoutComponent provides the main layout for the database management interface.
@@ -147,19 +131,21 @@ interface TableItem {
                   </svg>
                 </button>
                 <hlm-sheet-content
-                  class="h-full bg-background w-[600px] !max-w-[100%]"
+                  class="h-full bg-background w-[100%] !max-w-[900px]"
                   *brnSheetContent="let ctx"
                 >
                   <hlm-sheet-header>
                     <h3 hlmSheetTitle>Create a new Table</h3>
                     <p hlmSheetDescription>Fill in the details below:</p>
                   </hlm-sheet-header>
-                  <div class="py-4 grid gap-4">
-                    <studio-new-table
-                      (close)="closeSheet()"
-                      [showSystemTables]="showSystemTables()"
-                      [tables]="tables()"
-                    ></studio-new-table>
+                  <div class="py-4 grid gap-4 overflow-hidden w-full">
+                    <ng-scrollbar hlm class="h-[calc(100svh-5rem)]">
+                      <studio-new-table
+                        (close)="closeSheet()"
+                        [showSystemTables]="showSystemTables()"
+                        [tables]="tables()"
+                      ></studio-new-table>
+                    </ng-scrollbar>
                   </div>
                 </hlm-sheet-content>
               </hlm-sheet>

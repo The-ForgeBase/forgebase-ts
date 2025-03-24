@@ -28,34 +28,7 @@ import { DatabaseService } from '../../../services/database.service';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { DynamicInputComponent } from '../../../components/dynamic-input/dynamic-input.component';
 import { UseClientDirective } from '../../../shared/directives';
-
-interface TableColumn {
-  name: string;
-  table: string;
-  data_type: string;
-  default_value: string | null;
-  max_length: number | null;
-  numeric_precision: number | null;
-  numeric_scale: number | null;
-  is_generated: boolean;
-  generation_expression: string | null;
-  is_nullable: boolean;
-  is_unique: boolean;
-  is_primary_key: boolean;
-  has_auto_increment: boolean;
-  foreign_key_column: string | null;
-  foreign_key_table: string | null;
-}
-
-interface TableInfo {
-  columns: TableColumn[];
-  foreignKeys: any[];
-}
-
-interface TableSchema {
-  name: string;
-  info: TableInfo;
-}
+import { TableSchema } from '../../../shared/types/database';
 
 /**
  * TablesComponentPage displays and manages database table data in a modern, interactive UI.
@@ -290,7 +263,7 @@ export default class TablesComponentPage {
       // Update component state with fetched data and schema
       this.tableSchema.set(schema);
       this._data.set(data);
-      console.log('Table schema:', schema);
+      // console.log('Table schema:', schema);
 
       // Mark fetch as complete, regardless of whether data is empty or not
       this.dataFetchComplete.set(true);

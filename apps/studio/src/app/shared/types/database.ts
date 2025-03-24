@@ -1,3 +1,15 @@
+/**
+ * Interface representing a database table with additional metadata
+ */
+export interface TableItem {
+  /** Name of the table */
+  name: string;
+  /** Type of the table (system or user) */
+  type: 'system' | 'user';
+  /** Icon to display next to the table name */
+  icon: string;
+}
+
 export type ColumnType =
   | 'increments'
   | 'string'
@@ -93,3 +105,31 @@ export type TablePermissions = {
     DELETE?: PermissionRule[];
   };
 };
+
+export interface TableColumn {
+  name: string;
+  table: string;
+  data_type: string;
+  default_value: string | null;
+  max_length: number | null;
+  numeric_precision: number | null;
+  numeric_scale: number | null;
+  is_generated: boolean;
+  generation_expression: string | null;
+  is_nullable: boolean;
+  is_unique: boolean;
+  is_primary_key: boolean;
+  has_auto_increment: boolean;
+  foreign_key_column: string | null;
+  foreign_key_table: string | null;
+}
+
+export interface TableInfo {
+  columns: TableColumn[];
+  foreignKeys: any[];
+}
+
+export interface TableSchema {
+  name: string;
+  info: TableInfo;
+}
