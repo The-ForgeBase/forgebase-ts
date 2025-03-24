@@ -109,7 +109,7 @@ All code should be properly documented using JSDoc comments. Public APIs should 
 
 Example:
 
-````typescript
+```typescript
 /**
  * Retrieves data from the specified collection with optional filtering
  *
