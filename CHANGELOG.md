@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
+* Merge pull request #22 from The-ForgeBase/nest (48198b6)
+* Merge branch 'nest' of github.com:The-ForgeBase/forgebase-ts into nest (aa34e0e)
+* chore(package): remove packageManager field from package.json (90c122a)
+* docs: update changelog [skip ci] (eae6538)
 * Merge pull request #21 from The-ForgeBase/nest (f594f4d)
 * Update .github/copilot-instructions.md (4bd8220)
 * Update DEVELOPMENT.md (094fae5)
