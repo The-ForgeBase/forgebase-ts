@@ -45,8 +45,10 @@ export interface KeyStorageOptions {
 export class JoseJwtSessionManager implements SessionManager {
   private config: AuthConfig;
   private knex: Knex;
-  private privateKey: jose.KeyLike | Uint8Array | null = null;
-  private publicKey: jose.KeyLike | Uint8Array | null = null;
+  private privateKey: any | Uint8Array | null = null;
+  // this is a workaround for jose types in build
+  // private publicKey: jose.KeyLike | Uint8Array | null = null;
+  private publicKey: any | Uint8Array | null = null;
   private keyId: string;
   private algorithm: string;
   private keyDirectory: string;
