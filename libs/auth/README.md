@@ -1,6 +1,6 @@
 # ForgeBase Auth
 
-A flexible authentication library for Node.js applications, providing multiple authentication strategies and framework adapters. This library is a core component of the ForgeBase ecosystem, enabling secure user authentication across various platforms and frameworks.
+A flexible, comprehensive authentication library for Node.js applications, providing multiple authentication strategies and framework adapters. This library is a core component of the ForgeBase ecosystem, enabling secure user authentication across various platforms and frameworks.
 
 ## Purpose
 
@@ -17,6 +17,9 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
 - **Extensible Plugin System**: Add custom authentication providers and functionality through plugins
 - **Rate Limiting**: Protection against brute force attacks
 - **Password Policies**: Configurable password requirements with HaveIBeenPwned integration
+- **Email & SMS Verification**: Built-in support for verifying user contact information
+- **Hook System**: Event-based hooks for custom logic during authentication flows
+- **Audit Logging**: Track administrative actions and authentication events
 
 ## Table of Contents
 
@@ -36,6 +39,7 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
 - [Multi-Factor Authentication](#multi-factor-authentication)
 - [Session Management](#session-management)
 - [Plugin System](#plugin-system)
+- [Error Handling](#error-handling)
 - [API Reference](#api-reference)
 - [Building](#building)
 - [Running Tests](#running-tests)
@@ -138,6 +142,7 @@ The local provider includes built-in password policy enforcement with the follow
 - Require numbers
 - Require special characters
 - Integration with HaveIBeenPwned to reject compromised passwords
+- Maximum password attempts
 
 ### OAuth Providers
 
@@ -218,7 +223,13 @@ class CustomAuthProvider<TUser extends User> implements AuthProvider<TUser> {
     // Custom registration logic
   }
 
-  // Other required methods
+  getConfig?(): Promise<Record<string, string>> {
+    // Return provider configuration
+  }
+
+  validate?(token: string): Promise<TUser> {
+    // Validate a token (for passwordless or other token-based flows)
+  }
 }
 ```
 
@@ -384,16 +395,16 @@ await adminManager.createAuditLog({
 ForgeBase Auth provides robust support for Multi-Factor Authentication:
 
 ```typescript
-// Enable MFA for a user
+// Enable MFA for a user (first step - get QR code)
 const { secret, uri } = await authManager.enableMfa(userId);
 
-// Verify MFA setup with a valid TOTP code
+// Verify MFA setup with a valid TOTP code (second step - verify and enable)
 const { recoveryCodes } = await authManager.enableMfa(userId, '123456');
 
 // Verify MFA during login
 const { token } = await authManager.verifyMfa(userId, '123456');
 
-// Disable MFA
+// Disable MFA (requires current MFA code or recovery code)
 await authManager.disableMfa(userId, '123456');
 ```
 
@@ -402,6 +413,24 @@ Supported MFA methods:
 - TOTP (Time-based One-Time Password)
 - SMS verification
 - Email verification
+
+## Email & Phone Verification
+
+The library provides built-in support for verifying user email and phone numbers:
+
+```typescript
+// Send verification email
+await authManager.sendVerificationEmail(email);
+
+// Verify email with code
+const { user, token } = await authManager.verifyEmail(userId, verificationCode);
+
+// Send verification SMS
+await authManager.sendVerificationSms(phone);
+
+// Verify phone number with code
+const { user, token } = await authManager.verifySms(userId, verificationCode);
+```
 
 ## Session Management
 
@@ -418,6 +447,14 @@ const sessionManager = new BasicSessionManager('your-secret-key', config, db);
 ```typescript
 const jwtManager = new JwtSessionManager('your-jwt-secret', config, db);
 ```
+
+Session features include:
+
+- Token rotation
+- Refresh tokens
+- Configurable token expiration
+- Multiple session support
+- Session invalidation
 
 ## Plugin System
 
@@ -447,12 +484,40 @@ class MyCustomPlugin implements AuthPlugin<User> {
       afterLogin: async (data) => {
         // Custom logic after login
       },
+      beforeLogin: async (data) => {
+        // Custom logic before login
+      },
+      afterRegister: async (data) => {
+        // Custom logic after registration
+      },
     };
   }
 }
 
 // Register the plugin
 await authManager.registerPlugin(new MyCustomPlugin());
+```
+
+## Error Handling
+
+The library provides a comprehensive set of error classes for different authentication scenarios:
+
+```typescript
+try {
+  await authManager.login('local', credentials);
+} catch (error) {
+  if (error instanceof UserNotFoundError) {
+    // Handle user not found
+  } else if (error instanceof InvalidCredentialsError) {
+    // Handle invalid credentials
+  } else if (error instanceof VerificationRequiredError) {
+    // Handle verification required
+  } else if (error instanceof MFARequiredError) {
+    // Handle MFA required
+  } else if (error instanceof RateLimitExceededError) {
+    // Handle rate limit exceeded
+  }
+}
 ```
 
 ## API Reference
@@ -469,6 +534,8 @@ class DynamicAuthManager<TUser extends User> {
   async oauthCallback(provider: string, { code, state }: { code: string; state: string });
   async validateToken(token: string, provider: string);
   async logout(token: string);
+  async refreshToken(refreshToken: string);
+  async createToken(user: TUser): Promise<AuthToken | string>;
 
   // MFA methods
   async enableMfa(userId: string, code?: string);
@@ -478,12 +545,24 @@ class DynamicAuthManager<TUser extends User> {
   // Verification methods
   async verifyEmail(userId: string, verificationCode: string);
   async verifySms(userId: string, verificationCode: string);
+  async sendVerificationEmail(email: string);
+  async sendVerificationSms(phone: string);
+
+  // Password management
+  async resetPassword(userId: string, newPassword: string): Promise<void>;
 
   // Plugin management
   async registerPlugin(plugin: AuthPlugin<TUser>);
+  getPlugins(): AuthPlugin<TUser>[];
+
+  // Provider management
+  getProviders();
+  getProvider(provider: string);
+  getProviderConfig(provider: string);
 
   // Configuration
   getConfig();
+  getMfaStatus();
   updateConfig(update: Partial<AuthConfig>, adminUser: TUser);
 }
 ```
@@ -505,8 +584,17 @@ class InternalAdminManager {
   async updateAdmin(adminId: string, adminData: Partial<InternalAdmin>, updaterId: string);
   async deleteAdmin(adminId: string, deleterId: string);
   async listAdmins(page?: number, limit?: number);
+  async findAdminById(id: string): Promise<InternalAdmin | null>;
+  async findAdminByEmail(email: string): Promise<InternalAdmin | null>;
+
+  // User management
+  async listUsers(page?: number, limit?: number);
+  async getUser(userId: string);
+  async updateUser(userId: string, userData: Partial<User>);
+  async deleteUser(userId: string);
 
   // Audit logging
+  async createAuditLog(logData: { admin_id: string; action: string; details?: object });
   async getAuditLogs(adminId?: string, page?: number, limit?: number);
 
   // Configuration

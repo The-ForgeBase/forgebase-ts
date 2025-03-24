@@ -38,12 +38,12 @@ import { DividerModule } from 'primeng/divider';
           <p-button
             label="Sign In"
             styleClass="p-button-text mr-2 text-gray-600 rounded-full"
-            routerLink="/sigin"
+            routerLink="/signin"
           />
           <p-button
             label="Start your project"
             styleClass="p-button-outlined border-teal-500 text-teal-600 rounded-full"
-            routerLink="/sigin"
+            routerLink="/signin"
           />
         </div>
       </nav>

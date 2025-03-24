@@ -39,6 +39,8 @@ export class ForgeApi {
 
     this.config = this.mergeConfigs(this.config, config);
 
+    console.log('Initializing Forge API with config:', this.config);
+
     // Initialize services based on configuration
     this.storage = new StorageService(this.config.services?.storage);
     this.db = new DatabaseService(this.config.services?.db);
@@ -93,7 +95,10 @@ export class ForgeApi {
     return false;
   }
 
-  private async createContext(adapter: ServerAdapter): Promise<Context> {
+  private async createContext(
+    adapter: ServerAdapter,
+    isSystem = false
+  ): Promise<Context> {
     const headers = adapter.getHeaders();
 
     const request = {
@@ -105,6 +110,7 @@ export class ForgeApi {
       path: adapter.getPath(),
       config: this.config,
       userContext: adapter.getUserContext(),
+      isSystem,
     };
 
     const response = {
@@ -120,11 +126,14 @@ export class ForgeApi {
     };
   }
 
-  async handle(adapter: ServerAdapter): Promise<{
+  async handle(
+    adapter: ServerAdapter,
+    isSystem = false
+  ): Promise<{
     adapter: ServerAdapter;
     context: Context;
   }> {
-    const context = await this.createContext(adapter);
+    const context = await this.createContext(adapter, isSystem);
     const path = adapter.getPath();
 
     if (this.config.auth.enabled && this.config.auth.beforeMiddleware) {
@@ -210,7 +219,8 @@ export class ForgeApi {
           tableName: collection,
           data,
         },
-        ctx.req.userContext
+        ctx.req.userContext,
+        ctx.req.isSystem
       );
       ctx.res.body = { id };
       ctx.res.status = 201;
@@ -221,7 +231,8 @@ export class ForgeApi {
       ctx.res.body = await this.db.query(
         collection,
         ctx.req.query,
-        ctx.req.userContext
+        ctx.req.userContext,
+        ctx.req.isSystem
       );
     });
 
@@ -235,7 +246,8 @@ export class ForgeApi {
       ctx.res.body = await this.db.query(
         collection,
         query,
-        ctx.req.userContext
+        ctx.req.userContext,
+        ctx.req.isSystem
       );
     });
 
@@ -256,7 +268,7 @@ export class ForgeApi {
         data: data,
         id: id,
       };
-      await this.db.update(params, ctx.req.userContext);
+      await this.db.update(params, ctx.req.userContext, ctx.req.isSystem);
       ctx.res.status = 204;
     });
 
@@ -266,12 +278,22 @@ export class ForgeApi {
       if (typeof id === 'string' && !isNaN(Number(id))) {
         id = Number(id);
       }
-      await this.db.delete(collection, id, ctx.req.userContext);
+      await this.db.delete(
+        collection,
+        id,
+        ctx.req.userContext,
+        ctx.req.isSystem
+      );
       ctx.res.status = 204;
     });
 
     addRoute(this.router, 'GET', '/db/schema', async (ctx) => {
       try {
+        if (!ctx.req.isSystem) {
+          ctx.res.status = 403;
+          ctx.res.body = { error: 'Forbidden' };
+          return;
+        }
         const res = await this.db.getSchema();
         ctx.res.status = 200;
         ctx.res.body = res;
@@ -286,6 +308,11 @@ export class ForgeApi {
       'GET',
       '/db/schema/tables/:tableName',
       async (ctx) => {
+        if (!ctx.req.isSystem) {
+          ctx.res.status = 403;
+          ctx.res.body = { error: 'Forbidden' };
+          return;
+        }
         const { tableName } = ctx.req.params;
         ctx.res.body = await this.db.getTableSchema(tableName);
       }
@@ -296,46 +323,91 @@ export class ForgeApi {
       'DELETE',
       '/db/schema/tables/:tableName',
       async (ctx) => {
+        if (!ctx.req.isSystem) {
+          ctx.res.status = 403;
+          ctx.res.body = { error: 'Forbidden' };
+          return;
+        }
         const { tableName } = ctx.req.params;
         ctx.res.body = await this.db.deleteSchema(tableName);
       }
     );
 
     addRoute(this.router, 'GET', '/db/schema/tables', async (ctx) => {
+      if (!ctx.req.isSystem) {
+        ctx.res.status = 403;
+        ctx.res.body = { error: 'Forbidden' };
+        return;
+      }
       ctx.res.body = await this.db.getTables();
     });
 
     addRoute(this.router, 'POST', '/db/schema', async (ctx) => {
+      if (!ctx.req.isSystem) {
+        ctx.res.status = 403;
+        ctx.res.body = { error: 'Forbidden' };
+        return;
+      }
       const { tableName, columns } = ctx.req.body;
       ctx.res.body = await this.db.createSchema(tableName, columns);
     });
 
     addRoute(this.router, 'POST', '/db/schema/column', async (ctx) => {
+      if (!ctx.req.isSystem) {
+        ctx.res.status = 403;
+        ctx.res.body = { error: 'Forbidden' };
+        return;
+      }
       const { tableName, columns } = ctx.req.body;
       ctx.res.body = await this.db.addColumn(tableName, columns);
     });
 
     addRoute(this.router, 'DELETE', '/db/schema/column', async (ctx) => {
+      if (!ctx.req.isSystem) {
+        ctx.res.status = 403;
+        ctx.res.body = { error: 'Forbidden' };
+        return;
+      }
       const { tableName, columns } = ctx.req.body;
       ctx.res.body = await this.db.deleteColumn(tableName, columns);
     });
 
     addRoute(this.router, 'PUT', '/db/schema/column', async (ctx) => {
+      if (!ctx.req.isSystem) {
+        ctx.res.status = 403;
+        ctx.res.body = { error: 'Forbidden' };
+        return;
+      }
       const { tableName, columns } = ctx.req.body;
       ctx.res.body = await this.db.updateColumn(tableName, columns);
     });
 
     addRoute(this.router, 'POST', '/db/schema/foreign_key', async (ctx) => {
+      if (!ctx.req.isSystem) {
+        ctx.res.status = 403;
+        ctx.res.body = { error: 'Forbidden' };
+        return;
+      }
       const { tableName, foreignKey } = ctx.req.body;
       ctx.res.body = await this.db.addForeignKey(tableName, foreignKey);
     });
 
     addRoute(this.router, 'DELETE', '/db/schema/foreign_key', async (ctx) => {
+      if (!ctx.req.isSystem) {
+        ctx.res.status = 403;
+        ctx.res.body = { error: 'Forbidden' };
+        return;
+      }
       const { tableName, column } = ctx.req.body;
       ctx.res.body = await this.db.dropForeignKey(tableName, column);
     });
 
     addRoute(this.router, 'DELETE', '/db/schema/truncate', async (ctx) => {
+      if (!ctx.req.isSystem) {
+        ctx.res.status = 403;
+        ctx.res.body = { error: 'Forbidden' };
+        return;
+      }
       const { tableName } = ctx.req.body;
       ctx.res.body = await this.db.truncateTable(tableName);
     });
@@ -345,6 +417,11 @@ export class ForgeApi {
       'GET',
       '/db/schema/permissions/:tableName',
       async (ctx) => {
+        if (!ctx.req.isSystem) {
+          ctx.res.status = 403;
+          ctx.res.body = { error: 'Forbidden' };
+          return;
+        }
         const { tableName } = ctx.req.params;
         ctx.res.body = await this.db.getPermissions(tableName);
       }
@@ -355,6 +432,11 @@ export class ForgeApi {
       'PUT',
       '/db/schema/permissions/:tableName',
       async (ctx) => {
+        if (!ctx.req.isSystem) {
+          ctx.res.status = 403;
+          ctx.res.body = { error: 'Forbidden' };
+          return;
+        }
         const { tableName } = ctx.req.params;
         const { permissions } = ctx.req.body;
         ctx.res.body = await this.db.setPermissions(tableName, permissions);

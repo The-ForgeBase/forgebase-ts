@@ -1000,16 +1000,42 @@ class QueryBuilder<T extends Record<string, any>> {
     return response;
   }
 
-  async create(data: T): Promise<ApiResponse<T>> {
-    return this.sdk.createRecord<T>(this.tableName, data);
+  /**
+   * Create a record in the table
+   * @param data The data to create
+   * @param fetchOptions Optional fetch options to be used for this request
+   */
+  async create(
+    data: T,
+    fetchOptions: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    return this.sdk.createRecord<T>(this.tableName, data, fetchOptions);
   }
 
-  async update(id: number | string, data: Partial<T>): Promise<ApiResponse<T>> {
-    return this.sdk.updateRecord<T>(this.tableName, id, data);
+  /**
+   * Update a record by ID
+   * @param id The ID of the record to update
+   * @param data The data to update
+   * @param fetchOptions Optional fetch options to be used for this request
+   */
+  async update(
+    id: number | string,
+    data: Partial<T>,
+    fetchOptions: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    return this.sdk.updateRecord<T>(this.tableName, id, data, fetchOptions);
   }
 
-  async delete(id: number | string): Promise<ApiResponse<never>> {
-    return this.sdk.deleteRecord(this.tableName, id);
+  /**
+   * Delete a record by ID
+   * @param id The ID of the record to delete
+   * @param fetchOptions Optional fetch options to be used for this request
+   */
+  async delete(
+    id: number | string,
+    fetchOptions: RequestInit = {}
+  ): Promise<ApiResponse<never>> {
+    return this.sdk.deleteRecord(this.tableName, id, fetchOptions);
   }
 
   private applyTransformations(response: ApiResponse<T>): ApiResponse<T> {

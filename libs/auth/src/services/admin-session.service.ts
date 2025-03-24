@@ -50,18 +50,34 @@ export class KnexAdminSessionManager implements AdminSessionManager {
 
     const token = jwt.sign(payload, this.jwtSecret);
 
+    // Get database client type
+    const clientType = this.knex.client.config.client;
+
+    // Set expires_at with proper syntax based on database type
+    let expiresAt;
+    if (clientType === 'sqlite' || clientType === 'sqlite3') {
+      expiresAt = this.knex.raw(`datetime('now', '+24 hours')`);
+    } else {
+      // Postgres, MySQL, etc.
+      expiresAt = this.knex.raw(`now() + interval '24 hour'`);
+    }
+
     // Store session in database
     await this.knex(this.tableName).insert({
       id: crypto.randomUUID(),
       admin_id: admin.id,
       token: token,
-      expires_at: this.knex.raw(`now() + interval '24 hour'`),
+      expires_at: expiresAt,
       created_at: this.knex.fn.now(),
       updated_at: this.knex.fn.now(),
     });
 
+    // console.log('Session created:', token);
+
     // Update last login timestamp
     await this.adminService.updateLastLogin(admin.id);
+
+    // console.log('Last login updated successfully for admin:', admin.id);
 
     return token;
   }
@@ -82,6 +98,8 @@ export class KnexAdminSessionManager implements AdminSessionManager {
         .where('expires_at', '>', this.knex.fn.now())
         .first();
 
+      // console.log('Session:', session);
+
       if (!session) {
         throw new Error('Session not found or expired');
       }
@@ -94,6 +112,7 @@ export class KnexAdminSessionManager implements AdminSessionManager {
 
       return { admin };
     } catch (error) {
+      console.log('Session verification error:', error);
       throw new Error('Invalid or expired session');
     }
   }

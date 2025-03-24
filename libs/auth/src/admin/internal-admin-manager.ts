@@ -59,6 +59,7 @@ export class InternalAdminManager {
 
     // Create initial admin if not exists
     if (config.adminFeature?.createInitialAdmin) {
+      console.log('Initializing admin manager...');
       await this.ensureInitialAdmin(
         config.adminFeature.initialAdminEmail,
         config.adminFeature.initialAdminPassword
@@ -135,7 +136,7 @@ export class InternalAdminManager {
       action: 'LOGIN',
       details: { email },
     });
-
+    delete admin.password_hash;
     return { admin, token };
   }
 
@@ -462,7 +463,6 @@ export class InternalAdminManager {
    */
   private async createAuditLog(logEntry: AuditLogEntry): Promise<void> {
     await this.knex('internal_admin_audit_logs').insert({
-      id: this.knex.raw('uuid_generate_v4()'),
       admin_id: logEntry.admin_id,
       action: logEntry.action,
       details: logEntry.details ? JSON.stringify(logEntry.details) : null,

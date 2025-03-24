@@ -319,6 +319,14 @@ export class AuthController<TUser extends User> {
     }
   }
 
+  @Get('me')
+  @UseGuards(AuthGuard)
+  async getCurrentUser(@Req() req: Request) {
+    // User has already been validated by the guard and attached to the request
+    const user = req['user'];
+    return { user };
+  }
+
   @Post('disable-mfa')
   @UseGuards(AuthGuard)
   async disableMfa(

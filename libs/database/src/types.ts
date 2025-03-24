@@ -159,10 +159,23 @@ export interface DataMutationParams {
   id?: string | number;
 }
 
+// export interface AdvanceDataMutationParams {
+//   tableName: string;
+//   data: Record<string, any> | Array<Record<string, any>>;
+//   id?: string | number;
+//   query: DataQueryParams;
+// }
+
 export interface DataDeleteParams {
   tableName: string;
   id: string | number;
 }
+
+// export interface AdvanceDataDeleteParams {
+//   tableName: string;
+//   id?: string | number;
+//   query: DataQueryParams;
+// }
 
 export interface PermissionParams {
   tableName: string;
@@ -202,11 +215,24 @@ export interface ForgeDatabaseEndpoints {
     query: <T>(
       tableName: string,
       params: DataQueryParams,
-      user?: UserContext
+      user?: UserContext,
+      isSystem?: boolean
     ) => Promise<T[]>;
-    create: (params: DataMutationParams, user?: UserContext) => Promise<any>;
-    update: (params: DataMutationParams, user?: UserContext) => Promise<any>;
-    delete: (params: DataDeleteParams, user?: UserContext) => Promise<any>;
+    create: (
+      params: DataMutationParams,
+      user?: UserContext,
+      isSystem?: boolean
+    ) => Promise<any>;
+    update: (
+      params: DataMutationParams,
+      user?: UserContext,
+      isSystem?: boolean
+    ) => Promise<any>;
+    delete: (
+      params: DataDeleteParams,
+      user?: UserContext,
+      isSystem?: boolean
+    ) => Promise<any>;
   };
   permissions: {
     get: (params: PermissionParams) => Promise<TablePermissions | undefined>;

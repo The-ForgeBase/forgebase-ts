@@ -27,7 +27,7 @@ class PermissionService {
 
   async getPermissionsForTable(
     tableName: string
-  ): Promise<TablePermissions | undefined> {
+  ): Promise<TablePermissions | any> {
     // Check cache first
     const cachedPermissions = this.cache.get(tableName);
     if (cachedPermissions) {
@@ -39,7 +39,7 @@ class PermissionService {
       .where({ table_name: tableName })
       .first();
 
-    if (!result) return undefined;
+    if (!result) return {};
 
     const permissions = JSON.parse(result.permissions);
     this.cache.set(tableName, permissions);
@@ -49,7 +49,7 @@ class PermissionService {
   async setPermissionsForTable(
     tableName: string,
     permissions: TablePermissions
-  ): Promise<void> {
+  ): Promise<TablePermissions> {
     await this.knex('table_permissions')
       .insert({
         table_name: tableName,
@@ -60,6 +60,8 @@ class PermissionService {
 
     // Update cache
     this.cache.set(tableName, permissions);
+
+    return permissions;
   }
 
   async deletePermissionsForTable(tableName: string): Promise<void> {

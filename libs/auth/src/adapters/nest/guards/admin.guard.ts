@@ -3,10 +3,9 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
-  Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { AdminFeatureDisabledError } from '../../../types/admin';
 import { AdminService } from '../services/admin.service';
 
@@ -20,6 +19,10 @@ export class AdminGuard implements CanActivate {
   private extractToken(request: Request): string | null {
     if (request.headers.authorization?.startsWith('AdminBearer ')) {
       return request.headers.authorization.substring(12);
+    }
+    // console.log('AdminGuard request.cookies:', request.cookies);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('AdminGuard request.headers:', request.headers);
     }
 
     if (request.cookies && request.cookies.admin_token) {
@@ -42,6 +45,10 @@ export class AdminGuard implements CanActivate {
     const request = context.switchToHttp().getRequest() as Request;
     const path = request.path;
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('AdminGuard path:', path);
+    }
+
     // Skip token validation for login endpoint
     if (path.endsWith('/admin/login')) {
       return true;
@@ -59,6 +66,7 @@ export class AdminGuard implements CanActivate {
       request['admin'] = admin;
       return true;
     } catch (error) {
+      // console.log('AdminGuard error:', error);
       if (error instanceof AdminFeatureDisabledError) {
         throw new UnauthorizedException('Admin feature is disabled');
       }

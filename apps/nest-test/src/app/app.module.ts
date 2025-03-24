@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-// import { ForgeNestApiModule } from '@forgebase-ts/api/frameworks/nest';
 import { ForgeApiModule } from '@forgebase-ts/api/core/nest';
 import { AuthModule } from './auth/auth.module';
+import { AdminMiddleware } from '@forgebase-ts/auth/adapters/nest/middlewares/admin.middleware';
 import knex from 'knex';
 
 export const db = knex({
@@ -18,14 +18,15 @@ export const db = knex({
   imports: [
     ForgeApiModule.forRoot({
       prefix: '/api',
+      // api: {
+      //   adminReqName: 'admin',
+      // },
       services: {
         db: {
           provider: 'sqlite',
           realtime: false,
           enforceRls: false,
-          config: {
-            filename: './database.sqlite',
-          },
+          config: {},
           knex: db,
         },
         storage: {
@@ -39,4 +40,9 @@ export const db = knex({
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply AdminMiddleware globally to all routes
+    consumer.apply(AdminMiddleware).forRoutes('*');
+  }
+}

@@ -2,6 +2,8 @@ export * from './nestjs.module';
 export * from './services/auth.service';
 export * from './controllers/auth.controller';
 export * from './guards/auth.guard';
+export * from './services/jwks.service';
+export * from './controllers/jwks.controller';
 
 // Export admin components
 export * from './services/admin.service';

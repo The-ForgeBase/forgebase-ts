@@ -3,6 +3,7 @@ import { AuthConfig } from '../types';
 
 export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   // Auth Config Table
+  console.log('Initializing auth schema...');
   const hasAuthConfig = await knex.schema.hasTable('auth_config');
   if (!hasAuthConfig) {
     await knex.schema.createTable('auth_config', (table) => {
@@ -30,7 +31,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   if (!hasUsers) {
     await knex.schema.createTable('users', (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
-      table.string('email').unique().index();
+      table.string('email').index().unique().notNullable();
       table.string('phone').unique().nullable();
       table.string('name').nullable();
       table.string('picture').nullable();
@@ -48,6 +49,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table.index(['phone_verified']);
       table.index(['mfa_enabled']);
     });
+    console.log('Users table created');
   }
 
   // OAuth Accounts Table
@@ -213,7 +215,7 @@ export async function initializeAdminTables(knex: Knex): Promise<void> {
   if (!hasAdmins) {
     await knex.schema.createTable('internal_admins', (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
-      table.string('email').unique().notNullable().index();
+      table.string('email').index().unique().notNullable();
       table.string('name').nullable();
       table.string('password_hash').notNullable();
       table.string('role').defaultTo('admin').notNullable();

@@ -9,15 +9,17 @@ export default defineConfig(({ mode }) => {
   return {
     root: __dirname,
     cacheDir: `../../node_modules/.vite`,
-
     build: {
       outDir: '../../dist/apps/studio/client',
       reportCompressedSize: true,
       target: ['es2020'],
     },
+    ssr: {
+      noExternal: ['primeng/**', '@spartan-ng/**'],
+    },
     server: {
       fs: {
-        allow: ['.'],
+        allow: ['.', '..', '../../node_modules/'],
       },
     },
     plugins: [analog(), nxViteTsPaths()],

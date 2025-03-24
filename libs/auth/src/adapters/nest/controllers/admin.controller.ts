@@ -28,7 +28,7 @@ export class AdminController {
 
   @Public()
   @Post('login')
-  async login(@Body() body: any, @Res() res: Response) {
+  async login(@Body() body: any, @Res({ passthrough: true }) res: Response) {
     try {
       const { email, password } = body;
       const result = await this.adminService.login(email, password);
@@ -41,11 +41,13 @@ export class AdminController {
         {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
           maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+          path: '/',
         }
       );
 
-      return res.json({ admin: result.admin });
+      return { admin: result.admin, token: result.token };
     } catch (error) {
       return res.status(401).json({ error: error.message });
     }

@@ -40,16 +40,17 @@ export interface BaaSConfig {
   };
 }
 
-export type Context = {
+export interface Context {
   req: {
     params: Record<string, any>;
     query: Record<string, any>;
     body: any;
-    headers: Record<string, string>;
+    headers: Record<string, any>;
     method: string;
     path: string;
     config: BaaSConfig;
-    userContext: UserContext;
+    userContext?: UserContext;
+    isSystem?: boolean; // Add isSystem flag to request context
   };
   res: {
     body: any;
@@ -60,7 +61,7 @@ export type Context = {
     storage: StorageService;
     db: DatabaseService;
   };
-};
+}
 
 export type Handler = (ctx: Context) => Promise<void>;
 

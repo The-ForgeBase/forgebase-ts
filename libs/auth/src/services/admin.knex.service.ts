@@ -32,7 +32,7 @@ export class KnexAdminService implements AdminService {
    */
   async findAdminById(id: string): Promise<InternalAdmin | null> {
     const admin = await this.knex(this.tableName).where({ id }).first();
-
+    // console.log('findAdminById', id, admin);
     return admin || null;
   }
 
@@ -266,9 +266,12 @@ export class KnexAdminService implements AdminService {
    * @param id Admin ID
    */
   async updateLastLogin(id: string): Promise<void> {
+    // console.log('Updating last login for admin:', id);
     await this.knex(this.tableName).where({ id }).update({
       last_login_at: this.knex.fn.now(),
       updated_at: this.knex.fn.now(),
     });
+
+    // console.log('Last login updated successfully for admin 2:', id);
   }
 }
