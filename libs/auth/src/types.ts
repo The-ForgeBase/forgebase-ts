@@ -78,6 +78,10 @@ export interface AuthInternalConfig<TUser extends User> {
   verificationService?: VerificationService;
 }
 
+export interface JwksResponse {
+  keys: Array<Record<string, any>>;
+}
+
 export interface UserService<TUser extends User> {
   findUser(identifier: string): Promise<TUser | null>;
   createUser(user: Partial<TUser>, password?: string): Promise<TUser>;

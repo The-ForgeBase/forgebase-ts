@@ -173,13 +173,11 @@ export class NestAuthModuleWithJWKS {
         AdminService,
         JwksService,
       ],
-      controllers:
-        options.controllers ||
-        [
-          // AuthController,
-          // AdminController,
-          // JwksController,
-        ],
+      controllers: options.controllers || [
+        AuthController,
+        AdminController,
+        JwksController,
+      ],
       exports: [AuthService, AdminService, JwksService, AuthGuard, AdminGuard],
       global: true, // Make the module global to help avoid dependency issues
     };

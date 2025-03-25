@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { JwksService } from '../services/jwks.service';
-import { JwksResponse } from '../../../controllers/jwks-controller';
+import { JwksResponse } from '../../../types';
 
 /**
  * NestJS controller for exposing JWKS endpoints

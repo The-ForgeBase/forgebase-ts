@@ -288,32 +288,6 @@ export class AppModule {}
 export class FeatureModule {}
 ```
 
-#### Option 3: Middleware Integration (ForgeNestApiModule)
-
-```typescript
-import { Module } from '@nestjs/common';
-import { ForgeNestApiModule } from '@forgebase-ts/api/frameworks/nest';
-
-@Module({
-  imports: [
-    ForgeNestApiModule.forRoot({
-      prefix: '/api',
-      services: {
-        db: {
-          provider: 'sqlite',
-          config: { filename: 'database.sqlite' },
-        },
-        storage: {
-          provider: 'local',
-          config: {},
-        },
-      },
-    }),
-  ],
-})
-export class AppModule {}
-```
-
 You can also use custom routes and guards with NestJS:
 
 ```typescript
@@ -576,6 +550,7 @@ type Context = {
     path: string;
     config: BaaSConfig;
     userContext: UserContext;
+    isSystem: boolean;
   };
   res: {
     body: any;

@@ -195,7 +195,7 @@ export async function enforcePermissions(
     if (!rows) {
       return {
         row: undefined,
-        status: true,
+        status: false,
         hasFieldCheck: true,
         message: 'Field-level check required, please provide row data',
       };

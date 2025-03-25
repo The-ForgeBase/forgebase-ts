@@ -1,8 +1,12 @@
-import { AuthRequiredType, AuthToken, User } from '../../../types';
+import {
+  AuthRequiredType,
+  AuthToken,
+  JwksResponse,
+  User,
+} from '../../../types';
 import { DynamicAuthManager } from '../../../authManager';
 import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
-import { JoseJwtSessionManager } from '@forgebase-ts/auth/session/jose-jwt';
-import { JwksResponse } from '@forgebase-ts/auth/controllers/jwks-controller';
+import { JoseJwtSessionManager } from '../../../session/jose-jwt';
 
 @Injectable()
 export class AuthService<TUser extends User> {
