@@ -371,7 +371,7 @@ export class ForgeDatabase {
         const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
           await enforcePermissions(
             tableName,
-            'DELETE',
+            'UPDATE',
             user,
             this.permissionService
           );
@@ -395,12 +395,20 @@ export class ForgeDatabase {
           return result;
         }
 
+        const record = await this.hooks.query(
+          tableName,
+          (query) => {
+            return query.where({ id });
+          },
+          { id }
+        );
+
         const { status } = await enforcePermissions(
           tableName,
           'UPDATE',
           user,
           this.permissionService,
-          data
+          record[0]
         );
 
         if (!status) {
