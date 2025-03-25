@@ -329,6 +329,12 @@ export class ForgeDatabase {
           );
         }
 
+        if (!row || (Array.isArray(row) && row.length === 0)) {
+          throw new Error(
+            `User does not have permission to create this record in table "${tableName}"`
+          );
+        }
+
         const result = this.hooks.mutate(
           tableName,
           'create',
