@@ -6,8 +6,6 @@ import {
   HlmCardHeaderDirective,
   HlmCardTitleDirective,
 } from '@spartan-ng/ui-card-helm';
-import { injectLoad } from '@analogjs/router';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { DatabaseService } from '../../../services/database.service';
 
@@ -109,6 +107,6 @@ export default class DatabaseIndexComponent implements OnInit {
   databaseService = inject(DatabaseService);
 
   ngOnInit(): void {
-    this.tables.set(this.databaseService.getTables());
+    this.tables.set(this.databaseService.getTables()());
   }
 }

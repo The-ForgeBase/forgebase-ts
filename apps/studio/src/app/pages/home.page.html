@@ -1,0 +1,877 @@
+<!-- Navigation Bar -->
+<div class="min-h-screen flex flex-col">
+  <div
+    class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+  >
+    <div class="container flex h-14 items-center">
+      <div class="mr-4 flex">
+        <a class="flex items-center space-x-2" routerLink="/">
+          <ng-icon
+            name="lucideDatabase"
+            size="lg"
+            class="text-primary"
+          ></ng-icon>
+          <span class="font-bold">ForgeBase</span>
+        </a>
+      </div>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center gap-6 text-sm">
+        <a hlmBtn variant="ghost" routerLink="/dashboard">
+          <ng-icon
+            hlm
+            name="lucideLayoutDashboard"
+            size="sm"
+            class="mr-2"
+          ></ng-icon>
+          Dashboard
+        </a>
+        <a hlmBtn variant="ghost" routerLink="/database">
+          <ng-icon hlm name="lucideDatabase" size="sm" class="mr-2"></ng-icon>
+          Database
+        </a>
+        <a hlmBtn variant="ghost" routerLink="/api">
+          <ng-icon hlm name="lucideServer" size="sm" class="mr-2"></ng-icon>
+          API
+        </a>
+        <a hlmBtn variant="ghost" routerLink="/auth">
+          <ng-icon hlm name="lucideShield" size="sm" class="mr-2"></ng-icon>
+          Auth
+        </a>
+      </div>
+
+      <!-- Right Side Actions -->
+      <div class="flex flex-1 items-center justify-end space-x-2">
+        <a
+          hlmBtn
+          variant="ghost"
+          class="hidden md:flex"
+          href="https://github.com/forgebase/forgebase"
+          target="_blank"
+        >
+          <ng-icon hlm name="lucideGithub" size="sm" class="mr-2"></ng-icon>
+          GitHub
+        </a>
+        <a hlmBtn variant="ghost" class="hidden md:flex" routerLink="/settings">
+          <ng-icon hlm name="lucideSettings" size="sm"></ng-icon>
+        </a>
+
+        <!-- Mobile Menu Button -->
+        <hlm-sheet side="left">
+          <button
+            id="mobile-menu"
+            variant="ghost"
+            brnSheetTrigger
+            hlmBtn
+            size="icon"
+            class="md:hidden"
+          >
+            <ng-icon hlm name="lucideMenu" size="sm"></ng-icon>
+            <span class="sr-only">Toggle menu</span>
+          </button>
+          <hlm-sheet-content
+            *brnSheetContent="let ctx"
+            class="w-[80vw] sm:w-[350px]"
+          >
+            <hlm-sheet-header>
+              <h3 hlmSheetTitle>
+                <a class="flex items-center space-x-2" routerLink="/">
+                  <ng-icon
+                    name="lucideDatabase"
+                    size="lg"
+                    class="text-primary"
+                  ></ng-icon>
+                  <span class="font-bold">ForgeBase</span>
+                </a>
+              </h3>
+              <!-- <p hlmSheetDescription>Navigation Menu</p> -->
+            </hlm-sheet-header>
+
+            <div class="py-4">
+              <nav class="flex flex-col space-y-4">
+                <a
+                  hlmBtn
+                  variant="ghost"
+                  routerLink="/dashboard"
+                  (click)="ctx.close()"
+                  class="justify-start"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideLayoutDashboard"
+                    size="sm"
+                    class="mr-2"
+                  ></ng-icon>
+                  Dashboard
+                </a>
+                <a
+                  hlmBtn
+                  variant="ghost"
+                  routerLink="/database"
+                  (click)="ctx.close()"
+                  class="justify-start"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideDatabase"
+                    size="sm"
+                    class="mr-2"
+                  ></ng-icon>
+                  Database
+                </a>
+                <a
+                  hlmBtn
+                  variant="ghost"
+                  routerLink="/api"
+                  (click)="ctx.close()"
+                  class="justify-start"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideServer"
+                    size="sm"
+                    class="mr-2"
+                  ></ng-icon>
+                  API
+                </a>
+                <a
+                  hlmBtn
+                  variant="ghost"
+                  routerLink="/auth"
+                  (click)="ctx.close()"
+                  class="justify-start"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideShield"
+                    size="sm"
+                    class="mr-2"
+                  ></ng-icon>
+                  Auth
+                </a>
+                <a
+                  hlmBtn
+                  variant="ghost"
+                  href="https://github.com/forgebase/forgebase"
+                  target="_blank"
+                  (click)="ctx.close()"
+                  class="justify-start"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideGithub"
+                    size="sm"
+                    class="mr-2"
+                  ></ng-icon>
+                  GitHub
+                </a>
+                <a
+                  hlmBtn
+                  variant="ghost"
+                  routerLink="/settings"
+                  (click)="ctx.close()"
+                  class="justify-start"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideSettings"
+                    size="sm"
+                    class="mr-2"
+                  ></ng-icon>
+                  Settings
+                </a>
+              </nav>
+            </div>
+
+            <hlm-sheet-footer>
+              <button hlmBtn variant="ghost" (click)="ctx.close()">
+                <ng-icon hlm name="lucideX" size="sm" class="mr-2"></ng-icon>
+                Close Menu
+              </button>
+            </hlm-sheet-footer>
+          </hlm-sheet-content>
+        </hlm-sheet>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 bg-background text-foreground">
+    <!-- Hero Section with Gradient -->
+    <div class="relative isolate overflow-hidden">
+      <div
+        class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl"
+        aria-hidden="true"
+      >
+        <div
+          class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-primary to-[#9089fc] opacity-30"
+        ></div>
+      </div>
+
+      <div class="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
+        <div
+          class="mx-auto max-w-3xl text-center flex flex-col items-center justify-center"
+        >
+          <h1
+            class="text-4xl font-bold max-w-2xl text-center tracking-tight sm:text-6xl"
+          >
+            Build Powerful Backend Services with ForgeBase
+          </h1>
+          <p class="mt-6 text-lg leading-8 text-muted-foreground text-center">
+            A highly flexible, language-agnostic BaaS framework that plugs into
+            your existing server setup. Inspired by Pocketbase but built for
+            horizontal scaling with support for multiple databases like
+            PostgreSQL, SQLite, e.t.c. From prototypes to production, ForgeBase
+            helps you build robust backend services faster.
+          </p>
+          <div hlmCard class="transition-all hover:shadow-lg mt-6 w-full">
+            <div hlmCardContent class="p-0 overflow-hidden rounded-lg">
+              <img
+                src="assets/dashboard-preview.png"
+                alt="ForgeBase Studio Dashboard"
+                class="w-full shadow-2xl rounded-lg border"
+                onError="this.style.display='none'"
+              />
+            </div>
+          </div>
+          <div class="mt-10 flex items-center justify-center gap-x-6">
+            <a hlmBtn size="lg" routerLink="/studio">
+              Get Started
+              <ng-icon
+                hlm
+                class="ml-2"
+                name="lucideArrowRight"
+                size="sm"
+              ></ng-icon>
+            </a>
+            <a
+              hlmBtn
+              variant="outline"
+              size="lg"
+              href="https://github.com/forgebase/forgebase"
+              target="_blank"
+            >
+              <ng-icon hlm class="mr-2" name="lucideGithub" size="sm"></ng-icon>
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Language Support Section -->
+    <div class="bg-muted/50 py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="mb-12 text-center">
+          <h2 class="text-3xl font-bold tracking-tight">Language Support</h2>
+          <p class="mt-4 text-lg text-muted-foreground">
+            ForgeBase is being actively developed across multiple programming
+            languages
+          </p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <!-- JavaScript/TypeScript -->
+          <div hlmCard class="transition-all">
+            <div hlmCardContent class="pt-6">
+              <div class="flex flex-col items-center text-center">
+                <ng-icon
+                  hlm
+                  name="diTypescriptOriginal"
+                  size="lg"
+                  class="text-primary mb-4"
+                ></ng-icon>
+                <h3 class="font-semibold">JavaScript/TypeScript</h3>
+                <span
+                  class="text-sm px-2 py-1 rounded-full bg-primary/10 text-primary mt-2"
+                  >Alpha</span
+                >
+                <p class="text-xs text-muted-foreground mt-2">
+                  Runtime Agnostic
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Golang -->
+          <div hlmCard class="transition-all">
+            <div hlmCardContent class="pt-6">
+              <div class="flex flex-col items-center text-center">
+                <ng-icon
+                  hlm
+                  name="diGoOriginalWordmark"
+                  size="lg"
+                  class="text-primary mb-4"
+                ></ng-icon>
+                <h3 class="font-semibold">Go</h3>
+                <span
+                  class="text-sm px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-500 mt-2"
+                  >WIP</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Rust -->
+          <div hlmCard class="transition-all">
+            <div hlmCardContent class="pt-6">
+              <div class="flex flex-col items-center text-center">
+                <ng-icon
+                  hlm
+                  name="diRustOriginal"
+                  size="lg"
+                  class="text-primary mb-4"
+                ></ng-icon>
+                <h3 class="font-semibold">Rust</h3>
+                <span
+                  class="text-sm px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-500 mt-2"
+                  >WIP</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- PHP -->
+          <div hlmCard class="transition-all">
+            <div hlmCardContent class="pt-6">
+              <div class="flex flex-col items-center text-center">
+                <ng-icon
+                  hlm
+                  name="diPhpOriginal"
+                  size="lg"
+                  class="text-primary mb-4"
+                ></ng-icon>
+                <h3 class="font-semibold">PHP</h3>
+                <span
+                  class="text-sm px-2 py-1 rounded-full bg-muted text-muted-foreground mt-2"
+                  >Planned</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Python -->
+          <div hlmCard class="transition-all">
+            <div hlmCardContent class="pt-6">
+              <div class="flex flex-col items-center text-center">
+                <ng-icon
+                  hlm
+                  name="diPythonOriginal"
+                  size="lg"
+                  class="text-primary mb-4"
+                ></ng-icon>
+                <h3 class="font-semibold">Python</h3>
+                <span
+                  class="text-sm px-2 py-1 rounded-full bg-muted text-muted-foreground mt-2"
+                  >Planned</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- More Coming Soon -->
+          <div hlmCard class="transition-all border-dashed">
+            <div hlmCardContent class="p-4">
+              <div class="flex flex-col items-center text-center">
+                <ng-icon
+                  hlm
+                  name="lucideWand"
+                  size="lg"
+                  class="text-muted-foreground mb-2"
+                ></ng-icon>
+                <h3 class="font-semibold text-sm text-muted-foreground">
+                  More Languages
+                </h3>
+                <span class="text-xs text-muted-foreground mt-1"
+                  >Coming Soon</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Section -->
+    <div class="bg-muted/50 py-12">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div class="text-center">
+            <ng-icon
+              hlm
+              name="lucideZap"
+              size="lg"
+              class="text-primary mb-2"
+            ></ng-icon>
+            <div class="text-2xl font-bold">10x</div>
+            <div class="text-sm text-muted-foreground">Faster Development</div>
+          </div>
+          <div class="text-center">
+            <ng-icon
+              hlm
+              name="lucideBolt"
+              size="lg"
+              class="text-primary mb-2"
+            ></ng-icon>
+            <div class="text-2xl font-bold">99.9%</div>
+            <div class="text-sm text-muted-foreground">Uptime</div>
+          </div>
+          <div class="text-center">
+            <ng-icon
+              hlm
+              name="lucideGlobe"
+              size="lg"
+              class="text-primary mb-2"
+            ></ng-icon>
+            <div class="text-2xl font-bold">150+</div>
+            <div class="text-sm text-muted-foreground">Countries</div>
+          </div>
+          <div class="text-center">
+            <ng-icon
+              hlm
+              name="lucideUsers"
+              size="lg"
+              class="text-primary mb-2"
+            ></ng-icon>
+            <div class="text-2xl font-bold">1M+</div>
+            <div class="text-sm text-muted-foreground">Developers</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Cards Section -->
+    <div class="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+      <div class="mb-12 text-center">
+        <h2 class="text-3xl font-bold tracking-tight">
+          Built for Modern Development
+        </h2>
+        <p class="mt-4 text-lg text-muted-foreground">
+          Everything you need to build powerful backend services
+        </p>
+      </div>
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Database Card -->
+        <div hlmCard class="transition-all hover:shadow-lg">
+          <div hlmCardHeader>
+            <div class="flex items-center gap-2">
+              <ng-icon
+                hlm
+                name="lucideDatabase"
+                size="lg"
+                class="text-primary"
+              ></ng-icon>
+              <h3 hlmCardTitle>Multi-Dialect Database</h3>
+            </div>
+            <p hlmCardDescription>
+              Support for multiple database engines with advanced querying
+              capabilities
+            </p>
+          </div>
+          <div hlmCardContent>
+            <ul class="list-none space-y-2 text-sm text-muted-foreground">
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                SQLite, PostgreSQL, MySQL & more
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Type-safe query builder
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Real-time subscriptions
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Schema management
+              </li>
+            </ul>
+          </div>
+          <div hlmCardFooter>
+            <a hlmBtn variant="ghost" routerLink="/studio/database">
+              Learn more
+              <ng-icon
+                hlm
+                class="ml-2"
+                name="lucideArrowRight"
+                size="sm"
+              ></ng-icon>
+            </a>
+          </div>
+        </div>
+
+        <!-- API Card -->
+        <div hlmCard class="transition-all hover:shadow-lg">
+          <div hlmCardHeader>
+            <div class="flex items-center gap-2">
+              <ng-icon
+                hlm
+                name="lucideServer"
+                size="lg"
+                class="text-primary"
+              ></ng-icon>
+              <h3 hlmCardTitle>Framework Agnostic API</h3>
+            </div>
+            <p hlmCardDescription>
+              Integrate with any Node.js framework seamlessly
+            </p>
+          </div>
+          <div hlmCardContent>
+            <ul class="list-none space-y-2 text-sm text-muted-foreground">
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Express.js & NestJS adapters
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Fastify plugin support
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Hono edge compatibility
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Custom framework integration
+              </li>
+            </ul>
+          </div>
+          <div hlmCardFooter>
+            <a hlmBtn variant="ghost" routerLink="/studio/api">
+              Learn more
+              <ng-icon
+                hlm
+                class="ml-2"
+                name="lucideArrowRight"
+                size="sm"
+              ></ng-icon>
+            </a>
+          </div>
+        </div>
+
+        <!-- Security Card -->
+        <div hlmCard class="transition-all hover:shadow-lg">
+          <div hlmCardHeader>
+            <div class="flex items-center gap-2">
+              <ng-icon
+                hlm
+                name="lucideShield"
+                size="lg"
+                class="text-primary"
+              ></ng-icon>
+              <h3 hlmCardTitle>Enterprise Security</h3>
+            </div>
+            <p hlmCardDescription>
+              Built-in security features for robust applications
+            </p>
+          </div>
+          <div hlmCardContent>
+            <ul class="list-none space-y-2 text-sm text-muted-foreground">
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Row-level security (RLS)
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                Role-based access control
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                OAuth & JWT support
+              </li>
+              <li class="flex items-center">
+                <ng-icon
+                  hlm
+                  name="lucideCircleCheck"
+                  size="sm"
+                  class="mr-2 text-green-500"
+                ></ng-icon>
+                API key authentication
+              </li>
+            </ul>
+          </div>
+          <div hlmCardFooter>
+            <a hlmBtn variant="ghost" routerLink="/studio/auth">
+              Learn more
+              <ng-icon
+                hlm
+                class="ml-2"
+                name="lucideArrowRight"
+                size="sm"
+              ></ng-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why ForgeBase Section -->
+    <div class="bg-muted/50 py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="mb-12 text-center">
+          <h2 class="text-3xl font-bold tracking-tight">
+            Why Choose ForgeBase?
+          </h2>
+          <p class="mt-4 text-lg text-muted-foreground">
+            Built with modern development practices in mind
+          </p>
+        </div>
+        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div class="flex flex-col items-center text-center p-6">
+            <ng-icon
+              hlm
+              name="lucideRocket"
+              size="lg"
+              class="text-primary mb-4"
+            ></ng-icon>
+            <h3 class="text-xl font-semibold mb-2">Rapid Development</h3>
+            <p class="text-muted-foreground">
+              Build and deploy faster with our comprehensive toolkit and
+              intuitive Studio interface.
+            </p>
+          </div>
+          <div class="flex flex-col items-center text-center p-6">
+            <ng-icon
+              hlm
+              name="lucideCode"
+              size="lg"
+              class="text-primary mb-4"
+            ></ng-icon>
+            <h3 class="text-xl font-semibold mb-2">Language Agnostic</h3>
+            <p class="text-muted-foreground">
+              Use your preferred programming language and framework with our
+              flexible API.
+            </p>
+          </div>
+          <div class="flex flex-col items-center text-center p-6">
+            <ng-icon
+              hlm
+              name="lucideCpu"
+              size="lg"
+              class="text-primary mb-4"
+            ></ng-icon>
+            <h3 class="text-xl font-semibold mb-2">Scalable Architecture</h3>
+            <p class="text-muted-foreground">
+              Built to scale from prototype to production with enterprise-grade
+              performance.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Testimonials Section -->
+    <div class="py-16">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="mb-12 text-center">
+          <h2 class="text-3xl font-bold tracking-tight">Loved by Developers</h2>
+          <p class="mt-4 text-lg text-muted-foreground">
+            Here's what our community has to say
+          </p>
+        </div>
+        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div hlmCard>
+            <div hlmCardContent class="pt-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideUsers"
+                    size="md"
+                    class="text-primary"
+                  ></ng-icon>
+                </div>
+                <div class="ml-4">
+                  <h4 class="font-semibold">Sarah Chen</h4>
+                  <p class="text-sm text-muted-foreground">Senior Developer</p>
+                </div>
+              </div>
+              <p class="text-muted-foreground">
+                "ForgeBase has revolutionized how we build backend services. The
+                development speed and flexibility are unmatched."
+              </p>
+            </div>
+          </div>
+          <div hlmCard>
+            <div hlmCardContent class="pt-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideUsers"
+                    size="md"
+                    class="text-primary"
+                  ></ng-icon>
+                </div>
+                <div class="ml-4">
+                  <h4 class="font-semibold">James Wilson</h4>
+                  <p class="text-sm text-muted-foreground">Tech Lead</p>
+                </div>
+              </div>
+              <p class="text-muted-foreground">
+                "The ability to use multiple database dialects while maintaining
+                security has been a game-changer for our team."
+              </p>
+            </div>
+          </div>
+          <div hlmCard>
+            <div hlmCardContent class="pt-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideUsers"
+                    size="md"
+                    class="text-primary"
+                  ></ng-icon>
+                </div>
+                <div class="ml-4">
+                  <h4 class="font-semibold">Maria Garcia</h4>
+                  <p class="text-sm text-muted-foreground">
+                    Software Architect
+                  </p>
+                </div>
+              </div>
+              <p class="text-muted-foreground">
+                "ForgeBase's real-time capabilities and security features have
+                exceeded our expectations. It's now our go-to BaaS solution."
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Preview Section with Gradient -->
+    <div class="relative mt-20">
+      <div
+        class="absolute inset-x-0 top-0 -z-10 transform-gpu overflow-hidden blur-3xl"
+        aria-hidden="true"
+      >
+        <div
+          class="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-primary to-[#9089fc] opacity-30"
+        ></div>
+      </div>
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="mb-12 text-center">
+          <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">
+            Powerful Studio Dashboard
+          </h2>
+          <p class="mt-4 text-lg text-muted-foreground">
+            Manage your backend services with an intuitive, feature-rich
+            dashboard
+          </p>
+        </div>
+        <div hlmCard class="transition-all hover:shadow-lg mt-4">
+          <div hlmCardContent class="p-0 overflow-hidden rounded-lg">
+            <img
+              src="assets/dashboard-preview1.png"
+              alt="ForgeBase Studio Dashboard"
+              class="w-full shadow-2xl rounded-lg border"
+              onError="this.style.display='none'"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="relative mt-20 pb-20">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div hlmCard class="bg-primary/5">
+          <div hlmCardContent class="py-12">
+            <div class="mx-auto max-w-2xl text-center">
+              <h2 class="text-3xl font-bold tracking-tight">
+                Ready to Build Your Backend?
+              </h2>
+              <p class="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
+                Get started with ForgeBase today and experience the power of a
+                modern, flexible BaaS framework.
+              </p>
+              <div class="mt-10 flex items-center justify-center gap-x-6">
+                <a hlmBtn size="lg" routerLink="/studio">
+                  Get Started
+                  <ng-icon
+                    hlm
+                    class="ml-2"
+                    name="lucideArrowRight"
+                    size="sm"
+                  ></ng-icon>
+                </a>
+                <a hlmBtn variant="outline" size="lg" routerLink="/docs">
+                  Read the Docs
+                  <ng-icon
+                    hlm
+                    class="ml-2"
+                    name="lucideBook"
+                    size="sm"
+                  ></ng-icon>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

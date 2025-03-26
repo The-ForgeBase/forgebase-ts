@@ -56,7 +56,7 @@ import { TableItem } from '../../shared/types/database';
   selector: 'studio-database-layout',
   standalone: true,
   host: {
-    class: 'block w-full h-[calc(100svh-5rem)] overflow-hidden max-w-[100%]',
+    class: 'block w-full h-svh pb-[5rem] overflow-hidden max-w-[100%]',
   },
   imports: [
     CommonModule,

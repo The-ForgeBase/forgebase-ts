@@ -62,7 +62,7 @@ import { NgScrollbarModule } from 'ngx-scrollbar';
 @Component({
   standalone: true,
   host: {
-    class: 'block w-full overflow-auto min-h-[calc(100svh-5rem)] p-6 space-y-6',
+    class: 'block w-full overflow-auto min-h-svh pb-[5rem] p-6 space-y-6',
   },
   imports: [
     CommonModule,

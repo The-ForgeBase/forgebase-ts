@@ -25,7 +25,9 @@ import { RouterOutlet } from '@angular/router';
         <studio-side-menu />
         <div class="w-full flex flex-col flex-1 max-w-[100%]">
           <router-outlet />
-          <div class="w-full h-[5rem] flex-1 flex items-center justify-center">
+          <div
+            class="sticky bottom-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-3 flex items-center justify-center"
+          >
             <p class="text-center text-sm text-foreground">
               Forgebase Studio
               <span class="text-foreground/50">Version 0.0.1</span>

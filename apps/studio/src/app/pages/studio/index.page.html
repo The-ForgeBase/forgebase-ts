@@ -1,0 +1,302 @@
+<ng-template #contextMenu>
+  <hlm-menu class="w-48">
+    <hlm-menu-group>
+      @for (action of contextMenuActions; track action) {
+      <button hlmMenuItem>{{ action }}</button>
+      @if (action === 'View Documentation' || action === 'Share Access') {
+      <hlm-menu-separator />
+      } }
+    </hlm-menu-group>
+  </hlm-menu>
+</ng-template>
+
+<ng-scrollbar hlm class="h-[100%] w-full" visibility="native">
+  <div class="h-full px-4 py-6 lg:px-8 w-full">
+    <hlm-tabs tab="overview_tab" class="w-full">
+      <header
+        class="flex flex-col-reverse justify-between gap-y-10 align-baseline sm:flex-row"
+      >
+        <hlm-tabs-list class="inline-grid w-full grid-cols-3 sm:w-auto">
+          <button hlmTabsTrigger="overview_tab">Overview</button>
+          <button hlmTabsTrigger="activity_tab">Activity</button>
+          <button hlmTabsTrigger="analytics_tab">Analytics</button>
+        </hlm-tabs-list>
+        <button hlmBtn class="h-10 w-full sm:w-auto">
+          <ng-icon hlm size="sm" class="mr-2" name="lucideCirclePlus" />
+          Create Service
+        </button>
+      </header>
+
+      <div hlmTabsContent="overview_tab" class="w-full">
+        <!-- Metrics Overview Section -->
+        <div class="mt-6 space-y-1">
+          <h2 class="text-2xl font-semibold tracking-tight">System Overview</h2>
+          <p class="text-muted-foreground text-sm">
+            Key performance metrics and statistics
+          </p>
+        </div>
+        <brn-separator hlmSeparator />
+
+        <div class="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          @for (metric of metrics.overview; track metric) {
+          <div
+            class="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-4">
+                <div
+                  class="p-2 bg-primary/10 rounded-full flex items-center justify-center"
+                >
+                  <ng-icon
+                    hlm
+                    [name]="metric.icon"
+                    size="sm"
+                    class="text-primary m-auto !p-0"
+                  ></ng-icon>
+                </div>
+                <div>
+                  <p class="text-sm font-medium">{{ metric.title }}</p>
+                  <p class="text-2xl font-bold">{{ metric.value }}</p>
+                </div>
+              </div>
+              <div>
+                <span
+                  class="text
+                    {{ metric.trend === 'up' ? 'text-green-500' : 'text-red-500' }}
+                    text-sm font-medium"
+                >
+                  {{ metric.change }}
+                </span>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+
+        <!-- Quick Start Section -->
+        <div class="mt-8 space-y-1">
+          <h2 class="text-2xl font-semibold tracking-tight">Quick Start</h2>
+          <p class="text-muted-foreground text-sm">
+            Essential services to build your backend
+          </p>
+        </div>
+        <brn-separator hlmSeparator />
+
+        <div class="mt-2">
+          <div
+            class="mt-2 grid grid-cols-2 gap-4 pb-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4"
+          >
+            @for (item of sectionData.quickStart; track item) {
+            <figure
+              class="space-y-4 cursor-pointer"
+              [brnCtxMenuTriggerFor]="contextMenu"
+            >
+              <div
+                class="group relative block w-full overflow-hidden rounded-md bg-muted p-6"
+              >
+                <div
+                  class="flex flex-col items-center justify-center space-y-4"
+                >
+                  <ng-icon
+                    hlm
+                    [name]="item.icon"
+                    size="sm"
+                    class="text-primary h-12 w-12"
+                  ></ng-icon>
+                  <div class="text-center">
+                    <h3 class="font-medium text-lg">{{ item.title }}</h3>
+                    <p class="text-muted-foreground text-sm">
+                      {{ item.subtitle }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </figure>
+            }
+          </div>
+        </div>
+
+        <!-- Documentation Section -->
+        <div class="mt-8 space-y-1">
+          <h2 class="text-2xl font-semibold tracking-tight">
+            Quick Start Documentation
+          </h2>
+          <p class="text-muted-foreground text-sm">
+            Get started with code examples
+          </p>
+        </div>
+        <brn-separator hlmSeparator />
+
+        <div class="mt-4">
+          <hlm-tabs tab="webapp" class="w-full">
+            <hlm-tabs-list class="w-full justify-start border-b mb-4">
+              <button hlmTabsTrigger="webapp" class="flex items-center gap-2">
+                <ng-icon hlm name="lucideCode" size="sm"></ng-icon>
+                Web App
+              </button>
+              <button hlmTabsTrigger="server" class="flex items-center gap-2">
+                <ng-icon hlm name="lucideServer" size="sm"></ng-icon>
+                Server
+              </button>
+              <button hlmTabsTrigger="schema" class="flex items-center gap-2">
+                <ng-icon hlm name="lucideDatabase" size="sm"></ng-icon>
+                Schema
+              </button>
+            </hlm-tabs-list>
+
+            @for (tab of [docTabs.webApp, docTabs.server, docTabs.schema]; track
+            tab.title) {
+            <div [hlmTabsContent]="tab.name.toLowerCase().trim()">
+              <div hlmCard class="overflow-hidden">
+                <div class="p-6">
+                  <div class="flex items-center gap-2 mb-4">
+                    <div class="p-2 bg-primary/10 rounded-lg">
+                      <ng-icon
+                        hlm
+                        [name]="tab.icon"
+                        size="lg"
+                        class="text-primary"
+                      ></ng-icon>
+                    </div>
+                    <div>
+                      <h3 class="font-semibold">{{ tab.title }}</h3>
+                      <p class="text-sm text-muted-foreground">
+                        {{ tab.description }}
+                      </p>
+                    </div>
+                  </div>
+                  <pre
+                    class="p-4 rounded-lg bg-muted overflow-x-auto text-sm"
+                  ><code>{{ tab.code }}</code></pre>
+                </div>
+                <div class="px-6 py-4 bg-muted/50 flex justify-end gap-2">
+                  <button hlmBtn variant="ghost" size="sm">
+                    <ng-icon
+                      hlm
+                      name="lucideBookOpen"
+                      size="sm"
+                      class="mr-2"
+                    ></ng-icon>
+                    View Docs
+                  </button>
+                  <button hlmBtn variant="ghost" size="sm">
+                    <ng-icon
+                      hlm
+                      name="lucideGithub"
+                      size="sm"
+                      class="mr-2"
+                    ></ng-icon>
+                    Examples
+                  </button>
+                </div>
+              </div>
+            </div>
+            }
+          </hlm-tabs>
+        </div>
+
+        <div class="mt-5 space-y-1">
+          <h2 class="text-2xl font-semibold tracking-tight">
+            Features & Tools
+          </h2>
+          <p class="text-muted-foreground text-sm">
+            Advanced features to enhance your application
+          </p>
+        </div>
+
+        <brn-separator hlmSeparator />
+
+        <div class="mt-2 pb-4">
+          <div
+            class="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
+          >
+            @for (item of sectionData.features; track item) {
+            <figure class="space-y-4">
+              <div
+                class="group relative block w-full overflow-hidden rounded-md bg-muted/50 p-4"
+              >
+                <div
+                  class="flex flex-col items-center justify-center space-y-2"
+                >
+                  <ng-icon
+                    hlm
+                    [name]="item.icon"
+                    size="md"
+                    class="text-primary h-8 w-8"
+                  ></ng-icon>
+                  <div class="text-center">
+                    <h3 class="font-medium leading-none">{{ item.title }}</h3>
+                    <p class="text-muted-foreground text-xs mt-1">
+                      {{ item.subtitle }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </figure>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div hlmTabsContent="activity_tab" class="w-full space-y-6">
+        <div class="mt-6 space-y-2">
+          <h2 class="text-2xl font-semibold tracking-tight">Recent Activity</h2>
+          <p class="text-muted-foreground text-sm">
+            View your system's recent activities and logs
+          </p>
+        </div>
+        <brn-separator hlmSeparator />
+
+        <div
+          hlmCard
+          class="flex min-h-[450px] flex-col justify-center p-6 align-middle"
+        >
+          <div class="text-center">
+            <ng-icon
+              hlm
+              size="xl"
+              name="lucideSettings"
+              class="text-muted-foreground"
+            />
+            <h2 class="mt-4 text-lg font-semibold">No Recent Activity</h2>
+            <p class="text-muted-foreground mb-4 mt-2 text-sm">
+              Start using ForgeBase services to see activity logs
+            </p>
+            <button hlmBtn class="h-8 text-xs">View Documentation</button>
+          </div>
+        </div>
+      </div>
+
+      <div hlmTabsContent="analytics_tab" class="w-full space-y-6">
+        <div class="mt-6 space-y-2">
+          <h2 class="text-2xl font-semibold tracking-tight">
+            System Analytics
+          </h2>
+          <p class="text-muted-foreground text-sm">
+            Monitor your system's performance and usage
+          </p>
+        </div>
+        <brn-separator hlmSeparator />
+
+        <div
+          hlmCard
+          class="flex min-h-[450px] flex-col justify-center p-6 align-middle"
+        >
+          <div class="text-center">
+            <ng-icon
+              hlm
+              size="xl"
+              name="lucideZap"
+              class="text-muted-foreground"
+            />
+            <h2 class="mt-4 text-lg font-semibold">Analytics Coming Soon</h2>
+            <p class="text-muted-foreground mb-4 mt-2 text-sm">
+              We're working on bringing you detailed analytics and insights
+            </p>
+            <button hlmBtn class="h-8 text-xs">Request Early Access</button>
+          </div>
+        </div>
+      </div>
+    </hlm-tabs>
+  </div>
+</ng-scrollbar>
