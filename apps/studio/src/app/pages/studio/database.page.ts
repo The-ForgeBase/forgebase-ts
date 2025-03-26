@@ -40,7 +40,7 @@ import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
 import { InputTextModule } from 'primeng/inputtext';
 import { animate, style, transition, trigger } from '@angular/animations';
-import { NewTableComponent } from './components/table/new-table.component';
+import { NewTableComponent } from './components/table/new-table/new-table.component';
 
 import { load } from './database.server';
 import { TableItem } from '../../shared/types/database';

@@ -20,28 +20,9 @@ import { CalendarModule } from 'primeng/calendar';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { DropdownModule } from 'primeng/dropdown';
 import { HlmInputDirective } from '@spartan-ng/ui-input-helm';
-import { BrnSwitchComponent } from '@spartan-ng/brain/switch';
 import { EnumSelectComponent } from '../enum-select/enum-select.component';
-
-// Define column types
-export type ColumnType =
-  | 'increments'
-  | 'string'
-  | 'text'
-  | 'integer'
-  | 'bigInteger'
-  | 'boolean'
-  | 'decimal'
-  | 'float'
-  | 'datetime'
-  | 'date'
-  | 'time'
-  | 'timestamp'
-  | 'binary'
-  | 'json'
-  | 'jsonb'
-  | 'enum'
-  | 'uuid';
+import { ColumnType } from '../../shared/types/database';
+import { HlmSwitchComponent } from '@spartan-ng/ui-switch-helm';
 
 /**
  * SQL type to TypeScript type mapping
@@ -130,7 +111,7 @@ const SQL_TO_COLUMN_TYPE = new Map<string, ColumnType>([
     CalendarModule,
     DropdownModule,
     HlmInputDirective,
-    BrnSwitchComponent,
+    HlmSwitchComponent,
     EnumSelectComponent,
   ],
   providers: [
@@ -177,15 +158,13 @@ const SQL_TO_COLUMN_TYPE = new Map<string, ColumnType>([
 
       <!-- Boolean Input -->
       <ng-container *ngSwitchCase="'boolean'">
-        <div class="flex items-center space-x-2">
-          <brn-switch
-            hlm
+        <div class="flex items-center space-x-2 w-full">
+          <hlm-switch
             [id]="columnName"
-            [name]="columnName"
             [disabled]="disabled()"
             [checked]="!!value()"
             (changed)="onBooleanChange($event)"
-          ></brn-switch>
+          />
           <span class="text-sm text-muted-foreground">{{
             value() ? 'Yes' : 'No'
           }}</span>

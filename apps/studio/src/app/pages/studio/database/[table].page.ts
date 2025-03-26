@@ -46,7 +46,14 @@ import {
 import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideFolderCog, lucideShield } from '@ng-icons/lucide';
+import {
+  lucideExternalLink,
+  lucideFolderCog,
+  lucideLoader,
+  lucidePlus,
+  lucideShield,
+  lucideX,
+} from '@ng-icons/lucide';
 import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
 
 /**
@@ -97,7 +104,17 @@ import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
     NgIcon,
     HlmIconDirective,
   ],
-  providers: [MessageService, provideIcons({ lucideShield, lucideFolderCog })],
+  providers: [
+    MessageService,
+    provideIcons({
+      lucideShield,
+      lucideFolderCog,
+      lucideX,
+      lucideExternalLink,
+      lucidePlus,
+      lucideLoader,
+    }),
+  ],
   animations: [
     trigger('fadeIn', [
       transition(':enter', [
