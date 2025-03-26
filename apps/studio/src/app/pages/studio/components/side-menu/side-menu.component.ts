@@ -289,7 +289,7 @@ export class SideStudioMenuComponent {
 
   public features: ListItem[] = [
     { text: 'Deployment', icon: 'lucideRocket', link: '/studio/deployment' },
-    { text: 'Edge Functions', icon: 'lucideGlobe', link: '/studio/edge' },
+    // { text: 'Edge Functions', icon: 'lucideGlobe', link: '/studio/edge' },
     { text: 'Performance', icon: 'lucideZap', link: '/studio/performance' },
     { text: 'Integrations', icon: 'lucideCode', link: '/studio/integrations' },
   ];
