@@ -81,57 +81,45 @@
   </div>
 
   <div class="w-full flex gap-3">
-    <button hlmBtn variant="outline" class="text-sm font-medium h-9">
-      Table Settings
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="ml-2"
-      >
-        <path d="M4 6h16"></path>
-        <path d="M4 12h16"></path>
-        <path d="M4 18h16"></path>
-        <path d="M4 6v12"></path>
-        <path d="M20 6v12"></path>
-        <path d="M4 6h16"></path>
-        <path d="M4 12h16"></path>
-        <path d="M4 18h16"></path>
-        <path d="M4 6v12"></path>
-        <path d="M20 6v12"></path>
-        <path d="M4 6h16"></path>
-      </svg>
+    <button
+      hlmBtn
+      variant="outline"
+      class="text-sm font-medium h-9"
+      (click)="openSettingsSheet()"
+    >
+      <ng-icon hlm size="sm" name="lucideFolderCog" />
+      <span class="ml-2">Settings</span>
     </button>
+
+    <!-- Settings Sheet -->
+    <hlm-sheet #settingsSheetRef side="right">
+      <hlm-sheet-content
+        class="h-full bg-background w-[100%] !max-w-[600px]"
+        *brnSheetContent="let ctx"
+      >
+        <hlm-sheet-header>
+          <h3 hlmSheetTitle>Table Settings</h3>
+          <p hlmSheetDescription>Configure table schema and behavior:</p>
+        </hlm-sheet-header>
+        <div class="py-4 grid gap-4 overflow-hidden w-full">
+          <ng-scrollbar hlm class="h-[calc(100svh-5rem)]">
+            <studio-table-settings
+              (close)="closeSettingsSheet($event)"
+              [schema]="tableSchema()"
+            ></studio-table-settings>
+          </ng-scrollbar>
+        </div>
+      </hlm-sheet-content>
+    </hlm-sheet>
+
     <button
       hlmBtn
       variant="outline"
       class="text-sm font-medium h-9"
       (click)="openPermissionsSheet()"
     >
-      Table Permissions
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="ml-2"
-      >
-        <path d="M4 6h16"></path>
-        <path d="M4 12h16"></path>
-        <path d="M4 18h16"></path>
-        <path d="M4 6v12"></path>
-      </svg>
+      <ng-icon hlm size="sm" name="lucideShield" />
+      <span class="ml-2">Permissions</span>
     </button>
 
     <!-- Permissions Sheet -->
