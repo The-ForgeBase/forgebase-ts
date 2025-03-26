@@ -175,6 +175,7 @@ import { HlmCheckboxComponent } from '@spartan-ng/ui-checkbox-helm';
                                 .get('nullable')
                                 ?.setValue(!col.get('nullable')?.value)
                             "
+                            [checked]="col.get('nullable')?.value"
                           />
                           <span class="text-sm">Nullable</span>
                         </label>
@@ -187,6 +188,7 @@ import { HlmCheckboxComponent } from '@spartan-ng/ui-checkbox-helm';
                                 : 'unchecked'
                             "
                             (click)="onPrimaryKeyChange($index)"
+                            [checked]="col.get('isPrimary')?.value"
                           />
                           <span class="text-sm">Primary Key</span>
                         </label>
@@ -205,6 +207,7 @@ import { HlmCheckboxComponent } from '@spartan-ng/ui-checkbox-helm';
                                 .get('isUnique')
                                 ?.setValue(!col.get('isUnique')?.value)
                             "
+                            [checked]="col.get('isUnique')?.value"
                           />
                           <span class="text-sm">Unique</span>
                         </label>
@@ -219,6 +222,7 @@ import { HlmCheckboxComponent } from '@spartan-ng/ui-checkbox-helm';
                                 : 'unchecked'
                             "
                             (click)="onAutoIncrementChange($index)"
+                            [checked]="col.get('autoIncrement')?.value"
                           />
                           <span class="text-sm">Auto Increment</span>
                         </label>
@@ -242,6 +246,7 @@ import { HlmCheckboxComponent } from '@spartan-ng/ui-checkbox-helm';
                               !col.get('foreignKeyEnabled')?.value
                             )
                           "
+                          [checked]="col.get('foreignKeyEnabled')?.value"
                         />
                         <span class="text-sm">Foreign Key</span>
                       </label>
