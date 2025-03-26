@@ -326,6 +326,7 @@ import { TableItem } from '../../shared/types/database';
           <div class="flex-grow"></div>
           <div class="pt-3 mt-3 border-t border-muted">
             <a
+              [routerLink]="['/studio/database/settings']"
               href="javascript:void(0)"
               class="flex items-center px-4 py-2 text-sm rounded-md transition-colors hover:bg-accent/50"
               [pTooltip]="'View database settings'"

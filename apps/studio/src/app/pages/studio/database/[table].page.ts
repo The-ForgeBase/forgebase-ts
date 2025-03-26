@@ -1,11 +1,9 @@
 import {
   Component,
   computed,
-  effect,
   inject,
   signal,
   PLATFORM_ID,
-  ViewChild,
   viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
