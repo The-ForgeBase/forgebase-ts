@@ -1,6 +1,6 @@
 # ForgeBase API
 
-The ForgeBase API library provides a comprehensive set of functionalities and integrations for building and managing APIs within the ForgeBase ecosystem. It serves as the core interface layer between your application and ForgeBase services.
+A flexible, framework-agnostic API library for building robust backend services with built-in database and storage capabilities. This library provides a unified interface for handling HTTP requests, database operations, and file storage across various Node.js frameworks.
 
 ## Purpose
 
@@ -8,40 +8,86 @@ This library enables developers to easily integrate ForgeBase backend services i
 
 ## Core Features
 
-- **Framework Agnostic**: Works with Express, Fastify, Hono, NestJS, and more
-- **Database Integration**: Support for SQLite, PostgreSQL, and LibSQL with Knex
-- **Storage Integration**: File storage with support for local, S3, GCP, and Cloudinary backends
-- **Authentication & Authorization**: Fine-grained role, table, and namespace-level permissions
-- **Middleware Support**: Custom middleware for request/response processing
-- **Custom Routing**: Build custom API endpoints with a simple router interface
-- **Admin API**: Built-in API endpoints for database schema and data management
-- **TypeScript Support**: Full type safety with TypeScript interfaces
+- **Framework Integration**:
+
+  - Express.js adapter with middleware support
+  - NestJS modules (ForgeApiModule and ForgeApiWithChildModule)
+  - Fastify adapter with plugin system
+  - Hono adapter for edge compatibility
+  - Framework-agnostic core for custom integrations
+
+- **Database Operations**:
+
+  - CRUD operations with type safety
+  - Schema management and migrations
+  - Query builder with filtering and pagination
+  - Real-time updates (optional)
+  - Row-level security (RLS)
+  - Permissions management
+
+- **Request Handling**:
+
+  - Unified request/response interface
+  - Route parameter parsing
+  - Query string handling
+  - Body parsing with validation
+  - Header management
+  - Cookie support
+
+- **Middleware System**:
+
+  - Request/response pipeline
+  - Authentication middleware
+  - Admin request handling
+  - Custom middleware support
+  - Error handling middleware
+
+- **Security Features**:
+
+  - Role-based access control (RBAC)
+  - Input validation and sanitization
+  - CORS configuration
+  - Rate limiting
+  - API key authentication
+  - Admin request validation
+
+- **Storage Integration**:
+
+  - Local file system storage
+  - Cloud storage providers
+  - File upload/download
+  - Stream support
+  - Bucket management
+  - Access control
+
+- **Configuration Management**:
+  - Environment-based config
+  - Service configuration
+  - Dynamic updates
+  - Validation
+  - Defaults handling
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
-  - [Standalone Usage](#standalone-usage)
-  - [Framework-Specific Integration](#framework-specific-integration)
-- [Configuration](#configuration)
-  - [Database Configuration](#database-configuration)
-  - [Storage Configuration](#storage-configuration)
-  - [Authentication Configuration](#authentication-configuration)
+  - [Core API Setup](#core-api-setup)
 - [Framework Integration](#framework-integration)
   - [NestJS Integration](#nestjs-integration)
   - [Express Integration](#express-integration)
   - [Fastify Integration](#fastify-integration)
   - [Hono Integration](#hono-integration)
-- [Core Services](#core-services)
-  - [Database Service](#database-service)
-  - [Storage Service](#storage-service)
-  - [Auth Service](#auth-service)
+- [Database Operations](#database-operations)
+- [Schema Management](#schema-management)
+- [Admin Operations](#admin-operations)
+- [Error Handling](#error-handling)
+- [Security Best Practices](#security-best-practices)
 - [API Reference](#api-reference)
-  - [ForgeApi](#forgeapi)
-  - [Route Handlers](#route-handlers)
-  - [Middleware](#middleware)
-- [Building](#building)
-- [Running Tests](#running-tests)
+  - [ForgeApi Class](#forgeapi-class)
+  - [ServerAdapter Interface](#serveradapter-interface)
+  - [Configuration Types](#configuration-types)
+- [Testing](#testing)
+- [License](#license)
 
 ## Installation
 
@@ -55,159 +101,38 @@ pnpm add @forgebase-ts/api
 
 ## Basic Usage
 
-### Standalone Usage
+### Core API Setup
 
 ```typescript
 import { forgeApi } from '@forgebase-ts/api';
 
 const api = forgeApi({
   prefix: '/api',
-  auth: {
-    enabled: true,
-    exclude: ['/auth/login', '/auth/register'],
-  },
   services: {
-    storage: {
-      provider: 'local',
-      config: {},
-    },
     db: {
       provider: 'sqlite',
       config: {
-        filename: './database.sqlite',
+        filename: 'database.sqlite',
       },
-      realtime: false,
       enforceRls: true,
+      realtime: false,
+    },
+    storage: {
+      provider: 'local',
+      config: {},
     },
   },
 });
 
 // Add custom routes
-api.get('/hello', async (ctx) => {
+api.get('/custom', async (ctx) => {
   ctx.res.body = { message: 'Hello World' };
 });
 
-api.post('/items', async (ctx) => {
-  const id = await ctx.services.db.insert('items', ctx.req.body, ctx.req.userContext);
-  ctx.res.status = 201;
-  ctx.res.body = { id };
-});
-```
-
-### Framework-Specific Integration
-
-ForgeAPI can be integrated into various frameworks using dedicated adapters:
-
-```typescript
-import { forgeApi } from '@forgebase-ts/api';
-import { ExpressAdapter } from '@forgebase-ts/api/adapters';
-import express from 'express';
-
-const app = express();
-const api = forgeApi({
-  prefix: '/api',
-  services: {
-    db: {
-      provider: 'sqlite',
-      config: { filename: './database.sqlite' },
-      realtime: false,
-      enforceRls: false,
-    },
-    storage: {
-      provider: 'local',
-      config: {},
-    },
-  },
-});
-
-// Use the adapter for each request
-app.use(async (req, res, next) => {
-  try {
-    const adapter = new ExpressAdapter(req);
-    const result = await api.handle(adapter);
-
-    if (result) {
-      const { context } = result;
-      res.status(context.res.status).json(context.res.body);
-    } else {
-      next();
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-```
-
-## Configuration
-
-### Database Configuration
-
-```typescript
-const api = forgeApi({
-  services: {
-    db: {
-      // Database provider: 'sqlite', 'postgres', or 'libsql'
-      provider: 'postgres',
-
-      // Database-specific configuration
-      config: {
-        connection: {
-          host: 'localhost',
-          port: 5432,
-          user: 'postgres',
-          password: 'password',
-          database: 'forge',
-        },
-      },
-
-      // Enable real-time updates
-      realtime: true,
-
-      // Enable row-level security
-      enforceRls: true,
-
-      // Pass an existing Knex instance
-      knex: existingKnexInstance,
-    },
-  },
-});
-```
-
-### Storage Configuration
-
-```typescript
-const api = forgeApi({
-  services: {
-    storage: {
-      // Storage provider: 'local', 's3', 'gcp', or 'cloudinary'
-      provider: 's3',
-
-      // Provider-specific configuration
-      config: {
-        bucket: 'my-bucket',
-        region: 'us-east-1',
-        accessKeyId: 'AKIAXXXXXXXX',
-        secretAccessKey: 'XXXXXXXXXX',
-      },
-    },
-  },
-});
-```
-
-### Authentication Configuration
-
-```typescript
-const api = forgeApi({
-  auth: {
-    // Enable authentication
-    enabled: true,
-
-    // Routes that don't require authentication
-    exclude: ['/auth/login', '/auth/register', '/public'],
-
-    // Run auth check before middleware (true) or after middleware (false)
-    beforeMiddleware: true,
-  },
+// Add middleware
+api.use(async (ctx, next) => {
+  console.log(`${ctx.req.method} ${ctx.req.path}`);
+  await next();
 });
 ```
 
@@ -288,32 +213,6 @@ export class AppModule {}
 export class FeatureModule {}
 ```
 
-#### Option 3: Middleware Integration (ForgeNestApiModule)
-
-```typescript
-import { Module } from '@nestjs/common';
-import { ForgeNestApiModule } from '@forgebase-ts/api/frameworks/nest';
-
-@Module({
-  imports: [
-    ForgeNestApiModule.forRoot({
-      prefix: '/api',
-      services: {
-        db: {
-          provider: 'sqlite',
-          config: { filename: 'database.sqlite' },
-        },
-        storage: {
-          provider: 'local',
-          config: {},
-        },
-      },
-    }),
-  ],
-})
-export class AppModule {}
-```
-
 You can also use custom routes and guards with NestJS:
 
 ```typescript
@@ -374,6 +273,19 @@ app.listen(3000, () => {
 });
 ```
 
+### Fastify Integration
+
+```typescript
+import Fastify from 'fastify';
+import { FastifyAdapter } from '@forgebase-ts/api/adapters';
+
+const app = Fastify();
+const adapter = new FastifyAdapter(app);
+
+// Setup routes with cookie support
+adapter.setupRoutes(app, true);
+```
+
 ### Hono Integration
 
 ```typescript
@@ -420,135 +332,183 @@ app.use('/api/*', async (c, next) => {
 });
 ```
 
-## Core Services
-
-### Database Service
-
-The database service provides access to the underlying database:
+## Database Operations
 
 ```typescript
-const dbService = api.getDatabaseService();
-
-// Query records
-const users = await dbService.query(
+// Create a new record
+const id = await api.getDatabaseService().insert(
   'users',
   {
-    filter: { role: 'admin' },
-    select: ['id', 'name', 'email'],
-    orderBy: { field: 'created_at', direction: 'desc' },
-    limit: 10,
+    tableName: 'users',
+    data: {
+      name: 'John Doe',
+      email: 'john@example.com',
+    },
   },
   userContext
 );
 
-// Insert a record
-const id = await dbService.insert(
-  'posts',
+// Query records
+const users = await api.getDatabaseService().query(
+  'users',
   {
-    tableName: 'posts',
-    data: { title: 'Hello World', content: 'First post', author_id: 1 },
+    filter: { role: 'admin' },
+    select: ['id', 'name', 'email'],
+    limit: 10,
+    offset: 0,
   },
   userContext
 );
 
 // Update a record
-await dbService.update(
+await api.getDatabaseService().update(
   {
-    tableName: 'posts',
-    data: { title: 'Updated Title' },
+    tableName: 'users',
+    data: { role: 'manager' },
     id: 1,
   },
   userContext
 );
 
 // Delete a record
-await dbService.delete('posts', 1, userContext);
+await api.getDatabaseService().delete('users', 1, userContext);
+```
 
-// Schema management
-const schema = await dbService.getSchema();
-const tables = await dbService.getTables();
+## Schema Management
 
-// Create a new table
-await dbService.createSchema('comments', [
+```typescript
+// Create table schema
+await api.getDatabaseService().createSchema('posts', [
   {
     name: 'id',
     type: 'increments',
     primaryKey: true,
   },
   {
-    name: 'post_id',
-    type: 'integer',
+    name: 'title',
+    type: 'string',
     nullable: false,
   },
   {
     name: 'content',
     type: 'text',
-    nullable: false,
+  },
+  {
+    name: 'author_id',
+    type: 'integer',
+    references: 'users.id',
   },
 ]);
-```
 
-### Storage Service
+// Add column
+await api.getDatabaseService().addColumn('posts', [
+  {
+    name: 'published_at',
+    type: 'timestamp',
+  },
+]);
 
-The storage service provides file storage capabilities:
-
-```typescript
-const storageService = api.getStorageService();
-
-// Upload a file
-await storageService.upload('public', 'image.jpg', fileData);
-
-// Download a file
-const fileBuffer = await storageService.download('public', 'image.jpg');
-
-// Check if a file exists
-const exists = await storageService.exists('public', 'image.jpg');
-
-// Get file metadata
-const metadata = await storageService.getMetadata('public', 'image.jpg');
-
-// Delete a file
-await storageService.delete('public', 'image.jpg');
-```
-
-### Auth Service
-
-The auth service provides authentication and authorization capabilities:
-
-```typescript
-import { AuthService } from '@forgebase-ts/api';
-
-const authService = new AuthService({
-  enabled: true,
+// Set permissions
+await api.getDatabaseService().setPermissions('posts', {
+  read: {
+    roles: ['user', 'admin'],
+    rule: 'author_id = :user_id',
+  },
+  write: {
+    roles: ['admin'],
+  },
 });
-
-// Validate a token
-const isValid = await authService.validateToken('token');
-
-// Create a user
-const userId = await authService.createUser('user@example.com', 'password');
 ```
+
+## Admin Operations
+
+```typescript
+// System-level request handling
+const adminSecret = process.env.FORGE_ADMIN_SECRET;
+const isSystem = req.headers['x-forge-admin'] === adminSecret;
+
+// Admin-only schema operations
+if (isSystem) {
+  const schema = await api.getDatabaseService().getSchema();
+  const tables = await api.getDatabaseService().getTables();
+  const tableSchema = await api.getDatabaseService().getTableSchema('users');
+}
+```
+
+## Error Handling
+
+```typescript
+try {
+  await api.handle(adapter);
+} catch (error) {
+  if (error instanceof DatabaseError) {
+    // Handle database errors
+  } else if (error instanceof ValidationError) {
+    // Handle validation errors
+  } else if (error instanceof AuthorizationError) {
+    // Handle authorization errors
+  }
+}
+```
+
+## Security Best Practices
+
+1. **Input Validation**:
+
+   ```typescript
+   // Validate data before insertion
+   const validateUser = (data: any) => {
+     if (!data.email || !data.email.includes('@')) {
+       throw new ValidationError('Invalid email');
+     }
+     // More validation rules
+   };
+   ```
+
+2. **Row-Level Security**:
+
+   ```typescript
+   // Enable RLS in configuration
+   const config = {
+     services: {
+       db: {
+         enforceRls: true,
+         // ...
+       },
+     },
+   };
+
+   // Set table-level permissions
+   await api.getDatabaseService().setPermissions('documents', {
+     read: {
+       roles: ['user'],
+       rule: 'owner_id = :user_id OR is_public = true',
+     },
+   });
+   ```
+
+3. **Admin Request Validation**:
+
+   ```typescript
+   // Secure admin endpoints
+   const adminHeaderName = config.api?.adminReqName || 'x-forge-admin';
+   const adminSecret = process.env.FORGE_ADMIN_SECRET;
+
+   if (!adminSecret) {
+     console.warn('FORGE_ADMIN_SECRET not set. System-level requests disabled.');
+   }
+   ```
 
 ## API Reference
 
-### ForgeApi
-
-The `ForgeApi` class is the main entry point for the library:
+### ForgeApi Class
 
 ```typescript
 class ForgeApi {
-  // Constructor
-  constructor(config?: Partial<BaaSConfig>);
+  constructor(config: Partial<BaaSConfig>);
 
-  // Service access
-  getStorageService(): StorageService;
-  getDatabaseService(): DatabaseService;
-  getConfig(): BaaSConfig;
-
-  // Request handling
-  handle(adapter: ServerAdapter): Promise<{ adapter: ServerAdapter; context: Context }>;
-
-  // Middleware
+  // Core methods
+  handle(adapter: ServerAdapter, isSystem?: boolean): Promise<HandlerResult>;
   use(middleware: Handler): this;
 
   // Route methods
@@ -556,75 +516,57 @@ class ForgeApi {
   post(path: string, handler: Handler): this;
   put(path: string, handler: Handler): this;
   delete(path: string, handler: Handler): this;
+
+  // Service access
+  getStorageService(): StorageService;
+  getDatabaseService(): DatabaseService;
+  getConfig(): BaaSConfig;
 }
 ```
 
-### Route Handlers
-
-Route handlers are async functions that receive and modify a context object:
+### ServerAdapter Interface
 
 ```typescript
-type Handler = (ctx: Context) => Promise<void>;
+interface ServerAdapter {
+  getMethod(): string;
+  getPath(): string;
+  getHeaders(): Record<string, any>;
+  getQuery(): Record<string, any>;
+  getBody(): Promise<any>;
+  getUserContext(): UserContext;
+}
+```
 
-type Context = {
-  req: {
-    params: Record<string, any>;
-    query: Record<string, any>;
-    body: any;
-    headers: Record<string, string>;
-    method: string;
-    path: string;
-    config: BaaSConfig;
-    userContext: UserContext;
+### Configuration Types
+
+```typescript
+interface BaaSConfig {
+  prefix: string;
+  auth?: {
+    enabled: boolean;
+    exclude?: string[];
+    beforeMiddleware?: boolean;
   };
-  res: {
-    body: any;
-    status: number;
-    headers: Record<string, any>;
+  api?: {
+    adminReqName?: string;
   };
   services: {
-    storage: StorageService;
-    db: DatabaseService;
+    storage: StorageConfig;
+    db: DatabaseConfig;
   };
-};
+}
 ```
 
-### Middleware
+## Testing
 
-Middleware functions have the same signature as route handlers:
+```bash
+# Run unit tests
+nx test api
 
-```typescript
-// Authentication middleware example
-const authMiddleware: Handler = async (ctx) => {
-  const token = ctx.req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    ctx.res.status = 401;
-    ctx.res.body = { error: 'Unauthorized' };
-    return;
-  }
-
-  // Authenticate the token
-  try {
-    const user = await validateToken(token);
-    ctx.req.userContext = user;
-  } catch (error) {
-    ctx.res.status = 401;
-    ctx.res.body = { error: 'Invalid token' };
-  }
-};
-
-// Apply the middleware
-api.use(authMiddleware);
+# Run integration tests
+nx test api --config=integration
 ```
-
-## Building
-
-Run `nx build api` to build the library.
-
-## Running Tests
-
-Run `nx test api` to execute the unit tests via [Jest](https://jestjs.io).
 
 ## License
 
-This project is licensed under the MIT License.
+MIT

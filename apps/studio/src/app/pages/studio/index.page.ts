@@ -2,8 +2,20 @@ import { Component } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideCirclePlus,
-  lucideListMusic,
-  lucidePodcast,
+  lucideDatabase,
+  lucideServer,
+  lucideShield,
+  lucideSettings,
+  lucideCode,
+  lucideBox,
+  lucideRocket,
+  lucideZap,
+  lucideGlobe,
+  lucideCpu,
+  lucideUsers,
+  lucideTerminal,
+  lucideBookOpen,
+  lucideGithub,
 } from '@ng-icons/lucide';
 import { HlmSeparatorDirective } from '@spartan-ng/ui-separator-helm';
 import {
@@ -14,19 +26,12 @@ import {
 } from '@spartan-ng/ui-tabs-helm';
 import { HlmButtonDirective } from '@spartan-ng/ui-button-helm';
 import { HlmCardDirective } from '@spartan-ng/ui-card-helm';
-import { FallbackImageDirective } from './directives/fallback-img.directive';
-import {
-  BrnContextMenuTriggerDirective,
-  BrnMenuTriggerDirective,
-} from '@spartan-ng/brain/menu';
-
+import { BrnContextMenuTriggerDirective } from '@spartan-ng/brain/menu';
 import {
   HlmMenuComponent,
   HlmMenuGroupComponent,
   HlmMenuItemDirective,
-  HlmMenuItemSubIndicatorComponent,
   HlmMenuSeparatorComponent,
-  HlmSubMenuComponent,
 } from '@spartan-ng/ui-menu-helm';
 import img from '/assets/music_img_fallback.svg';
 import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
@@ -36,7 +41,7 @@ import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
 @Component({
   standalone: true,
   host: {
-    class: 'block w-full h-[calc(100svh-5rem)] overflow-hidden',
+    class: 'block w-full h-svh pb-[5rem] overflow-hidden',
   },
   imports: [
     HlmTabsComponent,
@@ -47,287 +52,359 @@ import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
     HlmSeparatorDirective,
     BrnContextMenuTriggerDirective,
     HlmCardDirective,
-    FallbackImageDirective,
     NgIcon,
     HlmIconDirective,
-    BrnMenuTriggerDirective,
     HlmScrollAreaDirective,
-
     NgScrollbarModule,
-
     HlmMenuComponent,
     HlmMenuGroupComponent,
     HlmMenuItemDirective,
-    HlmSubMenuComponent,
-    HlmMenuItemSubIndicatorComponent,
     HlmMenuSeparatorComponent,
   ],
   providers: [
-    provideIcons({ lucideCirclePlus, lucideListMusic, lucidePodcast }),
+    provideIcons({
+      lucideCirclePlus,
+      lucideDatabase,
+      lucideServer,
+      lucideShield,
+      lucideSettings,
+      lucideCode,
+      lucideBox,
+      lucideRocket,
+      lucideZap,
+      lucideGlobe,
+      lucideCpu,
+      lucideUsers,
+      lucideTerminal,
+      lucideBookOpen,
+      lucideGithub,
+    }),
   ],
-  styles: `
-      .fallback-img {
-        filter: opacity(0.3);
-      }
-    `,
-  template: `
-    <ng-template #contextMenu>
-      <hlm-menu class="w-40">
-        <hlm-menu-group>
-          <button hlmMenuItem>Add to Library</button>
-          <button hlmMenuItem [brnMenuTriggerFor]="playlist_submenu">
-            Add to Playlist
-            <hlm-menu-item-sub-indicator />
-
-            <ng-template #playlist_submenu>
-              <hlm-sub-menu>
-                <button hlmMenuItem class="h-9">
-                  <ng-icon
-                    hlm
-                    size="sm"
-                    name="lucideCirclePlus"
-                    class="mr-2 h-4 w-4"
-                  />
-                  Add to Library
-                </button>
-
-                <hlm-menu-separator />
-
-                @for (item of contextMenuPlaylist; track item) {
-                <button hlmMenuItem class="text-left">
-                  <ng-icon
-                    hlm
-                    size="sm"
-                    name="lucideListMusic"
-                    class="mr-2 h-4 w-4"
-                  />
-                  {{ item }}
-                </button>
-                }
-              </hlm-sub-menu>
-            </ng-template>
-          </button>
-          <hlm-menu-separator />
-
-          <button hlmMenuItem>Play Next</button>
-          <button hlmMenuItem>Play Later</button>
-          <button hlmMenuItem>Create Station</button>
-          <hlm-menu-separator />
-
-          <button hlmMenuItem>Like</button>
-          <button hlmMenuItem>Share</button>
-        </hlm-menu-group>
-      </hlm-menu>
-    </ng-template>
-    <ng-scrollbar hlm class="h-[100%] w-full" visibility="native">
-      <div class="h-full px-4 py-6 lg:px-8 w-full">
-        <hlm-tabs tab="music_tab" class="w-full">
-          <header
-            class="flex flex-col-reverse justify-between gap-y-10 align-baseline sm:flex-row"
-          >
-            <hlm-tabs-list class="inline-grid w-full grid-cols-3 sm:w-auto">
-              <button hlmTabsTrigger="music_tab">Music</button>
-              <button hlmTabsTrigger="podcast_tab">Podcasts</button>
-              <button
-                hlmTabsTrigger="live_tab"
-                [disabled]="true"
-                class="pointer-events-none cursor-pointer opacity-50"
-              >
-                Live
-              </button>
-            </hlm-tabs-list>
-            <button hlmBtn class="h-10 w-full sm:w-auto">
-              <ng-icon hlm size="sm" class="mr-2" name="lucideCirclePlus" />
-              Add Music
-            </button>
-          </header>
-
-          <div hlmTabsContent="music_tab" class="w-full">
-            <div class="mt-6 space-y-1">
-              <h2 class="text-2xl font-semibold tracking-tight">Listen Now</h2>
-              <p class="text-muted-foreground text-sm">
-                Top picks for you. Updated daily.
-              </p>
-            </div>
-            <brn-separator hlmSeparator />
-
-            <div class="mt-2">
-              <div
-                class="mt-2 grid grid-cols-2 gap-4 pb-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4"
-              >
-                @for (item of sectionData.listenNow; track item) {
-                <figure class="space-y-4" [brnCtxMenuTriggerFor]="contextMenu">
-                  <picture
-                    class="group relative block w-full overflow-hidden rounded-md"
-                  >
-                    <img
-                      [src]="item.img"
-                      [fallback]="imageFallback"
-                      class="bg-border aspect-square h-full w-full transform-gpu transition-transform group-hover:scale-110 md:aspect-[1/1.25]"
-                      alt="Music Image"
-                    />
-                  </picture>
-                  <figcaption class="space-y-1 text-sm">
-                    <h3 class="font-medium leading-none">
-                      {{ item.title }}
-                    </h3>
-                    <p class="text-muted-foreground text-xs">
-                      {{ item.subtitle }}
-                    </p>
-                  </figcaption>
-                </figure>
-                }
-              </div>
-            </div>
-
-            <div class="mt-5 space-y-1">
-              <h2 class="text-2xl font-semibold tracking-tight">
-                Made for You
-              </h2>
-              <p class="text-muted-foreground text-sm">
-                Your personal playlists. Updated daily.
-              </p>
-            </div>
-
-            <brn-separator hlmSeparator />
-
-            <div class="mt-2 pb-4">
-              <div
-                class="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
-              >
-                @for (item of sectionData.madeForYou; track item) {
-                <figure class="space-y-4">
-                  <picture
-                    class="group relative block w-full overflow-hidden rounded-md"
-                  >
-                    <img
-                      [src]="item.img"
-                      fallback="imageFallback"
-                      class="bg-border aspect-square w-full object-cover transition-transform group-hover:scale-110"
-                      alt="Music Image"
-                    />
-                  </picture>
-                  <figcaption class="space-y-1 text-sm">
-                    <h3 class="font-medium leading-none">
-                      {{ item.title }}
-                    </h3>
-                    <p class="text-muted-foreground text-xs">
-                      {{ item.subtitle }}
-                    </p>
-                  </figcaption>
-                </figure>
-                }
-              </div>
-            </div>
-          </div>
-          <div hlmTabsContent="podcast_tab" class="w-full space-y-6">
-            <div class="mt-6 space-y-2">
-              <h2 class="text-2xl font-semibold tracking-tight">
-                New Episodes
-              </h2>
-              <p class="text-muted-foreground text-sm">
-                Your favorite podcasts. Updated daily.
-              </p>
-            </div>
-            <brn-separator hlmSeparator />
-
-            <div
-              hlmCard
-              class="flex min-h-[450px] flex-col justify-center p-6 align-middle"
-            >
-              <div class="text-center">
-                <ng-icon
-                  hlm
-                  size="xl"
-                  name="lucidePodcast"
-                  class="text-muted-foreground"
-                />
-                <h2 class="mt-4 text-lg font-semibold">No episodes added</h2>
-                <p class="text-muted-foreground mb-4 mt-2 text-sm">
-                  You have not added any podcasts. Add one below
-                </p>
-                <button hlmBtn class="h-8 text-xs">Add Podcast</button>
-              </div>
-            </div>
-          </div>
-          <div hlmTabsContent="live_tab" class="w-full space-y-6">live</div>
-        </hlm-tabs>
-      </div>
-    </ng-scrollbar>
-  `,
+  templateUrl: './index.page.html',
 })
-export default class HomePageComponent {
+export default class StudioHomePageComponent {
   public imageFallback = img;
 
-  public sectionData = {
-    listenNow: [
+  public docTabs = {
+    webApp: {
+      name: 'webApp',
+      title: 'Web App Integration',
+      description: 'SDK usage for CRUD and real-time operations',
+      icon: 'lucideCode',
+      code: `// Initialize ForgeBase SDK
+import { DatabaseSDK } from '@forgebase-ts/sdk/client';
+
+const db = new DatabaseSDK('http://localhost:3000');
+
+// Basic CRUD Operations
+const users = await db
+  .table('users')
+  .select('id', 'name', 'email')
+  .where('status', 'active')
+  .execute();
+
+// Create a new record
+const newUser = await db.table('users').create({
+  name: 'John Doe',
+  email: 'john@example.com',
+});
+
+// Real-time Subscriptions
+const unsubscribe = await db
+  .table('users')
+  .subscribe({
+    onAdd: (user) => console.log('New user:', user),
+    onChange: (user) => console.log('User updated:', user),
+    onDelete: (id) => console.log('User deleted:', id),
+  });`,
+    },
+    server: {
+      name: 'server',
+      title: 'Server Setup',
+      description: 'ForgeBase API initialization for Node.js',
+      icon: 'lucideServer',
+      code: `// Initialize ForgeBase Server
+import { forgeApi } from '@forgebase-ts/api';
+
+const api = forgeApi({
+  prefix: '/api',
+  services: {
+    db: {
+      provider: 'postgres',
+      config: {
+        connection: process.env.DATABASE_URL,
+      },
+      enforceRls: true,
+    },
+    storage: {
+      provider: 'local',
+      config: {},
+    },
+  },
+});
+
+// Add custom routes
+api.get('/custom', async (ctx) => {
+  ctx.res.body = { message: 'Hello World' };
+});`,
+    },
+    schema: {
+      name: 'schema',
+      title: 'Database Schema',
+      description: 'Schema and permissions configuration',
+      icon: 'lucideDatabase',
+      code: `// Create table schema
+await db.createSchema('posts', [
+  {
+    name: 'id',
+    type: 'increments',
+    primaryKey: true,
+  },
+  {
+    name: 'title',
+    type: 'string',
+    nullable: false,
+  },
+  {
+    name: 'content',
+    type: 'text',
+  },
+  {
+    name: 'author_id',
+    type: 'integer',
+    references: 'users.id',
+  },
+]);
+
+// Set permissions
+await db.setPermissions('posts', {
+  read: {
+    roles: ['user', 'admin'],
+    rule: 'author_id = :user_id',
+  },
+  write: {
+    roles: ['admin'],
+  },
+});`,
+    },
+  };
+
+  public quickStartDocs = [
+    {
+      title: 'Web App Integration',
+      description: 'Integrate ForgeBase with your web application',
+      icon: 'lucideCode',
+      code: `// Initialize ForgeBase SDK
+import { DatabaseSDK } from '@forgebase-ts/sdk/client';
+
+const db = new DatabaseSDK('http://localhost:3000');
+
+// Basic CRUD Operations
+const users = await db
+  .table('users')
+  .select('id', 'name', 'email')
+  .where('status', 'active')
+  .execute();
+
+// Real-time Subscriptions
+const unsubscribe = await db
+  .table('users')
+  .subscribe({
+    onAdd: (user) => console.log('New user:', user),
+    onChange: (user) => console.log('User updated:', user),
+    onDelete: (id) => console.log('User deleted:', id),
+  });`,
+      language: 'typescript',
+    },
+    {
+      title: 'Node.js Server Setup',
+      description: 'Set up a ForgeBase server with Node.js',
+      icon: 'lucideTerminal',
+      code: `// Initialize ForgeBase Server
+import { forgeApi } from '@forgebase-ts/api';
+
+const api = forgeApi({
+  prefix: '/api',
+  services: {
+    db: {
+      provider: 'postgres',
+      config: {
+        connection: process.env.DATABASE_URL,
+      },
+      enforceRls: true,
+    },
+    storage: {
+      provider: 'local',
+      config: {},
+    },
+  },
+});
+
+// Add custom routes
+api.get('/custom', async (ctx) => {
+  ctx.res.body = { message: 'Hello World' };
+});`,
+      language: 'typescript',
+    },
+    {
+      title: 'Database Schema',
+      description: 'Define your database schema and permissions',
+      icon: 'lucideDatabase',
+      code: `// Create table schema
+await db.createSchema('posts', [
+  {
+    name: 'id',
+    type: 'increments',
+    primaryKey: true,
+  },
+  {
+    name: 'title',
+    type: 'string',
+    nullable: false,
+  },
+  {
+    name: 'content',
+    type: 'text',
+  },
+  {
+    name: 'author_id',
+    type: 'integer',
+    references: 'users.id',
+  },
+]);
+
+// Set permissions
+await db.setPermissions('posts', {
+  read: {
+    roles: ['user', 'admin'],
+    rule: 'author_id = :user_id',
+  },
+  write: {
+    roles: ['admin'],
+  },
+});`,
+      language: 'typescript',
+    },
+  ];
+
+  public metrics = {
+    overview: [
       {
-        img: 'https://images.pexels.com/photos/16580466/pexels-photo-16580466/free-photo-of-festa-comemoracao-musica-diversao.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-        title: 'Angular Rendezvous',
-        subtitle: 'Ethan Byte',
+        title: 'Total Requests',
+        value: '2.4M',
+        change: '+12.5%',
+        trend: 'up',
+        icon: 'lucideZap',
       },
       {
-        img: 'https://images.pexels.com/photos/20548730/pexels-photo-20548730/free-photo-of-cidade-meio-urbano-homem-ponto-de-referencia.jpeg?auto=compress&cs=tinysrgb&w=600',
-        title: 'Async Awakenings',
-        subtitle: 'Nina Netcode',
+        title: 'Active Users',
+        value: '38.2K',
+        change: '+8.2%',
+        trend: 'up',
+        icon: 'lucideUsers',
       },
       {
-        img: 'https://images.pexels.com/photos/20555179/pexels-photo-20555179/free-photo-of-homem-sentado-jogando-musica.jpeg?auto=compress&cs=tinysrgb&w=600',
-        title: 'The Art of Reusability',
-        subtitle: 'Lena Logic',
+        title: 'Database Size',
+        value: '1.2GB',
+        change: '+5.1%',
+        trend: 'up',
+        icon: 'lucideDatabase',
       },
       {
-        img: 'https://images.pexels.com/photos/7365313/pexels-photo-7365313.jpeg?auto=compress&cs=tinysrgb&w=600',
-        title: 'Stateful Symphony',
-        subtitle: 'Beth Binary',
+        title: 'Avg Response Time',
+        value: '85ms',
+        change: '-3.2%',
+        trend: 'down',
+        icon: 'lucideCpu',
       },
     ],
-    madeForYou: [
+    chartData: {
+      requests: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        data: [320, 420, 380, 450, 480, 360, 420],
+      },
+      users: {
+        today: 2845,
+        week: 18234,
+        month: 38200,
+      },
+    },
+  };
+
+  public sectionData = {
+    quickStart: [
       {
-        img: 'https://images.pexels.com/photos/20516167/pexels-photo-20516167/free-photo-of-preto-e-branco-p-b-mulher-relaxamento.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-        title: 'Thinking Components',
-        subtitle: 'Lena Logic',
+        img: 'assets/dashboard/database.svg',
+        title: 'Database Management',
+        subtitle: 'Configure tables, schemas, and queries',
+        icon: 'lucideDatabase',
       },
       {
-        img: 'https://images.pexels.com/photos/4038323/pexels-photo-4038323.jpeg?auto=compress&cs=tinysrgb&w=600',
-        title: 'Functional Fury',
-        subtitle: 'Beth Binary',
+        img: 'assets/dashboard/api.svg',
+        title: 'API Services',
+        subtitle: 'REST and Real-time endpoints',
+        icon: 'lucideServer',
       },
       {
-        img: 'https://images.pexels.com/photos/16580466/pexels-photo-16580466/free-photo-of-festa-comemoracao-musica-diversao.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-        title: 'Angular Rendezvous',
-        subtitle: 'Ethan Byte',
+        img: 'assets/dashboard/auth.svg',
+        title: 'Authentication',
+        subtitle: 'User management and security',
+        icon: 'lucideShield',
       },
       {
-        img: 'https://images.pexels.com/photos/7365313/pexels-photo-7365313.jpeg?auto=compress&cs=tinysrgb&w=600',
-        title: 'Stateful Symphony',
-        subtitle: 'Beth Binary',
+        img: 'assets/dashboard/storage.svg',
+        title: 'Storage',
+        subtitle: 'File and object storage',
+        icon: 'lucideBox',
+      },
+    ],
+    features: [
+      {
+        img: 'assets/dashboard/performance.svg',
+        title: 'Performance Metrics',
+        subtitle: 'Monitor system health',
+        icon: 'lucideZap',
       },
       {
-        img: 'https://images.pexels.com/photos/20548730/pexels-photo-20548730/free-photo-of-cidade-meio-urbano-homem-ponto-de-referencia.jpeg?auto=compress&cs=tinysrgb&w=600',
-        title: 'Async Awakenings',
-        subtitle: 'Nina Netcode',
+        img: 'assets/dashboard/deploy.svg',
+        title: 'Deployment',
+        subtitle: 'Production ready setup',
+        icon: 'lucideRocket',
       },
       {
-        img: 'https://images.pexels.com/photos/20555179/pexels-photo-20555179/free-photo-of-homem-sentado-jogando-musica.jpeg?auto=compress&cs=tinysrgb&w=600',
-        title: 'The Art of Reusability',
-        subtitle: 'Lena Logic',
+        img: 'assets/dashboard/edge.svg',
+        title: 'Edge Computing',
+        subtitle: 'Global edge deployment',
+        icon: 'lucideGlobe',
+      },
+      {
+        img: 'assets/dashboard/integrations.svg',
+        title: 'Integrations',
+        subtitle: 'Connect with other services',
+        icon: 'lucideCode',
+      },
+      {
+        img: 'assets/dashboard/realtime.svg',
+        title: 'Real-time',
+        subtitle: 'Live updates and subscriptions',
+        icon: 'lucideCpu',
+      },
+      {
+        img: 'assets/dashboard/settings.svg',
+        title: 'Settings',
+        subtitle: 'Configure your workspace',
+        icon: 'lucideSettings',
       },
     ],
   };
 
-  public contextMenuPlaylist = [
-    'Recently Added',
-    'Recently Played',
-    'Top Songs',
-    'Top Albums',
-    'Top Artists',
-    'Logic Discography',
-    'Bedtime Beats',
-    'Feeling Happy',
-    'I Miss Y2',
-    'Runtober',
-    'Mellow Days',
-    'Eminem Essentials',
+  public contextMenuActions = [
+    'View Details',
+    'Edit Configuration',
+    'View Logs',
+    'View Documentation',
+    'Create Backup',
+    'Share Access',
+    'Delete',
   ];
 }

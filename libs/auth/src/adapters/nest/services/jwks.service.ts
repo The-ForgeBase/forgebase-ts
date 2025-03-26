@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { JoseJwtSessionManager } from '../../../session/jose-jwt';
-import { JwksResponse } from '../../../controllers/jwks-controller';
+import { JwksResponse } from '../../../types';
 
 /**
  * NestJS service for managing JWKS (JSON Web Key Sets)

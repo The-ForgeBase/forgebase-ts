@@ -15,6 +15,7 @@ import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeng/themes/aura';
 import { definePreset } from '@primeng/themes';
 import { provideGlobalDirectives } from './shared/directives';
+import { withInMemoryScrolling } from '@angular/router';
 
 const MyPreset = definePreset(Aura, {
   primitive: {
@@ -689,7 +690,13 @@ const MyPreset = definePreset(Aura, {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideFileRouter(withDebugRoutes()),
+    provideFileRouter(
+      withDebugRoutes(),
+      withInMemoryScrolling({
+        anchorScrolling: 'enabled',
+        scrollPositionRestoration: 'top',
+      })
+    ),
     provideClientHydration(),
     provideHttpClient(
       withFetch(),

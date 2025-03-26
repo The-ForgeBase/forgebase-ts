@@ -329,6 +329,12 @@ export class ForgeDatabase {
           );
         }
 
+        if (!row || (Array.isArray(row) && row.length === 0)) {
+          throw new Error(
+            `User does not have permission to create this record in table "${tableName}"`
+          );
+        }
+
         const result = this.hooks.mutate(
           tableName,
           'create',
@@ -365,7 +371,7 @@ export class ForgeDatabase {
         const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
           await enforcePermissions(
             tableName,
-            'DELETE',
+            'UPDATE',
             user,
             this.permissionService
           );
@@ -389,12 +395,20 @@ export class ForgeDatabase {
           return result;
         }
 
+        const record = await this.hooks.query(
+          tableName,
+          (query) => {
+            return query.where({ id });
+          },
+          { id }
+        );
+
         const { status } = await enforcePermissions(
           tableName,
           'UPDATE',
           user,
           this.permissionService,
-          data
+          record[0]
         );
 
         if (!status) {

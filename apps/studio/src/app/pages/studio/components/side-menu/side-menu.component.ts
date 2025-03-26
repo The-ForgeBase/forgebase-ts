@@ -1,21 +1,35 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideLayoutGrid,
-  lucideLibrary,
-  lucideListMusic,
-  lucideMicVocal,
-  lucideMusic2,
-  lucideRadio,
+  lucideDatabase,
+  lucideServer,
   lucideShield,
-  lucideTable,
-  lucideUser,
+  lucideBox,
+  lucideRocket,
+  lucideGlobe,
+  lucideZap,
+  lucideCode,
+  lucideSettings,
+  lucideUsers,
+  lucideKey,
+  lucideBell,
+  lucideActivity,
+  lucideChartLine,
+  lucideFileText,
+  lucideLock,
+  lucideShieldAlert,
+  lucideHistory,
+  lucideChevronRight,
+  lucideChevronLeft,
 } from '@ng-icons/lucide';
 import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import { HlmButtonDirective } from '@spartan-ng/ui-button-helm';
 import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { SideMenuButtonComponent } from './side-menu-button.component';
+import { PreferencesService } from '../../../../services/preferences.service';
 
 interface ListItem {
   text: string;
@@ -36,6 +50,7 @@ interface ListItem {
     SideMenuButtonComponent,
     NgIcon,
     HlmIconDirective,
+    HlmButtonDirective,
     HlmScrollAreaDirective,
     NgScrollbarModule,
     NgClass,
@@ -43,34 +58,69 @@ interface ListItem {
   ],
   providers: [
     provideIcons({
-      lucideShield,
       lucideLayoutGrid,
-      lucideTable,
-      lucideRadio,
-      lucideListMusic,
-      lucideMusic2,
-      lucideUser,
-      lucideMicVocal,
-      lucideLibrary,
+      lucideDatabase,
+      lucideServer,
+      lucideShield,
+      lucideBox,
+      lucideRocket,
+      lucideGlobe,
+      lucideZap,
+      lucideCode,
+      lucideSettings,
+      lucideUsers,
+      lucideKey,
+      lucideBell,
+      lucideActivity,
+      lucideChartLine,
+      lucideFileText,
+      lucideLock,
+      lucideShieldAlert,
+      lucideHistory,
+      lucideChevronRight,
+      lucideChevronLeft,
     }),
   ],
   template: `
     <ng-scrollbar
       hlm
-      class="border-border h-full border-r space-y-4 py-4 w-full"
+      class="border-border h-screen border-r space-y-4 py-4 relative transition-all duration-300 ease-in-out"
       [ngClass]="{
-		'w-[230px]': hover(),
-	  }"
-      visibility="hover"
-      (mouseenter)="toggleHover()"
-      (mouseleave)="toggleHover()"
+        'w-[230px]': isPinned() || hover(),
+        'w-[60px]': !isPinned() && !hover(),
+        'pb-10': isPinned() || hover()
+      }"
+      [visibility]="isPinned() ? 'native' : 'hover'"
+      (mouseenter)="onMouseEnter()"
+      (mouseleave)="onMouseLeave()"
     >
+      <button
+        hlmBtn
+        variant="ghost"
+        size="icon"
+        class="absolute right-2 top-2 transition-opacity duration-200"
+        [class.opacity-0]="!hover() && !isPinned()"
+        [class.opacity-100]="hover() || isPinned()"
+        (click)="togglePin()"
+      >
+        <ng-icon
+          hlm
+          [name]="isPinned() ? 'lucideChevronLeft' : 'lucideChevronRight'"
+          size="sm"
+        />
+        <span class="sr-only">{{
+          isPinned() ? 'Unpin Sidebar' : 'Pin Sidebar'
+        }}</span>
+      </button>
+
       <div class="px-3 py-2">
         <h2
-          *ngIf="hover()"
-          class="mb-2 px-4 text-lg font-semibold tracking-tight"
+          *ngIf="hover() || isPinned()"
+          class="mb-2 px-4 text-lg font-semibold tracking-tight transition-opacity duration-200"
+          [class.opacity-0]="!hover() && !isPinned()"
+          [class.opacity-100]="hover() || isPinned()"
         >
-          Main
+          Overview
         </h2>
         <div class="space-y-1">
           @for (item of main; track item) {
@@ -80,32 +130,9 @@ interface ListItem {
               size="sm"
               [name]="item.icon"
               class="h-4 w-4"
-              [ngClass]="hover() ? 'mr-2' : ''"
+              [ngClass]="hover() || isPinned() ? 'mr-2' : ''"
             />
-            <span w-full inline-block *ngIf="hover()">{{ item.text }}</span>
-          </studio-side-button>
-          }
-        </div>
-      </div>
-
-      <div class="px-3 py-2 w-full">
-        <h2
-          *ngIf="hover()"
-          class="mb-2 px-4 text-lg font-semibold tracking-tight"
-        >
-          Library
-        </h2>
-        <div class="space-y-1 w-full">
-          @for (item of library; track item) {
-          <studio-side-button class="font-medium w-full flex">
-            <ng-icon
-              hlm
-              size="sm"
-              [name]="item.icon"
-              class="h-4 w-4"
-              [ngClass]="hover() ? 'mr-2' : ''"
-            />
-            <span class="w-full inline-block" *ngIf="hover()">{{
+            <span w-full inline-block *ngIf="hover() || isPinned()">{{
               item.text
             }}</span>
           </studio-side-button>
@@ -113,72 +140,226 @@ interface ListItem {
         </div>
       </div>
 
-      <!-- <div class="py-2">
-          <h2 class="mb-2 px-7 text-lg font-semibold tracking-tight">
-            Playlists
-          </h2>
-          <div class="space-y-1">
-            <ng-scrollbar hlm class="h-[300px]" visibility="hover">
-              @for (item of playlists; track item) {
-              <studio-side-button class="px-4">
-                <ng-icon
-                  hlm
-                  size="sm"
-                  [name]="item.icon"
-                  class="mr-2 h-4 w-4"
-                />
-                {{ item.text }}
-              </studio-side-button>
-              }
-            </ng-scrollbar>
-          </div>
-        </div> -->
+      <div class="px-3 py-2 w-full">
+        <h2
+          *ngIf="hover() || isPinned()"
+          class="mb-2 px-4 text-lg font-semibold tracking-tight transition-opacity duration-200"
+          [class.opacity-0]="!hover() && !isPinned()"
+          [class.opacity-100]="hover() || isPinned()"
+        >
+          Features
+        </h2>
+        <div class="space-y-1">
+          @for (item of features; track item) {
+          <studio-side-button
+            class="font-medium w-full flex"
+            [link]="item.link"
+          >
+            <ng-icon
+              hlm
+              size="sm"
+              [name]="item.icon"
+              class="h-4 w-4"
+              [ngClass]="hover() || isPinned() ? 'mr-2' : ''"
+            />
+            <span class="w-full inline-block" *ngIf="hover() || isPinned()">{{
+              item.text
+            }}</span>
+          </studio-side-button>
+          }
+        </div>
+      </div>
+
+      <div class="px-3 py-2 w-full">
+        <h2
+          *ngIf="hover() || isPinned()"
+          class="mb-2 px-4 text-lg font-semibold tracking-tight transition-opacity duration-200"
+          [class.opacity-0]="!hover() && !isPinned()"
+          [class.opacity-100]="hover() || isPinned()"
+        >
+          Monitoring
+        </h2>
+        <div class="space-y-1">
+          @for (item of monitoring; track item) {
+          <studio-side-button
+            class="font-medium w-full flex"
+            [link]="item.link"
+          >
+            <ng-icon
+              hlm
+              size="sm"
+              [name]="item.icon"
+              class="h-4 w-4"
+              [ngClass]="hover() || isPinned() ? 'mr-2' : ''"
+            />
+            <span class="w-full inline-block" *ngIf="hover() || isPinned()">{{
+              item.text
+            }}</span>
+          </studio-side-button>
+          }
+        </div>
+      </div>
+
+      <div class="px-3 py-2 w-full">
+        <h2
+          *ngIf="hover() || isPinned()"
+          class="mb-2 px-4 text-lg font-semibold tracking-tight transition-opacity duration-200"
+          [class.opacity-0]="!hover() && !isPinned()"
+          [class.opacity-100]="hover() || isPinned()"
+        >
+          Security
+        </h2>
+        <div class="space-y-1">
+          @for (item of security; track item) {
+          <studio-side-button
+            class="font-medium w-full flex"
+            [link]="item.link"
+          >
+            <ng-icon
+              hlm
+              size="sm"
+              [name]="item.icon"
+              class="h-4 w-4"
+              [ngClass]="hover() || isPinned() ? 'mr-2' : ''"
+            />
+            <span class="w-full inline-block" *ngIf="hover() || isPinned()">{{
+              item.text
+            }}</span>
+          </studio-side-button>
+          }
+        </div>
+      </div>
+
+      <div class="px-3 py-2 w-full">
+        <h2
+          *ngIf="hover() || isPinned()"
+          class="mb-2 px-4 text-lg font-semibold tracking-tight transition-opacity duration-200"
+          [class.opacity-0]="!hover() && !isPinned()"
+          [class.opacity-100]="hover() || isPinned()"
+        >
+          Tools
+        </h2>
+        <div class="space-y-1">
+          @for (item of tools; track item) {
+          <studio-side-button
+            class="font-medium w-full flex"
+            [link]="item.link"
+          >
+            <ng-icon
+              hlm
+              size="sm"
+              [name]="item.icon"
+              class="h-4 w-4"
+              [ngClass]="hover() || isPinned() ? 'mr-2' : ''"
+            />
+            <span class="w-full inline-block" *ngIf="hover() || isPinned()">{{
+              item.text
+            }}</span>
+          </studio-side-button>
+          }
+        </div>
+      </div>
     </ng-scrollbar>
   `,
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+
+      .transition-width {
+        transition: width 300ms ease-in-out;
+      }
+    `,
+  ],
 })
 export class SideStudioMenuComponent {
-  public playlists: any[] = [
-    { text: 'Recently Added', icon: 'lucideListMusic' },
-    { text: 'Recently Played', icon: 'lucideListMusic' },
-    { text: 'Top Songs', icon: 'lucideListMusic' },
-    { text: 'Top Albums', icon: 'lucideListMusic' },
-    { text: 'Top Artists', icon: 'lucideListMusic' },
-    { text: 'Logic Discography', icon: 'lucideListMusic' },
-    { text: 'Bedtime Beats', icon: 'lucideListMusic' },
-    { text: 'Feeling Happy', icon: 'lucideListMusic' },
-    { text: 'I Miss Y2K Pop', icon: 'lucideListMusic' },
-    { text: 'Runtober', icon: 'lucideListMusic' },
-    { text: 'Mellow Days', icon: 'lucideListMusic' },
-    { text: 'Eminem Essentials', icon: 'lucideListMusic' },
-  ];
-
-  public library: any[] = [
-    { text: 'Playlists', icon: 'lucideListMusic' },
-    { text: 'Songs', icon: 'lucideMusic2' },
-    { text: 'Made for You', icon: 'lucideUser' },
-    { text: 'Artists', icon: 'lucideMicVocal' },
-    { text: 'Albums', icon: 'lucideLibrary' },
-  ];
-
   public main: ListItem[] = [
     {
-      text: 'Overview',
+      text: 'Dashboard',
       icon: 'lucideLayoutGrid',
       selected: true,
       link: '/studio',
     },
+    { text: 'Database', icon: 'lucideDatabase', link: '/studio/database' },
+    { text: 'API', icon: 'lucideServer', link: '/studio/api' },
     { text: 'Auth', icon: 'lucideShield', link: '/studio/auth' },
-    { text: 'Database', icon: 'lucideTable', link: '/studio/database' },
+    { text: 'Storage', icon: 'lucideBox', link: '/studio/storage' },
   ];
 
-  hover = signal(false);
-  isOpen = signal(false);
+  public features: ListItem[] = [
+    { text: 'Deployment', icon: 'lucideRocket', link: '/studio/deployment' },
+    // { text: 'Edge Functions', icon: 'lucideGlobe', link: '/studio/edge' },
+    { text: 'Performance', icon: 'lucideZap', link: '/studio/performance' },
+    { text: 'Integrations', icon: 'lucideCode', link: '/studio/integrations' },
+  ];
 
-  toggleHover() {
-    this.hover.set(!this.hover());
+  public monitoring: ListItem[] = [
+    { text: 'Metrics', icon: 'lucideChartLine', link: '/studio/metrics' },
+    { text: 'Logs', icon: 'lucideFileText', link: '/studio/logs' },
+    { text: 'Alerts', icon: 'lucideBell', link: '/studio/alerts' },
+    { text: 'Activity', icon: 'lucideActivity', link: '/studio/activity' },
+    { text: 'Audit History', icon: 'lucideHistory', link: '/studio/audit' },
+  ];
+
+  public security: ListItem[] = [
+    {
+      text: 'Access Control',
+      icon: 'lucideLock',
+      link: '/studio/access-control',
+    },
+    {
+      text: 'Security Rules',
+      icon: 'lucideShieldAlert',
+      link: '/studio/security-rules',
+    },
+    { text: 'API Keys', icon: 'lucideKey', link: '/studio/api-keys' },
+  ];
+
+  public tools: ListItem[] = [
+    { text: 'Settings', icon: 'lucideSettings', link: '/studio/settings' },
+    { text: 'Team', icon: 'lucideUsers', link: '/studio/team' },
+  ];
+
+  constructor(private preferencesService: PreferencesService) {
+    // Initialize isPinned from preferences
+    this.isPinned = computed(() =>
+      this.preferencesService.getSidebarPinned()()
+    );
   }
 
-  toggleOpen() {
-    this.isOpen.set(!this.isOpen());
+  private hoverTimeout: any;
+  hover = signal(false);
+  isOpen = signal(false);
+  isPinned = computed(() => false); // Will be initialized in constructor
+
+  onMouseEnter() {
+    if (this.hoverTimeout) {
+      clearTimeout(this.hoverTimeout);
+    }
+    if (!this.isPinned()) {
+      this.hover.set(true);
+    }
+  }
+
+  onMouseLeave() {
+    if (!this.isPinned()) {
+      this.hoverTimeout = setTimeout(() => {
+        this.hover.set(false);
+      }, 300); // Add a small delay before closing
+    }
+  }
+
+  togglePin() {
+    const newPinnedState = !this.isPinned();
+    this.preferencesService.setSidebarPinned(newPinnedState);
+    if (!newPinnedState) {
+      // When unpinning, wait a bit before allowing hover state
+      setTimeout(() => {
+        if (!this.isPinned()) {
+          this.hover.set(false);
+        }
+      }, 300);
+    }
   }
 }

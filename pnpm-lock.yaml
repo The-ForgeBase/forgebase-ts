@@ -77,6 +77,12 @@ importers:
       '@ng-icons/core':
         specifier: ^29.10.0
         version: 29.10.0(@angular/common@19.2.0(@angular/core@19.2.0(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@19.2.0(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)
+      '@ng-icons/devicon':
+        specifier: ^31.2.0
+        version: 31.2.0
+      '@ng-icons/ionicons':
+        specifier: ^31.2.0
+        version: 31.2.0
       '@ng-icons/lucide':
         specifier: '>=29.0.0'
         version: 31.0.0
@@ -3547,6 +3553,12 @@ packages:
       '@angular/common': '>=18.0.0'
       '@angular/core': '>=18.0.0'
       rxjs: ^6.5.3 || ^7.4.0
+
+  '@ng-icons/devicon@31.2.0':
+    resolution: {integrity: sha512-lgpzAIaUqB/3bAWGCLJU0xiOuKJYRYI8Rh4DZq/qtJmsqpgo4BAAGXdhpRDyFwol7q71BC+ZPgIfUebtkVzsdw==}
+
+  '@ng-icons/ionicons@31.2.0':
+    resolution: {integrity: sha512-dhr8aF4fvUIMhb+3/Y+cr3J1Oat4SEnuUSDsXaIA6WU+hB7zTkhxXESdXztSAtuxJa7iZ2VZzpQF0MulPuHu4g==}
 
   '@ng-icons/lucide@31.0.0':
     resolution: {integrity: sha512-GciWvzGr6bYLapHq8LjcDCU7UxCq2opGwICv5jxGh7DxKc0I1fVHyQ+6wydEdJ/o68223ctKkdqQe4lFGsuIEg==}
@@ -19507,6 +19519,14 @@ snapshots:
       '@angular/common': 19.2.0(@angular/core@19.2.0(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)
       '@angular/core': 19.2.0(rxjs@7.8.1)(zone.js@0.15.0)
       rxjs: 7.8.1
+      tslib: 2.8.1
+
+  '@ng-icons/devicon@31.2.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@ng-icons/ionicons@31.2.0':
+    dependencies:
       tslib: 2.8.1
 
   '@ng-icons/lucide@31.0.0':

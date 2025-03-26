@@ -28,6 +28,8 @@
     "@nestjs/core": "^10.0.2",
     "@nestjs/platform-express": "^10.0.2",
     "@ng-icons/core": "^29.10.0",
+    "@ng-icons/devicon": "^31.2.0",
+    "@ng-icons/ionicons": "^31.2.0",
     "@ng-icons/lucide": ">=29.0.0",
     "@node-rs/argon2": "^2.0.2",
     "@oslojs/crypto": "^1.0.1",

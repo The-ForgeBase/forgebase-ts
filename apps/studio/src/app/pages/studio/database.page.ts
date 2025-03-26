@@ -56,7 +56,7 @@ import { TableItem } from '../../shared/types/database';
   selector: 'studio-database-layout',
   standalone: true,
   host: {
-    class: 'block w-full h-[calc(100svh-5rem)] overflow-hidden max-w-[100%]',
+    class: 'block w-full h-svh pb-[5rem] overflow-hidden max-w-[100%]',
   },
   imports: [
     CommonModule,
@@ -326,6 +326,7 @@ import { TableItem } from '../../shared/types/database';
           <div class="flex-grow"></div>
           <div class="pt-3 mt-3 border-t border-muted">
             <a
+              [routerLink]="['/studio/database/settings']"
               href="javascript:void(0)"
               class="flex items-center px-4 py-2 text-sm rounded-md transition-colors hover:bg-accent/50"
               [pTooltip]="'View database settings'"

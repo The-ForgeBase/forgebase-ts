@@ -7,7 +7,6 @@ export * from './session';
 export * from './session/session';
 export * from './session/jwt';
 export * from './session/jose-jwt'; // Export the new JoseJwtSessionManager
-export * from './controllers/jwks-controller'; // Export JwkController
 export * from './utils/token-verifier'; // Export TokenVerifier for external services
 export * from './lib/password';
 
