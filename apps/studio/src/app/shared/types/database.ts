@@ -27,7 +27,11 @@ export type ColumnType =
   | 'json'
   | 'jsonb'
   | 'enum'
-  | 'uuid';
+  | 'uuid'
+  | 'array'
+  | 'object'
+  | 'varchar'
+  | 'char';
 
 export interface ColumnDefinition {
   name: string;

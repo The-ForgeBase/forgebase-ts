@@ -2,7 +2,6 @@ import { Component, inject, input, output, signal } from '@angular/core';
 import {
   ColumnDefinition,
   ColumnType,
-  ForeignKey,
   TableItem,
   TableSchema,
 } from '../../../../shared/types/database';
@@ -20,7 +19,6 @@ import { HlmInputDirective } from '@spartan-ng/ui-input-helm';
 import { HlmSelectImports } from '@spartan-ng/ui-select-helm';
 import { BrnSelectImports } from '@spartan-ng/brain/select';
 import { HlmLabelDirective } from '@spartan-ng/ui-label-helm';
-import { HlmSwitchComponent } from '@spartan-ng/ui-switch-helm';
 import { HlmButtonDirective } from '@spartan-ng/ui-button-helm';
 import {
   HlmCardDirective,
@@ -37,6 +35,7 @@ import {
   lucideColumns2,
 } from '@ng-icons/lucide';
 import { DatabaseService } from '../../../../services/database.service';
+import { HlmCheckboxComponent } from '@spartan-ng/ui-checkbox-helm';
 
 @Component({
   selector: 'studio-new-table',
@@ -49,7 +48,6 @@ import { DatabaseService } from '../../../../services/database.service';
     HlmSelectImports,
     BrnSelectImports,
     HlmLabelDirective,
-    HlmSwitchComponent,
     HlmButtonDirective,
     HlmCardDirective,
     HlmCardHeaderDirective,
@@ -57,6 +55,7 @@ import { DatabaseService } from '../../../../services/database.service';
     HlmCardContentDirective,
     HlmAlertModule,
     NgIcon,
+    HlmCheckboxComponent,
   ],
   providers: [
     provideIcons({
@@ -111,88 +110,150 @@ import { DatabaseService } from '../../../../services/database.service';
 
             <div formArrayName="columns" class="space-y-4">
               @for (col of columnControls; track $index) {
-              <div
-                [formGroupName]="$index"
-                hlmCard
-                class="p-4 bg-card hover:bg-accent/5 transition-colors"
-              >
-                <div class="grid grid-cols-12 gap-4 items-center">
-                  <!-- Column Name -->
-                  <div class="col-span-3">
-                    <hlm-form-field>
-                      <label
-                        [for]="'columnName-' + $index"
-                        hlmLabel
-                        class="mb-2"
-                        >Name</label
-                      >
-                      <input
-                        [name]="'columnName-' + $index"
-                        [id]="'columnName-' + $index"
-                        class="w-full"
-                        hlmInput
-                        type="text"
-                        placeholder="Column name"
-                        formControlName="name"
-                        [attr.aria-label]="'Name for column ' + ($index + 1)"
-                      />
-                    </hlm-form-field>
-                  </div>
-
-                  <!-- Column Type -->
-                  <div class="col-span-3">
-                    <hlm-form-field>
-                      <label
-                        [for]="'columnType-' + $index"
-                        hlmLabel
-                        class="mb-2"
-                        >Type</label
-                      >
-                      <brn-select
-                        [id]="'columnType-' + $index"
-                        formControlName="type"
-                        placeholder="Select type"
-                        class="!mt-2"
-                      >
-                        <hlm-select-trigger class="w-full">
-                          <hlm-select-value />
-                        </hlm-select-trigger>
-                        <hlm-select-content>
-                          <hlm-select-label>Column Type</hlm-select-label>
-                          @for (option of columnTypes(); track option) {
-                          <hlm-option class="uppercase" [value]="option">
-                            {{ option }}
-                          </hlm-option>
-                          }
-                        </hlm-select-content>
-                      </brn-select>
-                    </hlm-form-field>
-                  </div>
-
-                  <!-- Nullable Switch -->
-                  <div class="col-span-2">
-                    <label class="flex flex-col gap-2" hlmLabel>
-                      <span
-                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >Nullable</span
-                      >
-                      <hlm-switch formControlName="nullable" class="mt-1.5" />
-                    </label>
-                  </div>
-
-                  <!-- Foreign Key Section -->
-                  <div class="col-span-3">
-                    <label class="flex flex-col gap-2" hlmLabel>
-                      <span class="text-sm font-medium leading-none"
-                        >Foreign Key</span
-                      >
-                      <div class="flex items-center gap-4">
-                        <hlm-switch
-                          formControlName="foreignKeyEnabled"
-                          (ngModelChange)="onForeignKeyToggle($index, $event)"
+              <div [formGroupName]="$index" class="rounded-lg border bg-card">
+                <div class="p-4" [class.border-t]="$index > 0">
+                  <div class="grid gap-4">
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="grid gap-2">
+                        <label
+                          class="text-sm font-medium"
+                          [for]="'colName' + $index"
+                          hlmLabel
+                        >
+                          Column Name
+                        </label>
+                        <input
+                          [id]="'colName' + $index"
+                          type="text"
+                          hlmInput
+                          formControlName="name"
+                          placeholder="Enter column name"
+                          class="w-full"
                         />
-                        @if (col.get('foreignKeyEnabled')?.value) {
-                        <div class="flex-1 space-y-2 flex flex-col gap-3">
+                      </div>
+                      <div class="grid gap-2">
+                        <label
+                          class="text-sm font-medium"
+                          [for]="'colType' + $index"
+                          hlmLabel
+                        >
+                          Data Type
+                        </label>
+                        <brn-select
+                          [id]="'colType' + $index"
+                          formControlName="type"
+                          placeholder="Select type"
+                          class="!mt-2"
+                        >
+                          <hlm-select-trigger class="w-full">
+                            <hlm-select-value />
+                          </hlm-select-trigger>
+                          <hlm-select-content>
+                            <hlm-select-label>Column Type</hlm-select-label>
+                            @for (type of columnTypes(); track type) {
+                            <hlm-option [value]="type">
+                              {{ type }}
+                            </hlm-option>
+                            }
+                          </hlm-select-content>
+                        </brn-select>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2" hlmLabel>
+                          <hlm-checkbox
+                            [attr.aria-checked]="col.get('nullable')?.value"
+                            [attr.data-state]="
+                              col.get('nullable')?.value
+                                ? 'checked'
+                                : 'unchecked'
+                            "
+                            (click)="
+                              col
+                                .get('nullable')
+                                ?.setValue(!col.get('nullable')?.value)
+                            "
+                          />
+                          <span class="text-sm">Nullable</span>
+                        </label>
+                        <label class="flex items-center gap-2" hlmLabel>
+                          <hlm-checkbox
+                            [attr.aria-checked]="col.get('isPrimary')?.value"
+                            [attr.data-state]="
+                              col.get('isPrimary')?.value
+                                ? 'checked'
+                                : 'unchecked'
+                            "
+                            (click)="onPrimaryKeyChange($index)"
+                          />
+                          <span class="text-sm">Primary Key</span>
+                        </label>
+                      </div>
+                      <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2" hlmLabel>
+                          <hlm-checkbox
+                            [attr.aria-checked]="col.get('isUnique')?.value"
+                            [attr.data-state]="
+                              col.get('isUnique')?.value
+                                ? 'checked'
+                                : 'unchecked'
+                            "
+                            (click)="
+                              col
+                                .get('isUnique')
+                                ?.setValue(!col.get('isUnique')?.value)
+                            "
+                          />
+                          <span class="text-sm">Unique</span>
+                        </label>
+                        <label class="flex items-center gap-2" hlmLabel>
+                          <hlm-checkbox
+                            [attr.aria-checked]="
+                              col.get('autoIncrement')?.value
+                            "
+                            [attr.data-state]="
+                              col.get('autoIncrement')?.value
+                                ? 'checked'
+                                : 'unchecked'
+                            "
+                            (click)="onAutoIncrementChange($index)"
+                          />
+                          <span class="text-sm">Auto Increment</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                      <label class="flex items-center gap-2" hlmLabel>
+                        <hlm-checkbox
+                          [attr.aria-checked]="
+                            col.get('foreignKeyEnabled')?.value
+                          "
+                          [attr.data-state]="
+                            col.get('foreignKeyEnabled')?.value
+                              ? 'checked'
+                              : 'unchecked'
+                          "
+                          (click)="
+                            onForeignKeyToggle(
+                              $index,
+                              !col.get('foreignKeyEnabled')?.value
+                            )
+                          "
+                        />
+                        <span class="text-sm">Foreign Key</span>
+                      </label>
+                    </div>
+
+                    @if (col.get('foreignKeyEnabled')?.value === true) {
+                    <div class="grid gap-4 pt-2 border-t">
+                      <div class="grid grid-cols-2 gap-4">
+                        <div class="grid gap-2">
+                          <label class="text-sm font-medium" hlmLabel
+                            >Reference Table</label
+                          >
                           <brn-select
                             formControlName="foreignKeyTable"
                             placeholder="Select table"
@@ -205,14 +266,20 @@ import { DatabaseService } from '../../../../services/database.service';
                               <hlm-select-label
                                 >Reference Table</hlm-select-label
                               >
-                              @for (table of tables(); track table) {
+                              @for (table of tables(); track table) { @if
+                              (table.name !== tableForm.get('tableName')?.value)
+                              {
                               <hlm-option [value]="table.name">{{
                                 table.name
                               }}</hlm-option>
-                              }
+                              } }
                             </hlm-select-content>
                           </brn-select>
-
+                        </div>
+                        <div class="grid gap-2">
+                          <label class="text-sm font-medium" hlmLabel
+                            >Reference Column</label
+                          >
                           <brn-select
                             formControlName="foreignKeyColumn"
                             placeholder="Select column"
@@ -246,24 +313,21 @@ import { DatabaseService } from '../../../../services/database.service';
                             </hlm-select-content>
                           </brn-select>
                         </div>
-                        }
                       </div>
-                    </label>
-                  </div>
-
-                  <!-- Delete Column Button -->
-                  <div class="col-span-1 flex justify-end">
-                    <button
-                      type="button"
-                      hlmBtn
-                      variant="ghost"
-                      size="icon"
-                      class="text-destructive hover:text-destructive/90"
-                      (click)="columnsFormArray.removeAt($index)"
-                      [attr.aria-label]="'Remove column ' + ($index + 1)"
-                    >
-                      <ng-icon name="lucideTrash2" size="16" />
-                    </button>
+                    </div>
+                    } @if ($index >= 3) {
+                    <div class="flex justify-end">
+                      <button
+                        type="button"
+                        hlmBtn
+                        variant="destructive"
+                        size="sm"
+                        (click)="columnsFormArray.removeAt($index)"
+                      >
+                        Remove Column
+                      </button>
+                    </div>
+                    }
                   </div>
                 </div>
               </div>
@@ -376,6 +440,9 @@ export class NewTableComponent {
           name: [column.name],
           type: [column.type],
           nullable: [column.nullable],
+          isPrimary: [false],
+          isUnique: [false],
+          autoIncrement: [false],
           foreignKeyEnabled: [false],
           foreignKeyTable: [''],
           foreignKeyColumn,
@@ -383,7 +450,7 @@ export class NewTableComponent {
       );
     });
 
-    console.log('Tables:', this.dbService.getTables());
+    console.log('Tables:', this.dbService.getTables()());
   }
 
   get columnsFormArray() {
@@ -404,6 +471,9 @@ export class NewTableComponent {
       name: [''],
       type: ['text'],
       nullable: [false],
+      isPrimary: [false],
+      isUnique: [false],
+      autoIncrement: [false],
       foreignKeyEnabled: [false],
       foreignKeyTable: [''],
       foreignKeyColumn,
@@ -420,9 +490,21 @@ export class NewTableComponent {
           name: col.name,
           type: col.type,
           nullable: col.nullable,
+          primary: col.isPrimary,
+          unique: col.isUnique,
         };
 
-        if (col.foreignKeyEnabled) {
+        // Handle auto increment
+        if (col.autoIncrement) {
+          column.type = 'increments';
+        }
+
+        // Handle foreign key
+        if (
+          col.foreignKeyEnabled &&
+          col.foreignKeyTable &&
+          col.foreignKeyColumn
+        ) {
           column.foreignKeys = {
             columnName: col.name,
             references: {
@@ -459,6 +541,8 @@ export class NewTableComponent {
         tableName,
         columns,
       };
+
+      // console.log('Request Body:', requestBody);
 
       fetch('http://localhost:8000/api/db/schema', {
         method: 'POST',
@@ -527,8 +611,10 @@ export class NewTableComponent {
       const foreignKeyColumn = column.get('foreignKeyColumn');
       if (enabled) {
         foreignKeyColumn?.enable();
+        column.get('foreignKeyEnabled')?.setValue(true);
       } else {
         foreignKeyColumn?.disable();
+        column.get('foreignKeyEnabled')?.setValue(false);
         // Reset values when disabling
         column.patchValue({
           foreignKeyTable: '',
@@ -553,5 +639,38 @@ export class NewTableComponent {
         }
       });
     }
+  }
+
+  onPrimaryKeyChange(columnIndex: number) {
+    const currentValue =
+      this.columnControls[columnIndex].get('isPrimary')?.value;
+    const newValue = !currentValue;
+
+    if (newValue) {
+      // If setting a column as primary, unset any other primary keys
+      this.columnControls.forEach((control, index) => {
+        if (index !== columnIndex) {
+          control.get('isPrimary')?.setValue(false);
+        }
+      });
+    }
+
+    this.columnControls[columnIndex].get('isPrimary')?.setValue(newValue);
+  }
+
+  onAutoIncrementChange(columnIndex: number) {
+    const column = this.columnControls[columnIndex];
+    const currentValue = column.get('autoIncrement')?.value;
+    const newValue = !currentValue;
+
+    if (newValue) {
+      // If enabling auto increment, set some sensible defaults
+      const type = column.get('type')?.value;
+      if (!['increments', 'integer', 'bigInteger'].includes(type)) {
+        column.get('type')?.setValue('integer');
+      }
+    }
+
+    column.get('autoIncrement')?.setValue(newValue);
   }
 }
