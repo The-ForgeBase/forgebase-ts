@@ -48,10 +48,7 @@ export default defineEventHandler(async (event) => {
 
         // Only throw error for protected routes
         if (isProtectedRoute) {
-          throw createError({
-            statusCode: 401,
-            message: 'Authentication failed',
-          });
+          return sendRedirect(event, '/signin', 401);
         }
       } else if (data.admin) {
         // Set auth context if verification succeeded
@@ -73,6 +70,7 @@ export default defineEventHandler(async (event) => {
     }
   } else if (isProtectedRoute) {
     // Redirect unauthenticated users trying to access protected routes
+    console.log('No admin token found, redirecting to signin');
     return sendRedirect(event, '/signin', 401);
   }
 });

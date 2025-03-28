@@ -5,6 +5,28 @@ import { SideStudioMenuComponent } from './studio/components/side-menu/side-menu
 import { CommonModule } from '@angular/common';
 
 import { RouterOutlet } from '@angular/router';
+import { injectRouter, RouteMeta } from '@analogjs/router';
+import { injectResponse } from '@analogjs/router/tokens';
+
+export const routeMeta: RouteMeta = {
+  title: 'Studio',
+  canActivate: [
+    () => {
+      const router = injectRouter();
+      const response = injectResponse();
+      console.log('response', response);
+      console.log('ssr', import.meta.env.SSR);
+      if (import.meta.env.SSR && response) {
+        const status = response.statusCode;
+        if (status === 401) {
+          router.navigate(['/login']);
+          return false;
+        }
+      }
+      return true;
+    },
+  ],
+};
 
 @Component({
   selector: 'studio-layout',

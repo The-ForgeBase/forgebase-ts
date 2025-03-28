@@ -22,7 +22,12 @@ export default defineConfig(({ mode }) => {
         allow: ['.', '..', '../../node_modules/'],
       },
     },
-    plugins: [analog(), nxViteTsPaths()],
+    plugins: [
+      analog({
+        liveReload: true,
+      }),
+      nxViteTsPaths(),
+    ],
     test: {
       globals: true,
       environment: 'jsdom',
