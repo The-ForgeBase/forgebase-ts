@@ -11,14 +11,11 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
-* Merge pull request #25 from The-ForgeBase/nest (dc59b44)
-* fix: comment out unused 'Edge Functions' menu item in SideStudioMenuComponent (dbad74c)
-* fix: update navigation links to point to the correct routes and GitHub repository (cbb4063)
-* feat: implement Database Settings page and remove unused SidebarService (15d54cb)
-* feat: update database layout and add new index page (33ede4c)
-* Enhance documentation for ForgeBase Database and SDK (35ca139)
-* refactor(api): remove unused NestJS modules and middleware; update JWKS imports (8a852a4)
-* fix(database): update permission check for record update in ForgeDatabase (bb58e73)
-* fix(database): add permission check for record creation in ForgeDatabase (4cd025e)
+* Merge pull request #27 from The-ForgeBase/nest (f92985b)
+* feat: update navigation branding and enhance authentication middleware with improved error handling and redirects (1595ef3)
+* feat: add new table creation component with dynamic column management (3bdb9dd)
+* feat: add checked binding for column properties in NewTableComponent (019382b)
+* feat: enhance NewTableComponent and TableSettingsComponent with additional column properties and UI improvements (45a8482)
+* feat: add TableSettingsComponent and integrate it into TablesComponentPage for schema configuration (be8f5b5)
 
 For changes in previous releases, please check the Git history.
