@@ -81,57 +81,45 @@
   </div>
 
   <div class="w-full flex gap-3">
-    <button hlmBtn variant="outline" class="text-sm font-medium h-9">
-      Table Settings
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="ml-2"
-      >
-        <path d="M4 6h16"></path>
-        <path d="M4 12h16"></path>
-        <path d="M4 18h16"></path>
-        <path d="M4 6v12"></path>
-        <path d="M20 6v12"></path>
-        <path d="M4 6h16"></path>
-        <path d="M4 12h16"></path>
-        <path d="M4 18h16"></path>
-        <path d="M4 6v12"></path>
-        <path d="M20 6v12"></path>
-        <path d="M4 6h16"></path>
-      </svg>
+    <button
+      hlmBtn
+      variant="outline"
+      class="text-sm font-medium h-9"
+      (click)="openSettingsSheet()"
+    >
+      <ng-icon hlm size="sm" name="lucideFolderCog" />
+      <span class="ml-2">Settings</span>
     </button>
+
+    <!-- Settings Sheet -->
+    <hlm-sheet #settingsSheetRef side="right">
+      <hlm-sheet-content
+        class="h-full bg-background w-[100%] !max-w-[600px]"
+        *brnSheetContent="let ctx"
+      >
+        <hlm-sheet-header>
+          <h3 hlmSheetTitle>Table Settings</h3>
+          <p hlmSheetDescription>Configure table schema and behavior:</p>
+        </hlm-sheet-header>
+        <div class="py-4 grid gap-4 overflow-hidden w-full">
+          <ng-scrollbar hlm class="h-[calc(100svh-5rem)]">
+            <studio-table-settings
+              (close)="closeSettingsSheet($event)"
+              [schema]="tableSchema()"
+            ></studio-table-settings>
+          </ng-scrollbar>
+        </div>
+      </hlm-sheet-content>
+    </hlm-sheet>
+
     <button
       hlmBtn
       variant="outline"
       class="text-sm font-medium h-9"
       (click)="openPermissionsSheet()"
     >
-      Table Permissions
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="ml-2"
-      >
-        <path d="M4 6h16"></path>
-        <path d="M4 12h16"></path>
-        <path d="M4 18h16"></path>
-        <path d="M4 6v12"></path>
-      </svg>
+      <ng-icon hlm size="sm" name="lucideShield" />
+      <span class="ml-2">Permissions</span>
     </button>
 
     <!-- Permissions Sheet -->
@@ -179,31 +167,81 @@
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
-    [style]="{ width: '500px' }"
-    header="Add New Record"
+    [style]="{ width: '650px', maxWidth: '95vw' }"
     [closeOnEscape]="true"
     [dismissableMask]="true"
-    styleClass="rounded-lg shadow-lg border-0"
+    styleClass="add-record-dialog rounded-lg shadow-xl border-0"
+    [contentStyle]="{ padding: '0' }"
+    [showHeader]="false"
+    role="dialog"
+    aria-labelledby="add-record-dialog-title"
+    [baseZIndex]="1050"
+    appendTo="body"
   >
-    <div class="p-4">
-      <form #addForm="ngForm" (ngSubmit)="addRecord()" class="space-y-5">
-        <div class="space-y-4">
+    <div class="relative">
+      <!-- Header with color accent -->
+      <div
+        class="bg-primary/5 dark:bg-primary/10 px-6 py-5 rounded-t-lg border-b"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 id="add-record-dialog-title" class="text-xl font-semibold">
+              Add New Record
+            </h2>
+            <p class="text-sm text-muted-foreground mt-1">
+              Fill in the details for the new record in
+              <span class="font-medium">{{ tableName() }}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            class="rounded-full p-2 hover:bg-background/80 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            (click)="addRecordDialogVisible.set(false)"
+            aria-label="Close dialog"
+          >
+            <ng-icon hlm name="lucideX" size="18" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Form content -->
+      <form #addForm="ngForm" (ngSubmit)="addRecord()" class="p-6">
+        <div class="space-y-5 overflow-y-auto pr-4" aria-label="Record fields">
           @for (col of tableSchema()!.info.columns || []; track col.name) { @if
           (!col.has_auto_increment && !col.is_generated) {
-          <div class="mb-4">
-            <label
-              [for]="'field_' + col.name"
-              class="block text-sm font-medium mb-1 text-foreground"
-              hlmLabel
-            >
-              {{ col.name }}
-              <span class="text-xs ml-1 text-muted-foreground"
-                >({{ col.data_type }})</span
+          <div
+            class="grid gap-2 transition-all hover:bg-muted/10 px-3 py-2 -mx-3 rounded-md"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <label
+                  [for]="'field_' + col.name"
+                  class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  hlmLabel
+                >
+                  {{ col.name }}
+                  @if (!col.is_nullable) {
+                  <span class="text-destructive ml-1" aria-hidden="true"
+                    >*</span
+                  >
+                  <span class="sr-only">Required</span>
+                  }
+                </label>
+                @if (col.foreign_key_table) {
+                <div
+                  class="flex items-center gap-1 text-xs text-primary px-1.5 py-0.5 bg-primary/5 rounded-full"
+                >
+                  <ng-icon name="lucideLink" size="10" class="opacity-70" />
+                  <span>FK</span>
+                </div>
+                }
+              </div>
+              <span
+                class="text-xs text-muted-foreground py-0.5 px-1.5 bg-muted/20 rounded"
               >
-              @if (!col.is_nullable) {
-              <span class="text-xs text-red-500 ml-1">*</span>
-              }
-            </label>
+                {{ col.data_type }}
+              </span>
+            </div>
 
             <app-dynamic-input
               [dataType]="col.data_type"
@@ -212,57 +250,84 @@
               [placeholder]="col.is_nullable ? 'Optional' : 'Required'"
               [(ngModel)]="newRecord[col.name]"
               [name]="col.name"
+              class="w-full"
             ></app-dynamic-input>
 
             @if (col.foreign_key_table) {
-            <p class="text-xs mt-1 text-blue-500">
-              References {{ col.foreign_key_table }}.{{
-                col.foreign_key_column
-              }}
-            </p>
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+              <ng-icon
+                hlm
+                name="lucideExternalLink"
+                size="12"
+                class="opacity-70"
+              />
+              References
+              <span class="font-mono"
+                >{{ col.foreign_key_table }}.{{ col.foreign_key_column }}</span
+              >
+            </div>
             }
           </div>
-          } }
+          } } @if (tableSchema()!.info.columns.length === 0) {
+          <div
+            class="flex items-center justify-center p-8 bg-muted/5 rounded-lg border border-dashed"
+          >
+            <p class="text-muted-foreground text-sm">
+              This table does not have any editable columns.
+            </p>
+          </div>
+          }
         </div>
 
-        <div class="flex justify-end gap-3 pt-3">
-          <button
-            hlmBtn
-            variant="outline"
-            type="button"
-            (click)="addRecordDialogVisible.set(false)"
-            class="text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            hlmBtn
-            type="submit"
-            [disabled]="addForm.invalid || isAddingRecord()"
-            class="text-sm"
-          >
-            <span
-              *ngIf="isAddingRecord()"
-              class="inline-block mr-2 animate-spin"
+        <div class="flex justify-between items-center gap-3 pt-5 mt-5 border-t">
+          <div class="text-xs text-muted-foreground">
+            <span class="text-destructive font-medium">*</span> Required fields
+          </div>
+          <div class="flex gap-3">
+            <button
+              hlmBtn
+              variant="ghost"
+              type="button"
+              (click)="addRecordDialogVisible.set(false)"
+              class="text-sm"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
-            </span>
-            {{ isAddingRecord() ? 'Adding...' : 'Add Record' }}
-          </button>
+              Cancel
+            </button>
+            <button
+              hlmBtn
+              type="submit"
+              [disabled]="addForm.invalid || isAddingRecord()"
+              class="text-sm min-w-[100px]"
+            >
+              @if (isAddingRecord()) {
+              <ng-icon
+                hlm
+                name="lucideLoader"
+                class="mr-2 animate-spin"
+                size="sm"
+              />
+              Adding... } @else {
+              <ng-icon hlm name="lucidePlus" class="mr-2" size="sm" />
+              Add Record }
+            </button>
+          </div>
         </div>
       </form>
+
+      @if (isAddingRecord()) {
+      <div
+        class="absolute inset-0 bg-background/50 backdrop-blur-[2px] rounded-lg flex items-center justify-center"
+      >
+        <div class="bg-background/80 p-3 rounded-full shadow-lg">
+          <ng-icon
+            hlm
+            name="lucideLoader"
+            class="text-primary animate-spin"
+            size="24"
+          />
+        </div>
+      </div>
+      }
     </div>
   </p-dialog>
 

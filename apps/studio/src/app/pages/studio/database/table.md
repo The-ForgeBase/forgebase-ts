@@ -23,6 +23,7 @@ import { InputTextModule } from 'primeng/inputtext';
 @Component({
 selector: 'table-row-edit-demo',
 templateUrl: `
+
 <div class="card">
 <p-toast />
 <p-table [value]="products" dataKey="id" editMode="row" [tableStyle]="{'min-width': '50rem'}">

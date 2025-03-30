@@ -37,6 +37,28 @@ import img from '/assets/music_img_fallback.svg';
 import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
+import { RouteMeta, injectRouter } from '@analogjs/router';
+import { injectResponse } from '@analogjs/router/tokens';
+
+export const routeMeta: RouteMeta = {
+  title: 'Studio',
+  canActivate: [
+    () => {
+      const router = injectRouter();
+      const response = injectResponse();
+      console.log('response', response);
+      console.log('ssr', import.meta.env.SSR);
+      if (import.meta.env.SSR && response) {
+        const status = response.statusCode;
+        if (status === 401) {
+          router.navigate(['/login']);
+          return false;
+        }
+      }
+      return true;
+    },
+  ],
+};
 
 @Component({
   standalone: true,

@@ -35,6 +35,7 @@ import {
   BrnSheetTriggerDirective,
 } from '@spartan-ng/brain/sheet';
 import { TablePermissionsComponent } from '../components/table/table-permissions.component';
+import { TableSettingsComponent } from '../components/table/table-settings.component';
 import {
   HlmSheetComponent,
   HlmSheetContentComponent,
@@ -44,6 +45,16 @@ import {
 } from '@spartan-ng/ui-sheet-helm';
 import { HlmScrollAreaDirective } from '@spartan-ng/ui-scrollarea-helm';
 import { NgScrollbarModule } from 'ngx-scrollbar';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  lucideExternalLink,
+  lucideFolderCog,
+  lucideLoader,
+  lucidePlus,
+  lucideShield,
+  lucideX,
+} from '@ng-icons/lucide';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
 
 /**
  * TablesComponentPage displays and manages database table data in a modern, interactive UI.
@@ -81,6 +92,7 @@ import { NgScrollbarModule } from 'ngx-scrollbar';
     HlmLabelDirective,
     UseClientDirective,
     TablePermissionsComponent,
+    TableSettingsComponent,
     HlmScrollAreaDirective,
     NgScrollbarModule,
     BrnSheetContentDirective,
@@ -89,8 +101,20 @@ import { NgScrollbarModule } from 'ngx-scrollbar';
     HlmSheetHeaderComponent,
     HlmSheetTitleDirective,
     HlmSheetDescriptionDirective,
+    NgIcon,
+    HlmIconDirective,
   ],
-  providers: [MessageService],
+  providers: [
+    MessageService,
+    provideIcons({
+      lucideShield,
+      lucideFolderCog,
+      lucideX,
+      lucideExternalLink,
+      lucidePlus,
+      lucideLoader,
+    }),
+  ],
   animations: [
     trigger('fadeIn', [
       transition(':enter', [
@@ -487,6 +511,60 @@ export default class TablesComponentPage {
         severity: 'error',
         summary: 'Error',
         detail: 'Failed to update permissions',
+      });
+    }
+  }
+
+  public settingsSheetRef = viewChild<BrnSheetComponent>('settingsSheetRef');
+
+  openSettingsSheet() {
+    this.settingsSheetRef()?.open();
+  }
+
+  async closeSettingsSheet(event: any) {
+    if (!event) {
+      this.settingsSheetRef()?.close({});
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/db/schema/tables/${this.tableName()}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(event),
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok) {
+        this.tableSchema.set(result);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Table settings updated successfully',
+        });
+        this.settingsSheetRef()?.close({});
+
+        // Reload data as schema changes might affect the data display
+        await this.loadTableSchema();
+      } else {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: result.error,
+        });
+      }
+    } catch (error) {
+      console.error('Error updating table settings:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to update table settings',
       });
     }
   }

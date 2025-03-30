@@ -85,7 +85,7 @@ export class AuthService {
    */
   checkAuthStatus(): Observable<boolean> {
     this.isLoading.set(true);
-
+    console.log('Checking auth status');
     return this.http
       .get<{ admin: Admin }>(`${this.baseUrl}/me`, { withCredentials: true })
       .pipe(
@@ -95,6 +95,7 @@ export class AuthService {
         }),
         map(() => true),
         catchError(() => {
+          console.log('Not authenticated');
           this.adminUser.set(null);
           this.isAuthenticated.set(false);
           return of(false);
