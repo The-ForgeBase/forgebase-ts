@@ -14,6 +14,21 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
     });
   }
 
+  // Crypto Keys Table for JWT signing
+  const hasCryptoKeys = await knex.schema.hasTable('crypto_keys');
+  if (!hasCryptoKeys) {
+    await knex.schema.createTable('crypto_keys', (table) => {
+      table.string('kid').primary(); // Key ID
+      table.string('algorithm').notNullable(); // Signing algorithm
+      table.text('private_key').notNullable(); // Private key in JWK format
+      table.text('public_key').notNullable(); // Public key in JWK format
+      table.timestamp('created_at').defaultTo(knex.fn.now());
+      table.timestamp('rotated_at').nullable();
+      table.boolean('is_current').defaultTo(true);
+      table.index(['is_current']);
+    });
+  }
+
   // OAuth Providers Table
   const hasAuthProviders = await knex.schema.hasTable('oauth_providers');
   if (!hasAuthProviders) {

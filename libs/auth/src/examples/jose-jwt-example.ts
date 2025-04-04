@@ -15,7 +15,6 @@ export async function setupWithExpress(
 ): Promise<any> {
   // Configure the options for JoseJwtSessionManager
   const keyOptions: KeyStorageOptions = {
-    keyDirectory: './keys', // Directory to store keys
     algorithm: 'ES256', // Use ES256 algorithm (ECDSA with P-256 curve)
     rotationDays: 90, // Rotate keys every 90 days
   };
@@ -71,7 +70,6 @@ export async function setupWithExpress(
 export async function setupWithHono(db: Knex, config: AuthConfig) {
   // Configure the options for JoseJwtSessionManager
   const keyOptions: KeyStorageOptions = {
-    keyDirectory: './keys',
     algorithm: 'ES256',
     rotationDays: 90,
   };

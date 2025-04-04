@@ -11,20 +11,20 @@ import { readFormData, setCookie, sendRedirect } from 'h3';
 export async function action({ event }: PageServerAction) {
   try {
     const body = await readFormData(event);
-    const email = body.get('email') as string;
-    const password = body.get('password') as string;
+    const email = body.get('email')?.toString().trim();
+    const password = body.get('password')?.toString();
 
-    // Removed logging of sensitive information
-
-    if (!email) {
-      return fail(422, { email: 'Email is required' });
+    // Input validation
+    if (!email || !email.includes('@')) {
+      return fail(422, { email: 'Valid email is required' });
     }
 
-    if (!password) {
-      return fail(422, { password: 'Password is required' });
+    if (!password || password.length < 6) {
+      return fail(422, { password: 'Password must be at least 6 characters' });
     }
 
-    const res = await fetch('http://localhost:8000/api/admin/login', {
+    const apiUrl = process.env['ADMIN_API_URL'] || 'http://localhost:8000';
+    const res = await fetch(`${apiUrl}/api/admin/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,57 +34,37 @@ export async function action({ event }: PageServerAction) {
         password,
       }),
     });
+
     const data = await res.json();
 
     if (!res.ok) {
-      return fail(res.status, data);
+      return fail(res.status, {
+        error: data.message || 'Authentication failed',
+      });
     }
 
-    // Extract Set-Cookie header and forward it to the client
-    const cookies = res.headers.getSetCookie?.() || [];
-
-    for (const cookie of cookies) {
-      const match = cookie.match(/^([^=]+)=([^;]+)/);
-      if (match && match.length >= 3) {
-        const [, name, value] = match;
-        // Forward each cookie to the client with appropriate settings
-        setCookie(event, name, value, {
-          httpOnly: cookie.includes('HttpOnly'),
-          secure: cookie.includes('Secure'),
-          path: '/',
-          // Extract maxAge if present in cookie string
-          maxAge: parseInt(cookie.match(/Max-Age=(\d+)/)?.[1] || '3600'),
-        });
-      }
-    }
-
-    // If cookie forwarding failed but we have a token in the response body
-    if (cookies.length === 0 && data.token) {
+    // Set the admin token cookie
+    if (data.token) {
       setCookie(event, 'admin_token', data.token, {
         httpOnly: true,
         secure: process.env['NODE_ENV'] === 'production',
         path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
       });
     }
 
-    return json({ type: 'success' });
+    return json({ success: true });
   } catch (error) {
     console.error('Authentication error:', error);
     return fail(500, { error: 'Authentication failed. Please try again.' });
   }
 }
 
-export const load = async ({
-  params, // params/queryParams from the request
-  req, // H3 Request
-  res, // H3 Response handler
-  fetch, // internal fetch for direct API calls,
-  event, // full request event
-}: PageServerLoad) => {
+export const load = async ({ event }: PageServerLoad) => {
   const user = event.context['auth'];
 
   if (user) {
-    sendRedirect(event, '/studio', 302);
+    return sendRedirect(event, '/studio', 302);
   }
 
   return {

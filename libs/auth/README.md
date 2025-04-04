@@ -1145,7 +1145,7 @@ try {
 
 ```typescript
 class DynamicAuthManager<TUser extends User> {
-  constructor(configStore: ConfigStore, providers: Record<string, AuthProvider<TUser>>, sessionManager: SessionManager, userService: KnexUserService<TUser>, refreshInterval?: number, enableConfigIntervalCheck?: boolean, internalConfig: AuthInternalConfig<TUser>, verificationService?: VerificationService, plugins?: AuthPlugin<TUser>[]);
+  constructor(configStore: ConfigStore, providers: Record<string, AuthProvider<TUser>>, sessionManager: SessionManager, userService: KnexUserService<TUser>, refreshInterval?: number, enableConfigIntervalCheck?: boolean, internalConfig: AuthInternalConfig<TUser>, EmailVerificationService?: EmailVerificationService, plugins?: AuthPlugin<TUser>[]);
 
   // Core authentication methods
   async register(provider: string, credentials: Partial<TUser>, password: string);

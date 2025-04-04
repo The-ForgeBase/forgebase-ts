@@ -75,7 +75,8 @@ export interface AuthInternalConfig<TUser extends User> {
   };
   mfaService?: MfaService;
   rateLimiter?: RateLimiter;
-  verificationService?: VerificationService;
+  emailVerificationService?: EmailVerificationService<TUser>;
+  smsVerificationService?: SmsVerificationService<TUser>;
 }
 
 export interface JwksResponse {
@@ -93,11 +94,14 @@ export interface UserService<TUser extends User> {
   getConfig(): AuthConfig;
 }
 
-export interface VerificationService {
-  sendVerificationEmail?(email: string): Promise<void>;
-  sendVerificationSms?(phone: string): Promise<void>;
-  verifyEmail?(email: string, token: string): Promise<boolean>;
-  verifySms?(token: string): Promise<boolean>;
+export interface EmailVerificationService<TUser extends User> {
+  sendVerificationEmail(email: string, user: TUser): Promise<void>;
+  verifyEmail(email: string, token: string, user: TUser): Promise<boolean>;
+}
+
+export interface SmsVerificationService<TUser extends User> {
+  sendVerificationSms(phone: string, user: TUser): Promise<void>;
+  verifySms?(token: string, phone: string, user: TUser): Promise<boolean>;
 }
 
 export interface PasswordHasher {

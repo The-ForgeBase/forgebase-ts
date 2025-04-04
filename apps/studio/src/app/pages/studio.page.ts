@@ -12,14 +12,11 @@ export const routeMeta: RouteMeta = {
   title: 'Studio',
   canActivate: [
     () => {
-      const router = injectRouter();
       const response = injectResponse();
-      console.log('response', response);
       console.log('ssr', import.meta.env.SSR);
       if (import.meta.env.SSR && response) {
         const status = response.statusCode;
         if (status === 401) {
-          router.navigate(['/login']);
           return false;
         }
       }

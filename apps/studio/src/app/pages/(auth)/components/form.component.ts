@@ -176,7 +176,7 @@ export class AuthenticationFormComponent {
   onSuccess() {
     console.log('Form submitted successfully');
     this.isLoading.set(false);
-    this.router.navigate(['/studio']);
+    // this.router.navigate(['/studio']);
   }
 
   onError(result?: FormErrors) {

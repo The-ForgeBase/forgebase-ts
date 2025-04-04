@@ -62,20 +62,26 @@ export class AuthController<TUser extends User> {
         // Set the token in the response headers
         if (typeof result.token === 'object' && result.token !== null) {
           res.cookie('token', result.token.accessToken, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+            path: this.adminConfig.cookieOptions?.path,
           });
           res.cookie('refreshToken', result.token.refreshToken, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+            path: this.adminConfig.cookieOptions?.path,
           });
         } else {
           res.cookie('token', result.token, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+            path: this.adminConfig.cookieOptions?.path,
           });
         }
       }
@@ -234,29 +240,39 @@ export class AuthController<TUser extends User> {
     const refreshToken = this.extractRefreshToken(req);
 
     if (!refreshToken) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: 'Refresh token not found' });
     }
 
     try {
       const token = await this.authService.refreshToken(refreshToken);
+
+      // Set secure cookies for the new tokens
       if (typeof token === 'object' && token !== null) {
         res.cookie('token', token.accessToken, {
-          httpOnly: true,
+          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+          path: this.adminConfig.cookieOptions?.path || '/',
         });
         res.cookie('refreshToken', token.refreshToken, {
-          httpOnly: true,
+          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+          path: this.adminConfig.cookieOptions?.path || '/',
         });
       } else {
         res.cookie('token', token, {
-          httpOnly: true,
+          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+          path: this.adminConfig.cookieOptions?.path || '/',
         });
       }
+
+      return res.json({ success: true });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }

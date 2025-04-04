@@ -25,7 +25,8 @@ import {
   UserNotFoundError,
   UserUnAuthorizedError,
   VerificationRequiredError,
-  VerificationService,
+  EmailVerificationService,
+  SmsVerificationService,
 } from './types';
 import { KnexUserService } from './userService';
 import crypto from 'crypto';
@@ -46,7 +47,8 @@ export class DynamicAuthManager<TUser extends User> {
     private refreshInterval = 5000,
     private enableConfigIntervalCheck = false,
     private internalConfig: AuthInternalConfig<TUser>,
-    private verificationService?: VerificationService,
+    private emailVerificationService?: EmailVerificationService<TUser>,
+    private smsVerificationService?: SmsVerificationService<TUser>,
     plugins: AuthPlugin<TUser>[] = []
   ) {
     this.watchConfig();
@@ -151,9 +153,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.loginAfterRegistration &&
-      !this.config.mfaSettings.required &&
-      (!this.config.authPolicy.emailVerificationRequired ||
-        !this.config.authPolicy.smsVerificationRequired)
+      !this.config.mfaSettings.required
     ) {
       const token = await this.sessionManager.createSession(user);
       // Execute post-login hooks
@@ -163,19 +163,21 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.emailVerificationRequired &&
-      this.verificationService &&
-      this.verificationService.sendVerificationEmail
+      this.emailVerificationService &&
+      user.email
     ) {
-      await this.verificationService.sendVerificationEmail(user.email);
+      await this.emailVerificationService.sendVerificationEmail(
+        user.email,
+        user
+      );
     }
 
     if (
       this.config.authPolicy.smsVerificationRequired &&
-      this.verificationService &&
-      this.verificationService.sendVerificationSms &&
+      this.sendVerificationEmail &&
       user.phone
     ) {
-      await this.verificationService.sendVerificationSms(user.phone);
+      await this.smsVerificationService.sendVerificationSms(user.phone, user);
     }
 
     // Execute post-registration hooks
@@ -223,7 +225,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.emailVerificationRequired &&
-      this.verificationService &&
+      this.emailVerificationService &&
       !user.email_verified
     ) {
       throw new VerificationRequiredError('email');
@@ -231,7 +233,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.smsVerificationRequired &&
-      this.verificationService &&
+      this.smsVerificationService &&
       !user.phone_verified
     ) {
       throw new VerificationRequiredError('sms');
@@ -290,7 +292,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.emailVerificationRequired &&
-      this.verificationService &&
+      this.emailVerificationService &&
       !user.email_verified
     ) {
       throw new VerificationRequiredError('email');
@@ -298,7 +300,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.smsVerificationRequired &&
-      this.verificationService &&
+      this.smsVerificationService &&
       !user.phone_verified
     ) {
       throw new VerificationRequiredError('sms');
@@ -366,9 +368,10 @@ export class DynamicAuthManager<TUser extends User> {
 
     const user = await this.userService.findUser(userId);
     if (!user) throw new UserNotFoundError(userId);
-    const isValid = this.verificationService.verifyEmail(
+    const isValid = await this.emailVerificationService.verifyEmail(
       user.email,
-      verificationCode
+      verificationCode,
+      user
     );
     if (!isValid) throw new InvalidCodeError();
     await this.userService.updateUser(user.id, {
@@ -382,19 +385,23 @@ export class DynamicAuthManager<TUser extends User> {
   async sendVerificationEmail(email: string) {
     const user = await this.userService.findUser(email);
     if (!user) throw new UserNotFoundError(email);
-    await this.verificationService.sendVerificationEmail(email);
+    await this.emailVerificationService.sendVerificationEmail(email, user);
   }
 
   async sendVerificationSms(phone: string) {
     const user = await this.userService.findUser(phone);
     if (!user) throw new UserNotFoundError(phone);
-    await this.verificationService.sendVerificationSms(phone);
+    await this.smsVerificationService.sendVerificationSms(phone, user);
   }
 
   async verifySms(userId: string, verificationCode: string) {
     const user = await this.userService.findUser(userId);
     if (!user) throw new UserNotFoundError(userId);
-    const isValid = this.verificationService.verifySms(verificationCode);
+    const isValid = await this.smsVerificationService.verifySms(
+      verificationCode,
+      user.phone,
+      user
+    );
     if (!isValid) throw new InvalidCodeError();
     await this.userService.updateUser(user.id, {
       ...user,
