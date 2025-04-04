@@ -25,9 +25,15 @@ export default defineEventHandler(async (event) => {
   console.log('Cookies:', cookies);
   console.log('User', event.context['auth']);
   const adminToken = cookies['admin_token'];
-  const isAuthRoute = pathname.startsWith('/signin');
+  const isAuthRoute =
+    pathname.startsWith('/signin') || pathname.includes('/signin');
   const isProtectedRoute =
-    pathname.startsWith('/studio') || pathname.startsWith('/api/v1');
+    pathname.startsWith('/studio') ||
+    pathname.startsWith('/api/v1') ||
+    pathname.includes('/studio');
+
+  console.log('Current pathname:', pathname);
+  console.log('Is protected route:', isProtectedRoute);
 
   // Only verify token if it exists
   if (adminToken !== undefined && adminToken !== null) {
