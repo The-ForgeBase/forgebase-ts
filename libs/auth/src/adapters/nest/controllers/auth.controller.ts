@@ -380,6 +380,37 @@ export class AuthController<TUser extends User> {
     }
   }
 
+  @Post('change-password')
+  @UseGuards(AuthGuard)
+  async changePassword(
+    @Req() req: Request,
+    @Body('oldPassword') oldPassword: string,
+    @Body('newPassword') newPassword: string,
+    @Res() res: Response
+  ) {
+    try {
+      // Get the user ID from the authenticated request
+      const userId = req['user'].id;
+
+      console.log('User ID:', userId);
+      console.log('Old Password:', oldPassword);
+      console.log('New Password:', newPassword);
+
+      // Call the service to change the password
+      const success = await this.authService.changePassword(
+        userId,
+        oldPassword,
+        newPassword
+      );
+
+      console.log('Password changed successfully:', success);
+
+      return res.json({ success });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
   @Post('verify-sms')
   async verifySms(
     @Body('userId') userId: string,

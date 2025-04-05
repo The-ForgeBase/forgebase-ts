@@ -1,13 +1,19 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react';
 import { ForgebaseWebAuth } from '../../ForgebaseWebAuth';
-import { 
-  User, 
-  AuthError, 
-  LoginCredentials, 
+import {
+  User,
+  AuthError,
+  LoginCredentials,
   RegisterCredentials,
   PasswordResetResponse,
   VerifyEmailResponse,
-  VerifyResetTokenResponse
+  VerifyResetTokenResponse,
 } from '../../types';
 
 /**
@@ -22,10 +28,18 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  sendVerificationEmail: (email: string, redirectUrl?: string) => Promise<{ success: boolean; token?: string }>;
+  sendVerificationEmail: (
+    email: string,
+    redirectUrl?: string
+  ) => Promise<{ success: boolean; token?: string }>;
   verifyEmail: (userId: string, code: string) => Promise<void>;
   forgotPassword: (email: string, redirectUrl?: string) => Promise<void>;
-  resetPassword: (userId: string, token: string, newPassword: string) => Promise<void>;
+  resetPassword: (
+    userId: string,
+    token: string,
+    newPassword: string
+  ) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   refreshToken: () => Promise<boolean>;
   fetchUser: () => Promise<User | null>;
   getAccessToken: () => string | null;
@@ -36,7 +50,9 @@ interface AuthContextType {
 /**
  * Create the auth context
  */
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
 /**
  * Auth provider props
@@ -52,28 +68,34 @@ interface AuthProviderProps {
 /**
  * Auth provider component
  */
-export const AuthProvider: React.FC<AuthProviderProps> = ({ 
-  auth, 
-  children, 
-  initialUser, 
-  initialAccessToken, 
-  initialRefreshToken 
+export const AuthProvider: React.FC<AuthProviderProps> = ({
+  auth,
+  children,
+  initialUser,
+  initialAccessToken,
+  initialRefreshToken,
 }) => {
-  const [user, setUser] = useState<User | null>(initialUser || auth.getCurrentUser());
+  const [user, setUser] = useState<User | null>(
+    initialUser || auth.getCurrentUser()
+  );
   const [isLoading, setIsLoading] = useState<boolean>(!initialUser);
   const [error, setError] = useState<AuthError | null>(null);
-  
+
   // Initialize auth state
   useEffect(() => {
     const initializeAuth = async () => {
       // If we have initial state from SSR, set it
       if (initialUser || initialAccessToken || initialRefreshToken) {
-        auth.setInitialState(initialUser || null, initialAccessToken, initialRefreshToken);
+        auth.setInitialState(
+          initialUser || null,
+          initialAccessToken,
+          initialRefreshToken
+        );
         setUser(initialUser || null);
         setIsLoading(false);
         return;
       }
-      
+
       setIsLoading(true);
       try {
         // Try to fetch user details if we have a token
@@ -90,40 +112,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         setIsLoading(false);
       }
     };
-    
+
     initializeAuth();
   }, [auth, initialUser, initialAccessToken, initialRefreshToken]);
-  
+
   // Login handler
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await auth.login(credentials);
-      setUser(response.user);
-    } catch (err) {
-      setError(err instanceof AuthError ? err : null);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [auth]);
-  
+  const login = useCallback(
+    async (credentials: LoginCredentials) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await auth.login(credentials);
+        setUser(response.user);
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [auth]
+  );
+
   // Register handler
-  const register = useCallback(async (credentials: RegisterCredentials) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await auth.register(credentials);
-      setUser(response.user);
-    } catch (err) {
-      setError(err instanceof AuthError ? err : null);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [auth]);
-  
+  const register = useCallback(
+    async (credentials: RegisterCredentials) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await auth.register(credentials);
+        setUser(response.user);
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [auth]
+  );
+
   // Logout handler
   const logout = useCallback(async () => {
     setIsLoading(true);
@@ -138,57 +166,83 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       setIsLoading(false);
     }
   }, [auth]);
-  
+
   // Send verification email handler
-  const sendVerificationEmail = useCallback(async (email: string, redirectUrl?: string) => {
-    setError(null);
-    try {
-      return await auth.sendVerificationEmail(email, redirectUrl);
-    } catch (err) {
-      setError(err instanceof AuthError ? err : null);
-      throw err;
-    }
-  }, [auth]);
-  
-  // Verify email handler
-  const verifyEmail = useCallback(async (userId: string, code: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await auth.verifyEmail(userId, code);
-      if (response.user) {
-        setUser(response.user);
+  const sendVerificationEmail = useCallback(
+    async (email: string, redirectUrl?: string) => {
+      setError(null);
+      try {
+        return await auth.sendVerificationEmail(email, redirectUrl);
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
       }
-    } catch (err) {
-      setError(err instanceof AuthError ? err : null);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [auth]);
-  
+    },
+    [auth]
+  );
+
+  // Verify email handler
+  const verifyEmail = useCallback(
+    async (userId: string, code: string) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await auth.verifyEmail(userId, code);
+        if (response.user) {
+          setUser(response.user);
+        }
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [auth]
+  );
+
   // Forgot password handler
-  const forgotPassword = useCallback(async (email: string, redirectUrl?: string) => {
-    setError(null);
-    try {
-      await auth.forgotPassword(email, redirectUrl);
-    } catch (err) {
-      setError(err instanceof AuthError ? err : null);
-      throw err;
-    }
-  }, [auth]);
-  
+  const forgotPassword = useCallback(
+    async (email: string, redirectUrl?: string) => {
+      setError(null);
+      try {
+        await auth.forgotPassword(email, redirectUrl);
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
+      }
+    },
+    [auth]
+  );
+
   // Reset password handler
-  const resetPassword = useCallback(async (userId: string, token: string, newPassword: string) => {
-    setError(null);
-    try {
-      await auth.resetPassword(userId, token, newPassword);
-    } catch (err) {
-      setError(err instanceof AuthError ? err : null);
-      throw err;
-    }
-  }, [auth]);
-  
+  const resetPassword = useCallback(
+    async (userId: string, token: string, newPassword: string) => {
+      setError(null);
+      try {
+        await auth.resetPassword(userId, token, newPassword);
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
+      }
+    },
+    [auth]
+  );
+
+  // Change password handler
+  const changePassword = useCallback(
+    async (oldPassword: string, newPassword: string) => {
+      setError(null);
+      try {
+        await auth.changePassword(oldPassword, newPassword);
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
+      }
+    },
+    [auth]
+  );
+
   // Refresh token handler
   const refreshToken = useCallback(async () => {
     setError(null);
@@ -204,7 +258,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       return false;
     }
   }, [auth]);
-  
+
   // Fetch user handler
   const fetchUser = useCallback(async () => {
     setIsLoading(true);
@@ -220,22 +274,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       setIsLoading(false);
     }
   }, [auth]);
-  
+
   // Get access token
   const getAccessToken = useCallback(() => {
     return auth.getAccessToken();
   }, [auth]);
-  
+
   // Get refresh token
   const getRefreshToken = useCallback(() => {
     return auth.getRefreshToken();
   }, [auth]);
-  
+
   // Get API instance
   const getApi = useCallback(() => {
     return auth.api;
   }, [auth]);
-  
+
   const value = {
     auth,
     user,
@@ -249,13 +303,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     verifyEmail,
     forgotPassword,
     resetPassword,
+    changePassword,
     refreshToken,
     fetchUser,
     getAccessToken,
     getRefreshToken,
-    getApi
+    getApi,
   };
-  
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

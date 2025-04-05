@@ -4,6 +4,7 @@ import {
   AuthErrorType,
   AuthResponse,
   AuthStorage,
+  ChangePasswordResponse,
   ForgebaseWebAuthConfig,
   LoginCredentials,
   PasswordResetResponse,
@@ -384,9 +385,9 @@ export class ForgebaseWebAuth {
    */
   isAuthenticated(): boolean {
     // In SSR mode with cookies, we can't determine authentication status
-    if (this.config.ssr && this.config.useCookies) {
-      return false;
-    }
+    // if (this.config.ssr && this.config.useCookies) {
+    //   return false;
+    // }
 
     // Check if we have a token and it's not expired
     if (this.accessToken && !isTokenExpired(this.accessToken)) {
@@ -603,6 +604,45 @@ export class ForgebaseWebAuth {
         throw error;
       }
       throw new AuthError('Password reset failed', AuthErrorType.UNKNOWN_ERROR);
+    }
+  }
+
+  /**
+   * Change password for the authenticated user
+   * @param oldPassword Current password
+   * @param newPassword New password
+   * @returns Change password response
+   */
+  async changePassword(
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ChangePasswordResponse> {
+    try {
+      // Check if user is authenticated
+      if (!this.isAuthenticated()) {
+        throw new AuthError(
+          'User must be authenticated to change password',
+          AuthErrorType.UNAUTHORIZED
+        );
+      }
+
+      const response = await this._api.post<ChangePasswordResponse>(
+        '/auth/change-password',
+        {
+          oldPassword,
+          newPassword,
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      throw new AuthError(
+        'Password change failed',
+        AuthErrorType.UNKNOWN_ERROR
+      );
     }
   }
 

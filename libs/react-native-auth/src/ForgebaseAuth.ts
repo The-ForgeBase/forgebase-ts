@@ -5,6 +5,7 @@ import {
   AuthResponse,
   AuthStorage,
   AuthToken,
+  ChangePasswordResponse,
   ForgebaseAuthConfig,
   LoginCredentials,
   PasswordResetResponse,
@@ -502,6 +503,45 @@ export class ForgebaseAuth {
         throw error;
       }
       throw new AuthError('Password reset failed', AuthErrorType.UNKNOWN_ERROR);
+    }
+  }
+
+  /**
+   * Change password for the authenticated user
+   * @param oldPassword Current password
+   * @param newPassword New password
+   * @returns Change password response
+   */
+  async changePassword(
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ChangePasswordResponse> {
+    try {
+      // Check if user is authenticated
+      if (!this.isAuthenticated()) {
+        throw new AuthError(
+          'User must be authenticated to change password',
+          AuthErrorType.UNAUTHORIZED
+        );
+      }
+
+      const response = await this._api.post<ChangePasswordResponse>(
+        '/auth/change-password',
+        {
+          oldPassword,
+          newPassword,
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      throw new AuthError(
+        'Password change failed',
+        AuthErrorType.UNKNOWN_ERROR
+      );
     }
   }
 

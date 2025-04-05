@@ -72,6 +72,14 @@ export interface VerifyResetTokenResponse {
 }
 
 /**
+ * Change password response
+ */
+export interface ChangePasswordResponse {
+  success: boolean;
+  message?: string;
+}
+
+/**
  * Configuration options for the ForgebaseAuth SDK
  */
 export interface ForgebaseAuthConfig {
@@ -126,6 +134,7 @@ export enum AuthErrorType {
   EMAIL_ALREADY_EXISTS = 'email_already_exists',
   VERIFICATION_REQUIRED = 'verification_required',
   INVALID_TOKEN = 'invalid_token',
+  UNAUTHORIZED = 'unauthorized',
   SERVER_ERROR = 'server_error',
   UNKNOWN_ERROR = 'unknown_error',
 }

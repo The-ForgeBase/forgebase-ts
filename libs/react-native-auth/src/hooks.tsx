@@ -37,6 +37,7 @@ interface AuthContextType {
     token: string,
     newPassword: string
   ) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   refreshToken: () => Promise<boolean>;
   fetchUser: () => Promise<User | null>;
   getAccessToken: () => string | null;
@@ -199,6 +200,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     [auth]
   );
 
+  // Change password handler
+  const changePassword = useCallback(
+    async (oldPassword: string, newPassword: string) => {
+      setError(null);
+      try {
+        await auth.changePassword(oldPassword, newPassword);
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
+      }
+    },
+    [auth]
+  );
+
   // Refresh token handler
   const refreshToken = useCallback(async () => {
     setError(null);
@@ -259,6 +274,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     verifyEmail,
     forgotPassword,
     resetPassword,
+    changePassword,
     refreshToken,
     fetchUser,
     getAccessToken,

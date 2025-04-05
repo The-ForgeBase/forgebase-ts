@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { hashPassword } from './lib/password';
+import { hashPassword, verifyPasswordHash } from './lib/password';
 import { sanitizeUser } from './lib/sanitize';
 import { BaseOAuthProvider } from './providers';
 import {
@@ -654,6 +654,52 @@ export class DynamicAuthManager<TUser extends User> {
       mfa_secret: null,
       mfa_recovery_codes: [],
     });
+  }
+
+  /**
+   * Change a user's password (requires authentication)
+   * @param userId The user ID
+   * @param oldPassword The current password
+   * @param newPassword The new password
+   * @returns True if the password was changed successfully
+   */
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<boolean> {
+    // Sanitize inputs
+    userId = userId.trim();
+    oldPassword = oldPassword.trim();
+    newPassword = newPassword.trim();
+
+    // Get the user
+    const user = await this.userService.findUser(userId);
+    if (!user) throw new UserNotFoundError(userId);
+
+    // Verify the old password
+    const passwordHash = user[this.userService.getColumns().passwordHash];
+    const isValid = await verifyPasswordHash(passwordHash, oldPassword);
+    if (!isValid) throw new UserUnAuthorizedError(userId, 'Invalid password');
+
+    // Hash the new password
+    const hash = await hashPassword(newPassword);
+
+    // Update the user's password
+    await this.internalConfig
+      .knex(this.userService.getTable())
+      .where(this.userService.getColumns().id, userId)
+      .update({
+        [this.userService.getColumns().passwordHash]: hash,
+        [this.userService.getColumns().updatedAt]: this.userService
+          .getInternalConfig()
+          .knex.fn.now(),
+      });
+
+    // Execute post-password-change hooks
+    await this.executeHooks('afterPasswordChange', { userId });
+
+    return true;
   }
 
   async updateConfig(update: Partial<AuthConfig>, adminUser: TUser) {

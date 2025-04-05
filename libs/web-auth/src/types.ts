@@ -1,5 +1,3 @@
-import { AxiosInstance, AxiosRequestConfig } from 'axios';
-
 /**
  * User interface representing the authenticated user
  */
@@ -31,6 +29,10 @@ export interface RegisterCredentials {
   password: string;
   name?: string;
   [key: string]: any;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
 }
 
 /**
@@ -202,6 +204,7 @@ export enum AuthErrorType {
   SERVER_ERROR = 'server_error',
   UNKNOWN_ERROR = 'unknown_error',
   SSR_ERROR = 'ssr_error',
+  UNAUTHORIZED = 'unauthorized',
 }
 
 /**

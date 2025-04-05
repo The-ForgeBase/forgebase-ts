@@ -150,6 +150,21 @@ export class AuthService<TUser extends User> {
     return this.authManager.resetPassword(userId, newPassword, token);
   }
 
+  /**
+   * Change a user's password by verifying the old password first
+   * @param userId The user ID
+   * @param oldPassword The current password
+   * @param newPassword The new password
+   * @returns Whether the password was changed successfully
+   */
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<boolean> {
+    return this.authManager.changePassword(userId, oldPassword, newPassword);
+  }
+
   async verifySms(userId: string, code: string) {
     return this.authManager.verifySms(userId, code);
   }
