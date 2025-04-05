@@ -64,7 +64,9 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
 
 - **Verification & MFA**:
 
-  - Email verification
+  - Email verification with JSX-Email templates
+  - Dynamic verification URLs
+  - Password reset with token verification
   - SMS verification
   - TOTP support
   - Recovery codes
@@ -93,6 +95,12 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
   - [Hono](#hono)
 - [Admin Management](#admin-management)
 - [Multi-Factor Authentication](#multi-factor-authentication)
+- [Email & Phone Verification](#email--phone-verification)
+  - [Email Verification Service](#email-verification-service)
+  - [JSX-Email Templates](#jsx-email-templates)
+- [Password Reset](#password-reset)
+  - [Password Reset Flow](#password-reset-flow)
+  - [NestJS Integration](#nestjs-integration-1)
 - [Session Management](#session-management)
 - [Plugin System](#plugin-system)
 - [Error Handling](#error-handling)
@@ -108,6 +116,18 @@ npm install @forgebase-ts/auth
 yarn add @forgebase-ts/auth
 # or
 pnpm add @forgebase-ts/auth
+```
+
+### Additional Dependencies
+
+For JSX-Email templates and advanced email features, you'll need these additional dependencies:
+
+```bash
+npm install jsx-email react nodemailer uuid
+# or
+yarn add jsx-email react nodemailer uuid
+# or
+pnpm add jsx-email react nodemailer uuid
 ```
 
 ## Basic Usage
@@ -839,11 +859,14 @@ Supported MFA methods:
 
 ## Email & Phone Verification
 
-The library provides built-in support for verifying user email and phone numbers:
+The library provides built-in support for verifying user email and phone numbers with enhanced features for email templates and dynamic URLs:
 
 ```typescript
-// Send verification email
-await authManager.sendVerificationEmail(email);
+// Send verification email (with optional custom redirect URL)
+await authManager.sendVerificationEmail(email, 'https://custom-app.com/verify');
+
+// Get the verification token (useful for testing or custom flows)
+const verificationToken = await authManager.sendVerificationEmail(email);
 
 // Verify email with code
 const { user, token } = await authManager.verifyEmail(userId, verificationCode);
@@ -853,6 +876,159 @@ await authManager.sendVerificationSms(phone);
 
 // Verify phone number with code
 const { user, token } = await authManager.verifySms(userId, verificationCode);
+```
+
+### Email Verification Service
+
+The library includes a flexible email verification service with support for different email providers and templates:
+
+```typescript
+// Initialize with Plunk email service
+const plunkVerificationService = new PlunkEmailVerificationService(db, {
+  apiKey: process.env.PLUNK_API_KEY,
+  fromEmail: 'noreply@yourdomain.com',
+  fromName: 'Your App',
+  tokenExpiryMinutes: 30,
+
+  // Use nodemailer with Plunk SMTP
+  useNodemailer: true,
+
+  // URL bases for verification and reset links
+  verificationUrlBase: 'https://yourdomain.com/verify',
+  resetUrlBase: 'https://yourdomain.com/reset-password',
+
+  // Use JSX-Email templates
+  useJsxTemplates: true,
+
+  // Additional query parameters for URLs
+  additionalQueryParams: {
+    source: 'email',
+  },
+});
+
+// Register the service with the auth manager
+const authManager = new DynamicAuthManager(
+  configStore,
+  providers,
+  sessionManager,
+  userService,
+  5000,
+  true,
+  { knex: db },
+  plunkVerificationService // Pass the verification service
+);
+```
+
+### JSX-Email Templates
+
+The library supports JSX-Email templates for beautiful, responsive emails:
+
+```typescript
+// Create a custom email template
+import * as React from 'react';
+import { Body, Button, Container, Head, Heading, Html, Text } from 'jsx-email';
+
+interface VerifyEmailProps {
+  url: string;
+  username?: string;
+}
+
+export const VerifyEmailTemplate = ({ url, username = 'there' }: VerifyEmailProps) => {
+  return (
+    <Html>
+      <Head />
+      <Body>
+        <Container>
+          <Heading>Email Verification</Heading>
+          <Text>Hello {username}!</Text>
+          <Text>Please verify your email by clicking the button below:</Text>
+          <Button href={url}>Verify Email</Button>
+        </Container>
+      </Body>
+    </Html>
+  );
+};
+
+// Generate HTML from the template
+import { render } from 'jsx-email';
+const html = await render(VerifyEmailTemplate({ url: 'https://example.com/verify?token=abc123' }));
+```
+
+## Password Reset
+
+The library provides a comprehensive password reset flow with support for token-based verification and custom URLs:
+
+```typescript
+// Send password reset email (with optional custom redirect URL)
+await authManager.sendPasswordResetEmail(email, 'https://custom-app.com/reset-password');
+
+// Get the reset token (useful for testing or custom flows)
+const resetToken = await authManager.sendPasswordResetEmail(email);
+
+// Verify a reset token
+const isValid = await authManager.verifyPasswordResetToken(userId, resetToken);
+
+// Reset password with token
+const success = await authManager.resetPassword(userId, 'newSecurePassword', resetToken);
+```
+
+### Password Reset Flow
+
+The typical password reset flow works as follows:
+
+1. **Request Password Reset**:
+
+   ```typescript
+   // User requests password reset
+   const resetToken = await authManager.sendPasswordResetEmail(userEmail, 'https://app.com/reset');
+   ```
+
+2. **User Receives Email**:
+   The user receives an email with a link containing the reset token.
+
+3. **Verify Token** (optional):
+
+   ```typescript
+   // Frontend extracts token from URL and verifies it
+   const isValid = await authManager.verifyPasswordResetToken(userId, token);
+   if (isValid) {
+     // Show password reset form
+   }
+   ```
+
+4. **Reset Password**:
+   ```typescript
+   // User submits new password with token
+   const success = await authManager.resetPassword(userId, newPassword, token);
+   ```
+
+### NestJS Integration
+
+The library includes NestJS endpoints for password reset:
+
+```typescript
+// Controller endpoints
+@Post('forgot-password')
+async forgotPassword(@Body('email') email: string, @Body('redirectUrl') redirectUrl?: string) {
+  const token = await this.authService.sendPasswordResetEmail(email, redirectUrl);
+  return { success: true, message: 'Password reset email sent', token };
+}
+
+@Post('verify-reset-token')
+async verifyResetToken(@Body('userId') userId: string, @Body('token') token: string) {
+  const isValid = await this.authService.verifyPasswordResetToken(userId, token);
+  return { valid: isValid };
+}
+
+@Post('reset-password')
+async resetPassword(
+  @Body('userId') userId: string,
+  @Body('token') token: string,
+  @Body('newPassword') newPassword: string
+) {
+  const success = await this.authService.resetPassword(userId, newPassword, token);
+  return { success };
+}
 ```
 
 ## Session Management
@@ -1168,7 +1344,9 @@ class DynamicAuthManager<TUser extends User> {
   async sendVerificationSms(phone: string);
 
   // Password management
-  async resetPassword(userId: string, newPassword: string): Promise<void>;
+  async resetPassword(userId: string, newPassword: string, token?: string): Promise<boolean>;
+  async sendPasswordResetEmail(email: string, resetUrl?: string): Promise<string | void>;
+  async verifyPasswordResetToken(userId: string, token: string): Promise<boolean>;
 
   // Plugin management
   async registerPlugin(plugin: AuthPlugin<TUser>);

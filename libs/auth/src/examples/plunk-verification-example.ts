@@ -1,17 +1,14 @@
 import { Knex } from 'knex';
-import { PlunkEmailVerificationService, PlunkVerificationConfig } from '../services/plunk-verification.service';
-import { User } from '../types';
+import {
+  PlunkEmailVerificationService,
+  PlunkVerificationConfig,
+} from '../services/plunk-verification.service';
+import { AppUser } from './types';
 
 /**
  * Example of how to use the PlunkEmailVerificationService with HTML emails
  */
 export async function setupPlunkVerificationService(knex: Knex) {
-  // Define your user type
-  interface AppUser extends User {
-    name?: string;
-    email: string;
-  }
-
   // Configure the service
   const config: PlunkVerificationConfig = {
     // Plunk configuration (optional if using nodemailer)
@@ -19,11 +16,11 @@ export async function setupPlunkVerificationService(knex: Knex) {
     fromEmail: 'noreply@yourdomain.com',
     fromName: 'Your App',
     templateId: 'your-plunk-template-id',
-    
+
     // Token expiry settings
     tokenExpiryMinutes: 15, // 15 minutes for email verification
     resetTokenExpiryMinutes: 60, // 1 hour for password reset
-    
+
     // Nodemailer configuration (optional)
     useNodemailer: true,
     smtpConfig: {
@@ -35,19 +32,27 @@ export async function setupPlunkVerificationService(knex: Knex) {
         pass: process.env.PLUNK_API_KEY || '',
       },
     },
-    
+
     // URL bases for verification and reset links
     verificationUrlBase: 'https://yourdomain.com/verify?token=',
   };
 
   // Create the service
-  const verificationService = new PlunkEmailVerificationService<AppUser>(knex, config);
+  const verificationService = new PlunkEmailVerificationService<AppUser>(
+    knex,
+    config
+  );
 
   // Example user
   const user: AppUser = {
     id: '123',
     email: 'user@example.com',
     name: 'John Doe',
+    email_verified: false,
+    phone_verified: false,
+    created_at: undefined,
+    updated_at: undefined,
+    mfa_enabled: false,
   };
 
   // Example: Send verification email
@@ -62,11 +67,17 @@ export async function setupPlunkVerificationService(knex: Knex) {
   console.log('Password reset token:', resetToken);
 
   // Example: Verify a token
-  const isValid = await verificationService.verifyPasswordResetToken(resetToken, user.id);
+  const isValid = await verificationService.verifyPasswordResetToken(
+    resetToken,
+    user.id
+  );
   console.log('Is token valid?', isValid);
 
   // Example: Consume a token after password reset
-  const consumed = await verificationService.consumePasswordResetToken(resetToken, user.id);
+  const consumed = await verificationService.consumePasswordResetToken(
+    resetToken,
+    user.id
+  );
   console.log('Token consumed?', consumed);
 
   return verificationService;
@@ -76,18 +87,12 @@ export async function setupPlunkVerificationService(knex: Knex) {
  * Example of how to use the PlunkEmailVerificationService with custom email templates
  */
 export async function setupWithCustomTemplates(knex: Knex) {
-  // Define your user type
-  interface AppUser extends User {
-    name?: string;
-    email: string;
-  }
-
   // Configure the service with custom email templates
   const config: PlunkVerificationConfig = {
     apiKey: process.env.PLUNK_API_KEY || '',
     fromEmail: 'noreply@yourdomain.com',
     fromName: 'Your App',
-    
+
     // Use nodemailer with Plunk SMTP
     useNodemailer: true,
     smtpConfig: {
@@ -99,11 +104,11 @@ export async function setupWithCustomTemplates(knex: Knex) {
         pass: process.env.PLUNK_API_KEY || '',
       },
     },
-    
+
     // Custom email template generators
     generateHtmlEmail: async (params) => {
       const { name, token, verificationUrl, expiresInMinutes } = params;
-      
+
       // You can use any template engine or HTML generation library here
       return `
         <!DOCTYPE html>
@@ -114,17 +119,21 @@ export async function setupWithCustomTemplates(knex: Knex) {
         <body>
           <h1>Hello ${name}!</h1>
           <p>Please verify your email by using this code: <strong>${token}</strong></p>
-          ${verificationUrl ? `<p>Or click <a href="${verificationUrl}">here</a> to verify.</p>` : ''}
+          ${
+            verificationUrl
+              ? `<p>Or click <a href="${verificationUrl}">here</a> to verify.</p>`
+              : ''
+          }
           <p>This code will expire in ${expiresInMinutes} minutes.</p>
         </body>
         </html>
       `;
     },
-    
+
     // Custom password reset email template
     generatePasswordResetEmail: async (params) => {
       const { name, resetUrl } = params;
-      
+
       return `
         <!DOCTYPE html>
         <html>
