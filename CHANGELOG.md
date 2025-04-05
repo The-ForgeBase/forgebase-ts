@@ -11,12 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
-* Merge pull request #28 from The-ForgeBase/nest (4c6842c)
-* feat: Implement authentication integration for Next.js, Nitro, and React (a37b398)
-* feat: Add ForgebaseAuth SDK with authentication features and hooks (624dedd)
-* feat: Add dynamic URL generation for verification and password reset (e682670)
-* feat: Add dynamic URL generation for verification and password reset (b4978cb)
-* feat: enhance authentication flow with improved route handling and user verification (61d6003)
-* Refactor code structure for improved readability and maintainability (64ebff9)
+* Merge pull request #29 from The-ForgeBase/nest (b01a335)
+* feat: Simplify DatabaseSDK initialization by removing unnecessary credentials option (06bf198)
 
 For changes in previous releases, please check the Git history.
