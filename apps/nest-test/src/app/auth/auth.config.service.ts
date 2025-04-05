@@ -151,11 +151,32 @@ export class AuthConfigService implements OnModuleInit {
       }
 
       const plunkVerificationService = new PlunkEmailVerificationService(db, {
-        apiKey: '',
+        apiKey: process.env.PLUNK_API_KEY || '',
         fromEmail: 'noreply@yourdomain.com',
         fromName: 'Your App',
         templateId: 'your-template-id',
         tokenExpiryMinutes: 30,
+        resetTokenExpiryMinutes: 60, // 1 hour for password reset tokens
+
+        // Use nodemailer with Plunk SMTP
+        useNodemailer: true,
+
+        // URL bases for verification and reset links
+        // Note: In a production environment, these should be configurable
+        // based on the deployment environment or tenant configuration
+        verificationUrlBase: 'http://localhost:3000/verify',
+        resetUrlBase: 'http://localhost:3000/reset-password',
+
+        // Use JSX-Email templates
+        useJsxTemplates: true,
+
+        // Additional query parameters
+        additionalQueryParams: {
+          source: 'email',
+        },
+
+        // Custom token query parameter name (optional)
+        tokenQueryParam: 'token',
       });
 
       // Initialize auth manager with the JoseJwtManager

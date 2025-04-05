@@ -95,8 +95,58 @@ export interface UserService<TUser extends User> {
 }
 
 export interface EmailVerificationService<TUser extends User> {
-  sendVerificationEmail(email: string, user: TUser): Promise<void>;
+  /**
+   * Send a verification email to the user
+   * @param email The recipient's email address
+   * @param user The user object
+   * @param customVerificationUrlBase Optional custom base URL for verification link
+   * @returns The generated verification token (optional)
+   */
+  sendVerificationEmail(
+    email: string,
+    user: TUser,
+    customVerificationUrlBase?: string
+  ): Promise<string | void>;
+
+  /**
+   * Verify an email verification token
+   * @param email The email address to verify
+   * @param token The verification token
+   * @param user The user object
+   * @returns Whether the verification was successful
+   */
   verifyEmail(email: string, token: string, user: TUser): Promise<boolean>;
+
+  /**
+   * Send a password reset email to the user
+   * @param email The recipient's email address
+   * @param user The user object
+   * @param resetUrl Optional URL for password reset
+   * @param customResetUrlBase Optional custom base URL for reset link
+   * @returns The generated reset token
+   */
+  sendPasswordResetEmail(
+    email: string,
+    user: TUser,
+    resetUrl?: string,
+    customResetUrlBase?: string
+  ): Promise<string>;
+
+  /**
+   * Verify a password reset token
+   * @param email The email address associated with the token
+   * @param token The password reset token
+   * @returns Whether the token is valid
+   */
+  verifyPasswordResetToken(email: string, token: string): Promise<boolean>;
+
+  /**
+   * Consume a verification token
+   * @param token The verification token
+   * @param userId The user ID
+   * @returns Whether the token was successfully consumed
+   */
+  consumePasswordResetToken(token: string, userId: string): Promise<boolean>;
 }
 
 export interface SmsVerificationService<TUser extends User> {

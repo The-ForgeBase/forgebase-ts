@@ -86,7 +86,13 @@ export class AuthController<TUser extends User> {
         }
       }
 
-      return res.json(result);
+      // Include verification token in the response if available
+      const response = {
+        ...result,
+        verificationToken: result['verificationToken'] || undefined,
+      };
+
+      return res.json(response);
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
@@ -287,6 +293,88 @@ export class AuthController<TUser extends User> {
     try {
       const result = await this.authService.verifyEmail(userId, code);
       return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('send-verification-email')
+  async sendVerificationEmail(
+    @Body('email') email: string,
+    @Res() res: Response,
+    @Body('redirectUrl') redirectUrl?: string
+  ) {
+    try {
+      // Send the verification email with the redirectUrl
+      const token = await this.authService.sendVerificationEmail(
+        email,
+        redirectUrl
+      );
+
+      return res.json({
+        success: true,
+        message: 'Verification email sent',
+        token: token || undefined,
+      });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(
+    @Body('email') email: string,
+    @Res() res: Response,
+    @Body('redirectUrl') redirectUrl?: string
+  ) {
+    try {
+      // Send the password reset email with the redirectUrl
+      const token = await this.authService.sendPasswordResetEmail(
+        email,
+        redirectUrl
+      );
+
+      return res.json({
+        success: true,
+        message: 'Password reset email sent',
+        token: token || undefined,
+      });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('verify-reset-token')
+  async verifyResetToken(
+    @Body('userId') userId: string,
+    @Body('token') token: string,
+    @Res() res: Response
+  ) {
+    try {
+      const isValid = await this.authService.verifyPasswordResetToken(
+        userId,
+        token
+      );
+      return res.json({ valid: isValid });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body('userId') userId: string,
+    @Body('token') token: string,
+    @Body('newPassword') newPassword: string,
+    @Res() res: Response
+  ) {
+    try {
+      const success = await this.authService.resetPassword(
+        userId,
+        newPassword,
+        token
+      );
+      return res.json({ success });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
