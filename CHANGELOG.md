@@ -11,11 +11,12 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
-* Merge pull request #27 from The-ForgeBase/nest (f92985b)
-* feat: update navigation branding and enhance authentication middleware with improved error handling and redirects (1595ef3)
-* feat: add new table creation component with dynamic column management (3bdb9dd)
-* feat: add checked binding for column properties in NewTableComponent (019382b)
-* feat: enhance NewTableComponent and TableSettingsComponent with additional column properties and UI improvements (45a8482)
-* feat: add TableSettingsComponent and integrate it into TablesComponentPage for schema configuration (be8f5b5)
+* Merge pull request #28 from The-ForgeBase/nest (4c6842c)
+* feat: Implement authentication integration for Next.js, Nitro, and React (a37b398)
+* feat: Add ForgebaseAuth SDK with authentication features and hooks (624dedd)
+* feat: Add dynamic URL generation for verification and password reset (e682670)
+* feat: Add dynamic URL generation for verification and password reset (b4978cb)
+* feat: enhance authentication flow with improved route handling and user verification (61d6003)
+* Refactor code structure for improved readability and maintainability (64ebff9)
 
 For changes in previous releases, please check the Git history.
