@@ -462,6 +462,26 @@ export class AuthController<TUser extends User> {
     return { user };
   }
 
+  //TODO: To be deprecated
+  @Post('verify-token')
+  @UseGuards(AuthGuard)
+  async verifyToken(@Body('token') token: string, @Res() res: Response) {
+    try {
+      // Use the auth service to validate the token
+      const result = await this.authService.validateSessionToken(token);
+
+      return res.json({
+        valid: true,
+        user: result,
+      });
+    } catch (error) {
+      return res.status(401).json({
+        valid: false,
+        error: error.message,
+      });
+    }
+  }
+
   @Post('disable-mfa')
   @UseGuards(AuthGuard)
   async disableMfa(

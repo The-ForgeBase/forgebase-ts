@@ -188,6 +188,10 @@ export class AuthService<TUser extends User> {
     return this.authManager.validateToken(token, provider);
   }
 
+  async validateSessionToken(token: string): Promise<TUser> {
+    return this.authManager.validateSessionToken(token);
+  }
+
   getProviderConfig(provider: string) {
     return this.authManager.getProviderConfig(provider);
   }

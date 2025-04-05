@@ -353,6 +353,10 @@ export class DynamicAuthManager<TUser extends User> {
     return this.sessionManager.createSession(user);
   }
 
+  async validateSessionToken(token: string): Promise<TUser> {
+    return this.sessionManager.validateToken(token) as Promise<TUser>;
+  }
+
   async validateToken(
     token: string,
     provider: string

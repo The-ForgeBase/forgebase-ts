@@ -219,6 +219,7 @@ export interface SessionManager {
     token: string
   ): Promise<{ user: User; token?: string | AuthToken }>;
   refreshSession?(refreshToken: string): Promise<AuthToken | string>;
+  validateToken?(token: string): Promise<User>;
 }
 
 export class UserNotFoundError extends Error {

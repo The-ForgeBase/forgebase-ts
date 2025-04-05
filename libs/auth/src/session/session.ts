@@ -60,4 +60,24 @@ export class BasicSessionManager implements SessionManager {
     const sessionToken = generateSessionId(token);
     await this.knex('sessions').where({ token: sessionToken }).delete();
   }
+
+  async refreshSession(refreshToken: string): Promise<AuthToken | string> {
+    throw new Error('Method not implemented.');
+  }
+
+  async validateToken(token: string): Promise<User> {
+    const sessionToken = generateSessionId(token);
+    const session = await this.knex('sessions')
+      .where({ token: sessionToken })
+      .where('expires_at', '>', new Date())
+      .first();
+
+    if (!session) throw new Error('Invalid session');
+    const user = await this.knex('users')
+      .where({ id: session.user_id })
+      .first();
+
+    if (!user) throw new Error('Invalid session');
+    return user;
+  }
 }

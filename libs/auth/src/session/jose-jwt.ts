@@ -247,6 +247,23 @@ export class JoseJwtSessionManager implements SessionManager {
   }
 
   /**
+   * Validate a token (optional)
+   *
+   * @param {string} token - Token to validate
+   * @returns {Promise<User>} User associated with the token
+   */
+  async validateToken(token: string): Promise<User> {
+    const verified = await this.verifyJwt(token);
+    const userId = verified.payload.sub as string;
+
+    const user = await this.knex('users').where({ id: userId }).first();
+
+    if (!user) throw new Error('Invalid access token');
+
+    return user;
+  }
+
+  /**
    * Destroy a session
    *
    * @param {string} token - Token to destroy

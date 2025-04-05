@@ -123,4 +123,14 @@ export class JwtSessionManager implements SessionManager {
     await this.knex('access_tokens').where({ token }).delete();
     await this.knex('refresh_tokens').where({ token }).delete();
   }
+
+  async validateToken(token: string): Promise<User> {
+    const decoded = jwt.verify(token, this.secret);
+    if (!decoded) throw new Error('Invalid access token');
+
+    const user = await this.knex('users').where({ id: decoded.sub }).first();
+
+    if (!user) throw new Error('Invalid access token');
+    return user;
+  }
 }
