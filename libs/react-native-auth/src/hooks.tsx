@@ -1,4 +1,4 @@
-import {
+import React, {
   useEffect,
   useState,
   useCallback,
@@ -12,6 +12,7 @@ import {
   LoginCredentials,
   RegisterCredentials,
 } from './types';
+import { AxiosInstance } from 'axios';
 
 /**
  * Auth context interface
@@ -46,9 +47,7 @@ interface AuthContextType {
 /**
  * Create the auth context
  */
-export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
  * Auth provider props

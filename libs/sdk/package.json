@@ -30,12 +30,6 @@
       "import": "./dist/jwt/index.js",
       "default": "./dist/jwt/index.js",
       "require": "./dist/jwt/index.js"
-    },
-    "./auth": {
-      "types": "./dist/auth/index.d.ts",
-      "import": "./dist/auth/index.js",
-      "default": "./dist/auth/index.js",
-      "require": "./dist/auth/index.js"
     }
   },
   "typesVersions": {
@@ -48,9 +42,6 @@
       ],
       "jwt": [
         "./dist/jwt/index.d.ts"
-      ],
-      "auth": [
-        "./dist/auth/index.d.ts"
       ]
     }
   },
@@ -58,12 +49,9 @@
     "tslib": "^2.3.0",
     "knex": "^3.1.0",
     "@forgebase-ts/database": "0.0.1",
-    "react": "18.3.1",
-    "@angular/core": "^19.0.0",
-    "@angular/common": "^19.0.0",
-    "rxjs": "^7.8.0",
     "hono": "^4.6.19",
     "express": "^4.21.2",
-    "jose": "^6.0.10"
+    "jose": "^6.0.10",
+    "axios": "^1.7.9"
   }
 }

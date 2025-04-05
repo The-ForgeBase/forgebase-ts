@@ -4,8 +4,7 @@
     "outDir": "../../dist/out-tsc",
     "module": "commonjs",
     "moduleResolution": "node10",
-    "types": ["jest", "node"],
-    "jsx": "react-native"
+    "types": ["jest", "node"]
   },
   "include": [
     "jest.config.ts",

@@ -1,0 +1,19 @@
+{
+  "name": "web-auth",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/web-auth/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/web-auth",
+        "main": "libs/web-auth/src/index.ts",
+        "tsConfig": "libs/web-auth/tsconfig.lib.json",
+        "assets": ["libs/web-auth/*.md"]
+      }
+    }
+  }
+}

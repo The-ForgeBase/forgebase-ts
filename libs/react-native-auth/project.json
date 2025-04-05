@@ -1,7 +1,7 @@
 {
   "name": "react-native-auth",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "react-native-auth/src",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/react-native-auth/src",
   "projectType": "library",
   "tags": [],
   "targets": {
@@ -9,10 +9,10 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/react-native-auth",
-        "main": "react-native-auth/src/index.ts",
-        "tsConfig": "react-native-auth/tsconfig.lib.json",
-        "assets": ["react-native-auth/*.md"]
+        "outputPath": "dist/libs/react-native-auth",
+        "main": "libs/react-native-auth/src/index.ts",
+        "tsConfig": "libs/react-native-auth/tsconfig.lib.json",
+        "assets": ["libs/react-native-auth/*.md"]
       }
     }
   }
