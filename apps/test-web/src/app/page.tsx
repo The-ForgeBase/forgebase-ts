@@ -2,8 +2,8 @@ import Link from 'next/link';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 w-full">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full text-center">
         <h1 className="text-3xl font-bold mb-6">ForgebaseWebAuth Test</h1>
         <p className="mb-8 text-gray-600">
           Welcome to the ForgebaseWebAuth test application. This app
@@ -11,7 +11,7 @@ export default function HomePage() {
           Next.js App Router.
         </p>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 max-w-md mx-auto mb-8">
           <Link
             href="/login"
             className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"

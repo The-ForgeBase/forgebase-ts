@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { hashPassword } from './lib/password';
+import { sanitizeUser } from './lib/sanitize';
 import { BaseOAuthProvider } from './providers';
 import {
   AuthConfig,
@@ -159,7 +160,9 @@ export class DynamicAuthManager<TUser extends User> {
       const token = await this.sessionManager.createSession(user);
       // Execute post-login hooks
       await this.executeHooks('afterLoginFromReg', { user, token });
-      return { user, token };
+      // Sanitize user data before returning
+      const sanitizedUser = sanitizeUser(user);
+      return { user: sanitizedUser, token };
     }
 
     // Handle email verification if required
@@ -191,9 +194,9 @@ export class DynamicAuthManager<TUser extends User> {
       verificationToken,
     });
 
-    // Return user, empty token, and verification token if available
+    // Return sanitized user, empty token, and verification token if available
     return {
-      user,
+      user: sanitizeUser(user),
       token: '',
       verificationToken: verificationToken || undefined,
     };
@@ -257,7 +260,8 @@ export class DynamicAuthManager<TUser extends User> {
     }
 
     const token = await this.sessionManager.createSession(user);
-    return { user, token };
+    // Sanitize user data before returning
+    return { user: sanitizeUser(user), token };
   }
 
   async login(
@@ -326,7 +330,8 @@ export class DynamicAuthManager<TUser extends User> {
     const token = await this.sessionManager.createSession(user);
     // Execute post-login hooks
     await this.executeHooks('afterLogin', { provider, user, token });
-    return { user, token };
+    // Sanitize user data before returning
+    return { user: sanitizeUser(user), token };
   }
 
   getConfig() {
@@ -364,11 +369,16 @@ export class DynamicAuthManager<TUser extends User> {
 
       const fToken = await this.sessionManager.createSession(user);
 
-      return { user, token: fToken };
+      // Sanitize user data before returning
+      return { user: sanitizeUser(user), token: fToken };
     }
 
-    const user = await this.sessionManager.verifySession(token);
-    return user as { user: TUser; token?: string | AuthToken };
+    const result = await this.sessionManager.verifySession(token);
+    // Sanitize user data before returning
+    return {
+      user: sanitizeUser(result.user) as TUser,
+      token: result.token,
+    };
   }
 
   async logout(token: string): Promise<void> {
@@ -396,7 +406,8 @@ export class DynamicAuthManager<TUser extends User> {
       email_verified: true,
     });
     const token = await this.sessionManager.createSession(user);
-    return { user, token };
+    // Sanitize user data before returning
+    return { user: sanitizeUser(user), token };
   }
 
   /**
@@ -488,7 +499,8 @@ export class DynamicAuthManager<TUser extends User> {
       phone_verified: true,
     });
     const token = await this.sessionManager.createSession(user);
-    return { user, token };
+    // Sanitize user data before returning
+    return { user: sanitizeUser(user), token };
   }
 
   /**

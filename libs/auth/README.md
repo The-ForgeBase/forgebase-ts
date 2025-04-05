@@ -44,6 +44,7 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
   - Brute force protection and rate limiting
   - Password policies with HaveIBeenPwned
   - Input validation and sanitization
+  - User data sanitization for sensitive fields
   - CSRF protection
   - Security headers management
 
@@ -1220,10 +1221,16 @@ const data = await sessionManager.getTokenData(token);
    - Proper key size (RSA 2048+ bits)
 
 4. **Token Validation**:
+
    - Verify signature
    - Check expiration
    - Validate issuer and audience
    - Verify claims
+
+5. **User Data Sanitization**:
+   - Remove sensitive fields before sending to clients
+   - Sanitize user objects in all auth responses
+   - Protect password hashes, MFA secrets, and recovery codes
 
 Example security configuration:
 
@@ -1316,6 +1323,16 @@ try {
 ```
 
 ## API Reference
+
+### Utility Functions
+
+```typescript
+// Sanitize a user object by removing sensitive fields
+function sanitizeUser<T extends User>(user: T): T;
+
+// Sanitize an array of user objects
+function sanitizeUsers<T extends User>(users: T[]): T[];
+```
 
 ### DynamicAuthManager
 
