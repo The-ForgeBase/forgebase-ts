@@ -36,8 +36,8 @@ export class AuthController<TUser extends User> {
   }
 
   private extractRefreshToken(req: Request): string | null {
-    if (req.headers.authorization?.startsWith('RToken ')) {
-      return req.headers.authorization.substring(7);
+    if (req.headers['X-Refresh-Token']) {
+      return req.headers['X-Refresh-Token'] as string;
     }
     if (req.cookies && req.cookies.refreshToken) {
       return req.cookies.refreshToken;
@@ -134,7 +134,7 @@ export class AuthController<TUser extends User> {
         });
       }
 
-      return res.json({ user: result.user });
+      return res.json({ user: result.user, token: result.token });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
@@ -240,7 +240,7 @@ export class AuthController<TUser extends User> {
     }
   }
 
-  @Post('refresh')
+  @Post('refresh-token')
   @UseGuards(AuthGuard)
   async refresh(@Req() req: Request, @Res() res: Response) {
     const refreshToken = this.extractRefreshToken(req);
@@ -278,7 +278,7 @@ export class AuthController<TUser extends User> {
         });
       }
 
-      return res.json({ success: true });
+      return res.json({ success: true, token });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
