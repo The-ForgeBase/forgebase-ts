@@ -2,20 +2,12 @@ import { AuthConfig, AuthToken, SessionManager, User } from '../types';
 import { Knex } from 'knex';
 import { timeStringToDate } from '@forgebase-ts/common';
 import * as jose from 'jose';
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 
 /**
  * Interface for key storage options
  */
 export interface KeyStorageOptions {
-  /**
-   * Directory to store keys
-   * @default './.keys'
-   */
-  keyDirectory?: string;
-
   /**
    * Key ID for the current key pair
    * @default generated UUID
@@ -45,13 +37,10 @@ export interface KeyStorageOptions {
 export class JoseJwtSessionManager implements SessionManager {
   private config: AuthConfig;
   private knex: Knex;
-  private privateKey: any | Uint8Array | null = null;
-  // this is a workaround for jose types in build
-  // private publicKey: jose.KeyLike | Uint8Array | null = null;
-  private publicKey: any | Uint8Array | null = null;
+  private privateKey: CryptoKey | Uint8Array | null = null;
+  private publicKey: CryptoKey | Uint8Array | null = null;
   private keyId: string;
   private algorithm: string;
-  private keyDirectory: string;
   private rotationInterval: number;
   private publicJwk: jose.JWK | null = null;
 
@@ -71,14 +60,8 @@ export class JoseJwtSessionManager implements SessionManager {
     this.knex = knex;
     this.keyId = keyOptions.kid || crypto.randomUUID();
     this.algorithm = keyOptions.algorithm || 'RS256';
-    this.keyDirectory = keyOptions.keyDirectory || './.keys';
     this.rotationInterval =
       (keyOptions.rotationDays || 90) * 24 * 60 * 60 * 1000; // Convert days to milliseconds
-
-    // Ensure key directory exists
-    if (!fs.existsSync(this.keyDirectory)) {
-      fs.mkdirSync(this.keyDirectory, { recursive: true });
-    }
   }
 
   /**
@@ -227,7 +210,7 @@ export class JoseJwtSessionManager implements SessionManager {
       }
 
       return { user };
-    } catch (verifyError) {
+    } catch {
       // If direct verification fails, try the database lookup as backup
       const accessToken = await this.knex('access_tokens')
         .where({ token })
@@ -279,7 +262,6 @@ export class JoseJwtSessionManager implements SessionManager {
     if (!this.publicKey) return null;
 
     if (this.publicKey instanceof CryptoKey) {
-      //   const jwk = await jose.exportJWK(this.publicKey);
       const pem = await jose.exportSPKI(this.publicKey);
       return pem;
     }
@@ -293,6 +275,13 @@ export class JoseJwtSessionManager implements SessionManager {
   async rotateKeys(): Promise<void> {
     this.keyId = crypto.randomUUID();
     await this.generateKeyPair();
+
+    // Update the previous key's rotation timestamp
+    await this.knex('crypto_keys').where({ is_current: true }).update({
+      is_current: false,
+      rotated_at: this.knex.fn.now(),
+    });
+
     console.log(`Key rotated: New key ID ${this.keyId}`);
   }
 
@@ -300,39 +289,26 @@ export class JoseJwtSessionManager implements SessionManager {
    * Load existing keys or generate new ones
    */
   private async loadOrGenerateKeys(): Promise<void> {
-    const privateKeyPath = path.join(
-      this.keyDirectory,
-      `private_${this.keyId}.json`
-    );
-    const publicKeyPath = path.join(
-      this.keyDirectory,
-      `public_${this.keyId}.json`
-    );
+    const currentKey = await this.knex('crypto_keys')
+      .where({ is_current: true })
+      .first();
 
-    if (fs.existsSync(privateKeyPath) && fs.existsSync(publicKeyPath)) {
+    if (currentKey) {
       try {
-        // Load existing keys
-        const privateKeyJson = JSON.parse(
-          fs.readFileSync(privateKeyPath, 'utf8')
-        );
-        const publicKeyJson = JSON.parse(
-          fs.readFileSync(publicKeyPath, 'utf8')
-        );
-
+        this.keyId = currentKey.kid;
+        this.algorithm = currentKey.algorithm;
         this.privateKey = await jose.importJWK(
-          privateKeyJson,
-          this.algorithm as string
+          JSON.parse(currentKey.private_key),
+          this.algorithm
         );
         this.publicKey = await jose.importJWK(
-          publicKeyJson,
-          this.algorithm as string
+          JSON.parse(currentKey.public_key),
+          this.algorithm
         );
-        this.publicJwk = publicKeyJson;
+        this.publicJwk = JSON.parse(currentKey.public_key);
 
-        // Check if keys need rotation based on file creation time
-        const fileStats = fs.statSync(privateKeyPath);
-        const keyAge = Date.now() - fileStats.birthtime.getTime();
-
+        // Check if keys need rotation based on creation time
+        const keyAge = Date.now() - new Date(currentKey.created_at).getTime();
         if (keyAge > this.rotationInterval) {
           console.log(
             'Keys are older than rotation interval, generating new keys'
@@ -344,7 +320,6 @@ export class JoseJwtSessionManager implements SessionManager {
         await this.generateKeyPair();
       }
     } else {
-      // Generate new keys
       await this.generateKeyPair();
     }
   }
@@ -386,21 +361,14 @@ export class JoseJwtSessionManager implements SessionManager {
 
       this.publicJwk = publicJwk;
 
-      // Save keys to files
-      const privateKeyPath = path.join(
-        this.keyDirectory,
-        `private_${this.keyId}.json`
-      );
-      const publicKeyPath = path.join(
-        this.keyDirectory,
-        `public_${this.keyId}.json`
-      );
-
-      fs.writeFileSync(privateKeyPath, JSON.stringify(privateJwk, null, 2));
-      fs.writeFileSync(publicKeyPath, JSON.stringify(publicJwk, null, 2));
-
-      // Set permissions on private key for security
-      fs.chmodSync(privateKeyPath, 0o600);
+      // Save keys to database
+      await this.knex('crypto_keys').insert({
+        kid: this.keyId,
+        algorithm: this.algorithm,
+        private_key: JSON.stringify(privateJwk),
+        public_key: JSON.stringify(publicJwk),
+        is_current: true,
+      });
     } catch (error) {
       console.error('Error generating key pair:', error);
       throw new Error(
@@ -413,11 +381,11 @@ export class JoseJwtSessionManager implements SessionManager {
   /**
    * Generate a signed JWT
    *
-   * @param {Record<string, any>} payload - JWT payload
+   * @param {Record<string, string | number>} payload - JWT payload
    * @returns {Promise<string>} Signed JWT
    */
   private async generateSignedJwt(
-    payload: Record<string, any>,
+    payload: Record<string, string | number>,
     expiresIn: string
   ): Promise<string> {
     if (!this.privateKey || !this.publicJwk) {

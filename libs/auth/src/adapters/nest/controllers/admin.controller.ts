@@ -39,8 +39,8 @@ export class AdminController {
           : 'admin_token',
         result.token,
         {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
+          httpOnly: this.adminConfig.cookieOptions?.httpOnly || false,
+          secure: process.env.NODE_ENV === 'production' ? false : false,
           sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
           maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
           path: '/',

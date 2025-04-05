@@ -25,7 +25,7 @@
 //   5000,
 //   true,
 //   { knex: db },
-//   verificationService,
+//   EmailVerificationService,
 //   [magicLinkPlugin] // Pass the plugin
 // );
 

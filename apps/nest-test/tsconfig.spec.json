@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "module": "commonjs",
-    "moduleResolution": "node10","types": ["jest", "node"]
+    "moduleResolution": "node10",
+    "types": ["jest", "node"],
+    "jsx": "react"
   },
   "include": [
     "jest.config.ts",

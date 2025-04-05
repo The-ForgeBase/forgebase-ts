@@ -191,13 +191,34 @@ export interface ApiResponse<T extends Record<string, any>> {
   id?: number;
 }
 
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+
 export class DatabaseSDK {
   private baseUrl: string;
-  private defaultFetchOptions: RequestInit;
+  private axiosInstance: AxiosInstance;
 
-  constructor(baseUrl: string, fetchOptions: RequestInit = {}) {
+  /**
+   * Create a new DatabaseSDK instance
+   * @param baseUrl The base URL for API requests
+   * @param axiosInstance Optional custom axios instance (e.g., from ForgebaseAuth)
+   * @param axiosConfig Optional axios configuration
+   */
+  constructor(
+    baseUrl: string,
+    axiosInstance?: AxiosInstance,
+    axiosConfig: AxiosRequestConfig = {}
+  ) {
     this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
-    this.defaultFetchOptions = fetchOptions;
+
+    // Use the provided axios instance or create a new one
+    if (axiosInstance) {
+      this.axiosInstance = axiosInstance;
+    } else {
+      this.axiosInstance = axios.create({
+        baseURL: this.baseUrl,
+        ...axiosConfig,
+      });
+    }
   }
 
   /**
@@ -209,22 +230,11 @@ export class DatabaseSDK {
   }
 
   /**
-   * Get the default fetch options
-   * @returns The default fetch options
+   * Get the axios instance used for API requests
+   * @returns The axios instance
    */
-  getDefaultFetchOptions(): RequestInit {
-    return this.defaultFetchOptions;
-  }
-
-  /**
-   * Set or update default fetch options
-   * @param fetchOptions The fetch options to set
-   */
-  setDefaultFetchOptions(fetchOptions: RequestInit): void {
-    this.defaultFetchOptions = {
-      ...this.defaultFetchOptions,
-      ...fetchOptions,
-    };
+  getAxiosInstance(): AxiosInstance {
+    return this.axiosInstance;
   }
 
   /**
@@ -232,14 +242,14 @@ export class DatabaseSDK {
    * @param tableName The name of the table to query
    * @param params Query parameters including filters and pagination
    * @param options Query options
-   * @param fetchOptions Custom fetch options for this specific request
+   * @param axiosConfig Custom axios config for this specific request
    * @returns Promise containing the fetched records
    */
   async getRecords<T extends Record<string, any>>(
     tableName: string,
     params: QueryParams<T> = {},
     options: QueryOptions = { execute: true },
-    fetchOptions: RequestInit = {}
+    axiosConfig: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
     // Build query parameters
     const queryParams = new URLSearchParams();
@@ -255,11 +265,22 @@ export class DatabaseSDK {
       return { params: params };
     }
 
-    const url = `${this.baseUrl}/${tableName}${
+    const url = `/${tableName}${
       queryParams.toString() ? `?${queryParams.toString()}` : ''
     }`;
 
-    return this.fetchApi<ApiResponse<T>>(url, fetchOptions);
+    try {
+      const response = await this.axiosInstance.get<ApiResponse<T>>(
+        url,
+        axiosConfig
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || error.message);
+      }
+      throw error;
+    }
   }
 
   private serializeQueryParams<T extends Record<string, any>>(
@@ -283,27 +304,29 @@ export class DatabaseSDK {
    * Creates a new record in the specified table
    * @param tableName The name of the table to create the record in
    * @param data The data to create the record with
-   * @param fetchOptions Custom fetch options for this specific request
+   * @param axiosConfig Custom axios config for this specific request
    * @returns Promise containing the created record
    */
   async createRecord<T extends Record<string, any>>(
     tableName: string,
     data: T,
-    fetchOptions: RequestInit = {}
+    axiosConfig: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
-    const url = `${this.baseUrl}/${tableName}`;
-
-    return this.fetchApi<ApiResponse<T>>(url, {
-      method: 'POST',
-      body: JSON.stringify({ data }),
-      ...fetchOptions,
-      headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions.headers,
-      },
-    });
+    try {
+      const response = await this.axiosInstance.post<ApiResponse<T>>(
+        `/${tableName}`,
+        { data },
+        axiosConfig
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || error.message);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -311,47 +334,56 @@ export class DatabaseSDK {
    * @param tableName The name of the table containing the record to update
    * @param id The ID of the record to update
    * @param data The data to update the record with
-   * @param fetchOptions Custom fetch options for this specific request
+   * @param axiosConfig Custom axios config for this specific request
    * @returns Promise containing the updated record
    */
   async updateRecord<T extends Record<string, any>>(
     tableName: string,
     id: number | string,
     data: Partial<T>,
-    fetchOptions: RequestInit = {}
+    axiosConfig: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
-    const url = `${this.baseUrl}/${tableName}/${id}`;
-
-    return this.fetchApi<ApiResponse<T>>(url, {
-      method: 'PUT',
-      body: JSON.stringify({ data }),
-      ...fetchOptions,
-      headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions.headers,
-      },
-    });
+    try {
+      const response = await this.axiosInstance.put<ApiResponse<T>>(
+        `/${tableName}/${id}`,
+        { data },
+        axiosConfig
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || error.message);
+      }
+      throw error;
+    }
   }
 
   /**
    * Deletes a record by ID from the specified table
+   * @param tableName The name of the table containing the record to delete
+   * @param id The ID of the record to delete
+   * @param axiosConfig Custom axios config for this specific request
+   * @returns Promise containing the result of the deletion
    */
-  async deleteRecord(
+  async deleteRecord<T extends Record<string, any>>(
     tableName: string,
     id: number | string,
-    fetchOptions: RequestInit = {}
+    axiosConfig: AxiosRequestConfig = {}
   ): Promise<ApiResponse<never>> {
-    const url = `${this.baseUrl}/${tableName}/${id}`;
-
-    return this.fetchApi<ApiResponse<never>>(url, {
-      method: 'DELETE',
-      ...fetchOptions,
-      headers: {
-        ...fetchOptions.headers,
-      },
-    });
+    try {
+      const response = await this.axiosInstance.delete<ApiResponse<never>>(
+        `/${tableName}/${id}`,
+        axiosConfig
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || error.message);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -368,41 +400,6 @@ export class DatabaseSDK {
   private validateData(data: Record<string, any>): void {
     if (typeof data !== 'object' || Object.keys(data).length === 0) {
       throw new Error('Invalid data: must be a non-empty object');
-    }
-  }
-
-  /**
-   * Generic API fetch method with error handling
-   */
-  private async fetchApi<T>(
-    url: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    try {
-      // Merge default fetch options with request-specific options
-      const mergedOptions: RequestInit = {
-        ...this.defaultFetchOptions,
-        ...options,
-        headers: {
-          ...this.defaultFetchOptions.headers,
-          ...options.headers,
-        },
-      };
-
-      const response = await fetch(url, mergedOptions);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      return (await response.json()) as T;
-    } catch (error) {
-      throw error instanceof Error
-        ? error
-        : new Error('An unknown error occurred');
     }
   }
 }
@@ -982,15 +979,15 @@ class QueryBuilder<T extends Record<string, any>> {
 
   /**
    * Execute with transformations
-   * @param fetchOptions Optional fetch options to be used for this request
+   * @param axiosConfig Optional axios config to be used for this request
    * @returns Promise with the query results
    */
-  async execute(fetchOptions: RequestInit = {}): Promise<ApiResponse<T>> {
+  async execute(axiosConfig: AxiosRequestConfig = {}): Promise<ApiResponse<T>> {
     const response = await this.sdk.getRecords<T>(
       this.tableName,
       this.params,
       { execute: true },
-      fetchOptions
+      axiosConfig
     );
 
     if (this.params.transforms && response.records) {
@@ -1003,39 +1000,42 @@ class QueryBuilder<T extends Record<string, any>> {
   /**
    * Create a record in the table
    * @param data The data to create
-   * @param fetchOptions Optional fetch options to be used for this request
+   * @param axiosConfig Optional axios config to be used for this request
+   * @returns Promise with the created record
    */
   async create(
     data: T,
-    fetchOptions: RequestInit = {}
+    axiosConfig: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
-    return this.sdk.createRecord<T>(this.tableName, data, fetchOptions);
+    return this.sdk.createRecord<T>(this.tableName, data, axiosConfig);
   }
 
   /**
    * Update a record by ID
    * @param id The ID of the record to update
    * @param data The data to update
-   * @param fetchOptions Optional fetch options to be used for this request
+   * @param axiosConfig Optional axios config to be used for this request
+   * @returns Promise with the updated record
    */
   async update(
     id: number | string,
     data: Partial<T>,
-    fetchOptions: RequestInit = {}
+    axiosConfig: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
-    return this.sdk.updateRecord<T>(this.tableName, id, data, fetchOptions);
+    return this.sdk.updateRecord<T>(this.tableName, id, data, axiosConfig);
   }
 
   /**
    * Delete a record by ID
    * @param id The ID of the record to delete
-   * @param fetchOptions Optional fetch options to be used for this request
+   * @param axiosConfig Optional axios config to be used for this request
+   * @returns Promise with the deletion result
    */
   async delete(
     id: number | string,
-    fetchOptions: RequestInit = {}
+    axiosConfig: AxiosRequestConfig = {}
   ): Promise<ApiResponse<never>> {
-    return this.sdk.deleteRecord(this.tableName, id, fetchOptions);
+    return this.sdk.deleteRecord(this.tableName, id, axiosConfig);
   }
 
   private applyTransformations(response: ApiResponse<T>): ApiResponse<T> {

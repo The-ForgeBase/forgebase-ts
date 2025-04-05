@@ -9,11 +9,13 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request, Response } from 'express';
+import { NestAuthConfig } from '..';
 
 @Injectable()
 export class AuthGuard<TUser extends User> implements CanActivate {
   constructor(
     @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager<TUser>,
+    @Inject('AUTH_CONFIG') private adminConfig: NestAuthConfig,
     private reflector: Reflector
   ) {}
 
@@ -54,17 +56,23 @@ export class AuthGuard<TUser extends User> implements CanActivate {
       if (newToken) {
         if (typeof newToken === 'object' && newToken !== null) {
           res.cookie('token', newToken.accessToken, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
+            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
             secure: process.env.NODE_ENV === 'production',
           });
           res.cookie('refreshToken', newToken.refreshToken, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
+            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
             secure: process.env.NODE_ENV === 'production',
           });
         } else {
           res.cookie('token', newToken, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
             secure: process.env.NODE_ENV === 'production',
+            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
           });
         }
       }

@@ -19,15 +19,24 @@ import {
  */
 export default defineEventHandler(async (event) => {
   // Get the request path once
+  console.log('auth middleare');
   const pathname = getRequestURL(event).pathname;
   const cookies = parseCookies(event);
+  console.log('Cookies:', cookies);
+  console.log('User', event.context['auth']);
   const adminToken = cookies['admin_token'];
-  const isAuthRoute = pathname.startsWith('/signin');
+  const isAuthRoute =
+    pathname.startsWith('/signin') || pathname.includes('/signin');
   const isProtectedRoute =
-    pathname.startsWith('/studio') || pathname.startsWith('/api/v1');
+    pathname.startsWith('/studio') ||
+    pathname.startsWith('/api/v1') ||
+    pathname.includes('/studio');
+
+  console.log('Current pathname:', pathname);
+  console.log('Is protected route:', isProtectedRoute);
 
   // Only verify token if it exists
-  if (adminToken) {
+  if (adminToken !== undefined && adminToken !== null) {
     try {
       // Use environment variable or config for API URL to support different environments
       const apiUrl = process.env['ADMIN_API_URL'] || 'http://localhost:8000';
@@ -41,6 +50,8 @@ export default defineEventHandler(async (event) => {
       });
 
       const data = await res.json();
+
+      console.log('Response data:', data);
 
       if (!res.ok) {
         // Clear invalid token
@@ -71,6 +82,15 @@ export default defineEventHandler(async (event) => {
   } else if (isProtectedRoute) {
     // Redirect unauthenticated users trying to access protected routes
     console.log('No admin token found, redirecting to signin');
-    return sendRedirect(event, '/signin', 401);
+    console.log('Current pathname:', pathname);
+    console.log('Is protected route:', isProtectedRoute);
+    try {
+      const redirectResult = await sendRedirect(event, '/signin', 401);
+      console.log('Redirect result:', redirectResult);
+      return redirectResult;
+    } catch (error) {
+      console.error('Error during redirect:', error);
+      throw error;
+    }
   }
 });

@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       analog({
-        liveReload: true,
+        // liveReload: true,
       }),
       nxViteTsPaths(),
     ],

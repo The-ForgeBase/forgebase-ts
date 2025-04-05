@@ -36,8 +36,8 @@ export class AuthController<TUser extends User> {
   }
 
   private extractRefreshToken(req: Request): string | null {
-    if (req.headers.authorization?.startsWith('RToken ')) {
-      return req.headers.authorization.substring(7);
+    if (req.headers['X-Refresh-Token']) {
+      return req.headers['X-Refresh-Token'] as string;
     }
     if (req.cookies && req.cookies.refreshToken) {
       return req.cookies.refreshToken;
@@ -62,25 +62,37 @@ export class AuthController<TUser extends User> {
         // Set the token in the response headers
         if (typeof result.token === 'object' && result.token !== null) {
           res.cookie('token', result.token.accessToken, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+            path: this.adminConfig.cookieOptions?.path,
           });
           res.cookie('refreshToken', result.token.refreshToken, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+            path: this.adminConfig.cookieOptions?.path,
           });
         } else {
           res.cookie('token', result.token, {
-            httpOnly: true,
+            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+            path: this.adminConfig.cookieOptions?.path,
           });
         }
       }
 
-      return res.json(result);
+      // Include verification token in the response if available
+      const response = {
+        ...result,
+        verificationToken: result['verificationToken'] || undefined,
+      };
+
+      return res.json(response);
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
@@ -122,7 +134,7 @@ export class AuthController<TUser extends User> {
         });
       }
 
-      return res.json({ user: result.user });
+      return res.json({ user: result.user, token: result.token });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
@@ -228,35 +240,45 @@ export class AuthController<TUser extends User> {
     }
   }
 
-  @Post('refresh')
+  @Post('refresh-token')
   @UseGuards(AuthGuard)
   async refresh(@Req() req: Request, @Res() res: Response) {
     const refreshToken = this.extractRefreshToken(req);
 
     if (!refreshToken) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: 'Refresh token not found' });
     }
 
     try {
       const token = await this.authService.refreshToken(refreshToken);
+
+      // Set secure cookies for the new tokens
       if (typeof token === 'object' && token !== null) {
         res.cookie('token', token.accessToken, {
-          httpOnly: true,
+          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+          path: this.adminConfig.cookieOptions?.path || '/',
         });
         res.cookie('refreshToken', token.refreshToken, {
-          httpOnly: true,
+          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+          path: this.adminConfig.cookieOptions?.path || '/',
         });
       } else {
         res.cookie('token', token, {
-          httpOnly: true,
+          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+          path: this.adminConfig.cookieOptions?.path || '/',
         });
       }
+
+      return res.json({ success: true, token });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
@@ -271,6 +293,88 @@ export class AuthController<TUser extends User> {
     try {
       const result = await this.authService.verifyEmail(userId, code);
       return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('send-verification-email')
+  async sendVerificationEmail(
+    @Body('email') email: string,
+    @Res() res: Response,
+    @Body('redirectUrl') redirectUrl?: string
+  ) {
+    try {
+      // Send the verification email with the redirectUrl
+      const token = await this.authService.sendVerificationEmail(
+        email,
+        redirectUrl
+      );
+
+      return res.json({
+        success: true,
+        message: 'Verification email sent',
+        token: token || undefined,
+      });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(
+    @Body('email') email: string,
+    @Res() res: Response,
+    @Body('redirectUrl') redirectUrl?: string
+  ) {
+    try {
+      // Send the password reset email with the redirectUrl
+      const token = await this.authService.sendPasswordResetEmail(
+        email,
+        redirectUrl
+      );
+
+      return res.json({
+        success: true,
+        message: 'Password reset email sent',
+        token: token || undefined,
+      });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('verify-reset-token')
+  async verifyResetToken(
+    @Body('userId') userId: string,
+    @Body('token') token: string,
+    @Res() res: Response
+  ) {
+    try {
+      const isValid = await this.authService.verifyPasswordResetToken(
+        userId,
+        token
+      );
+      return res.json({ valid: isValid });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body('userId') userId: string,
+    @Body('token') token: string,
+    @Body('newPassword') newPassword: string,
+    @Res() res: Response
+  ) {
+    try {
+      const success = await this.authService.resetPassword(
+        userId,
+        newPassword,
+        token
+      );
+      return res.json({ success });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }

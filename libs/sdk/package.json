@@ -24,6 +24,12 @@
       "import": "./dist/database/server/index.js",
       "default": "./dist/database/server/index.js",
       "require": "./dist/database/server/index.js"
+    },
+    "./jwt": {
+      "types": "./dist/jwt/index.d.ts",
+      "import": "./dist/jwt/index.js",
+      "default": "./dist/jwt/index.js",
+      "require": "./dist/jwt/index.js"
     }
   },
   "typesVersions": {
@@ -33,12 +39,19 @@
       ],
       "server": [
         "./dist/database/server/index.d.ts"
+      ],
+      "jwt": [
+        "./dist/jwt/index.d.ts"
       ]
     }
   },
   "dependencies": {
     "tslib": "^2.3.0",
     "knex": "^3.1.0",
-    "@forgebase-ts/database": "0.0.1"
+    "@forgebase-ts/database": "0.0.1",
+    "hono": "^4.6.19",
+    "express": "^4.21.2",
+    "jose": "^6.0.10",
+    "axios": "^1.7.9"
   }
 }

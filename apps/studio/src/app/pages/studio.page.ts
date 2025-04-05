@@ -5,23 +5,37 @@ import { SideStudioMenuComponent } from './studio/components/side-menu/side-menu
 import { CommonModule } from '@angular/common';
 
 import { RouterOutlet } from '@angular/router';
-import { injectRouter, RouteMeta } from '@analogjs/router';
+import {
+  injectRouter,
+  RouteMeta,
+  injectLoad,
+  getLoadResolver,
+} from '@analogjs/router';
 import { injectResponse } from '@analogjs/router/tokens';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+import { load } from './studio.server';
 
 export const routeMeta: RouteMeta = {
   title: 'Studio',
+  resolve: {
+    data: async (route) => {
+      // call server load resolver for this route from another resolver
+      const data = (await getLoadResolver(route)) as any;
+
+      return { ...data };
+    },
+  },
   canActivate: [
-    () => {
+    async (route) => {
       const router = injectRouter();
-      const response = injectResponse();
-      console.log('response', response);
-      console.log('ssr', import.meta.env.SSR);
-      if (import.meta.env.SSR && response) {
-        const status = response.statusCode;
-        if (status === 401) {
-          router.navigate(['/login']);
-          return false;
-        }
+      const data = (await getLoadResolver(route)) as any;
+
+      console.log('data', data);
+
+      if (data && !data.user) {
+        router.navigate(['/signin']);
+        return false;
       }
       return true;
     },

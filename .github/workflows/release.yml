@@ -101,7 +101,7 @@ jobs:
           find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
 
       - name: Build all libraries
-        run: pnpm exec nx run-many -t build --projects=api,auth,common,database,real-time,storage,sdk
+        run: pnpm exec nx run-many -t build --projects=api,auth,common,database,real-time,storage,sdk,web-auth,react-native-auth
 
       - name: Setup GitHub Package Registry
         run: |

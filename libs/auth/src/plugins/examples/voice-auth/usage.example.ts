@@ -36,7 +36,7 @@
 //   5000,
 //   true,
 //   { knex: db },
-//   verificationService,
+//   EmailVerificationService,
 //   [voiceAuthPlugin] // Pass the plugin here
 // );
 

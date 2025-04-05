@@ -1,0 +1,11 @@
+{
+  "migrations": [
+    {
+      "version": "1.15.0-beta.3",
+      "description": "Update marked version to 15.0.7",
+      "implementation": "./src/migrations/update-markdown-version/update-markdown-version",
+      "package": "@analogjs/content",
+      "name": "update-marked-version"
+    }
+  ]
+}

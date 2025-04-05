@@ -19,6 +19,8 @@ export type NestAuthConfig = {
     httpOnly?: boolean;
     secure?: boolean;
     maxAge?: number;
+    sameSite?: 'lax' | 'strict' | 'none';
+    path?: string;
   };
   tokenExpiry?: string;
   jwtSecret?: string;

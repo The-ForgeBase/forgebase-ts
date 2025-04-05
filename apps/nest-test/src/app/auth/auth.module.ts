@@ -15,17 +15,29 @@ import { CustomJwksController } from './jwks/custom-jwks.controller';
       useFactory: async (authConfigService: AuthConfigService) => {
         const { authManager, adminManager, joseJwtManager } =
           await authConfigService.initialize(db);
-        console.log('AuthModule: Initialization complete');
+        // console.log('AuthModule: Initialization complete');
         return {
           authManager,
           adminManager,
           adminConfig: {
             basePath: '/admin',
             cookieName: 'admin_token',
+            cookieOptions: {
+              httpOnly: false,
+              secure: false,
+              maxAge: 3600,
+              sameSite: 'lax',
+            },
           },
           config: {
             basePath: '/auth',
             cookieName: 'auth_token',
+            cookieOptions: {
+              httpOnly: false,
+              secure: false,
+              maxAge: 3600,
+              sameSite: 'lax',
+            },
           },
           joseJwtManager,
         };

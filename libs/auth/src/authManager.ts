@@ -25,7 +25,8 @@ import {
   UserNotFoundError,
   UserUnAuthorizedError,
   VerificationRequiredError,
-  VerificationService,
+  EmailVerificationService,
+  SmsVerificationService,
 } from './types';
 import { KnexUserService } from './userService';
 import crypto from 'crypto';
@@ -46,7 +47,8 @@ export class DynamicAuthManager<TUser extends User> {
     private refreshInterval = 5000,
     private enableConfigIntervalCheck = false,
     private internalConfig: AuthInternalConfig<TUser>,
-    private verificationService?: VerificationService,
+    private emailVerificationService?: EmailVerificationService<TUser>,
+    private smsVerificationService?: SmsVerificationService<TUser>,
     plugins: AuthPlugin<TUser>[] = []
   ) {
     this.watchConfig();
@@ -120,6 +122,7 @@ export class DynamicAuthManager<TUser extends User> {
     user?: TUser;
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
+    verificationToken?: string;
   }> {
     if (!this.config.enabledProviders.includes(provider)) {
       throw new ProviderNotEnabled(provider);
@@ -151,9 +154,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.loginAfterRegistration &&
-      !this.config.mfaSettings.required &&
-      (!this.config.authPolicy.emailVerificationRequired ||
-        !this.config.authPolicy.smsVerificationRequired)
+      !this.config.mfaSettings.required
     ) {
       const token = await this.sessionManager.createSession(user);
       // Execute post-login hooks
@@ -161,27 +162,45 @@ export class DynamicAuthManager<TUser extends User> {
       return { user, token };
     }
 
+    // Handle email verification if required
+    let verificationToken: string | void;
     if (
       this.config.authPolicy.emailVerificationRequired &&
-      this.verificationService &&
-      this.verificationService.sendVerificationEmail
+      this.emailVerificationService &&
+      user.email
     ) {
-      await this.verificationService.sendVerificationEmail(user.email);
+      verificationToken =
+        await this.emailVerificationService.sendVerificationEmail(
+          user.email,
+          user
+        );
     }
 
     if (
       this.config.authPolicy.smsVerificationRequired &&
-      this.verificationService &&
-      this.verificationService.sendVerificationSms &&
+      this.sendVerificationEmail &&
       user.phone
     ) {
-      await this.verificationService.sendVerificationSms(user.phone);
+      await this.smsVerificationService.sendVerificationSms(user.phone, user);
     }
 
     // Execute post-registration hooks
-    await this.executeHooks('afterRegister', { user, token: provider });
+    await this.executeHooks('afterRegister', {
+      user,
+      token: provider,
+      verificationToken,
+    });
 
-    return { user, token: '' };
+    // Return user, empty token, and verification token if available
+    return {
+      user,
+      token: '',
+      verificationToken: verificationToken || undefined,
+    };
+  }
+
+  getEmailVerificationService() {
+    return this.emailVerificationService;
   }
 
   getProviders() {
@@ -223,7 +242,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.emailVerificationRequired &&
-      this.verificationService &&
+      this.emailVerificationService &&
       !user.email_verified
     ) {
       throw new VerificationRequiredError('email');
@@ -231,7 +250,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.smsVerificationRequired &&
-      this.verificationService &&
+      this.smsVerificationService &&
       !user.phone_verified
     ) {
       throw new VerificationRequiredError('sms');
@@ -290,7 +309,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.emailVerificationRequired &&
-      this.verificationService &&
+      this.emailVerificationService &&
       !user.email_verified
     ) {
       throw new VerificationRequiredError('email');
@@ -298,7 +317,7 @@ export class DynamicAuthManager<TUser extends User> {
 
     if (
       this.config.authPolicy.smsVerificationRequired &&
-      this.verificationService &&
+      this.smsVerificationService &&
       !user.phone_verified
     ) {
       throw new VerificationRequiredError('sms');
@@ -366,9 +385,10 @@ export class DynamicAuthManager<TUser extends User> {
 
     const user = await this.userService.findUser(userId);
     if (!user) throw new UserNotFoundError(userId);
-    const isValid = this.verificationService.verifyEmail(
+    const isValid = await this.emailVerificationService.verifyEmail(
       user.email,
-      verificationCode
+      verificationCode,
+      user
     );
     if (!isValid) throw new InvalidCodeError();
     await this.userService.updateUser(user.id, {
@@ -379,22 +399,89 @@ export class DynamicAuthManager<TUser extends User> {
     return { user, token };
   }
 
-  async sendVerificationEmail(email: string) {
+  /**
+   * Send a verification email to the user
+   * @param email The recipient's email address
+   * @param verificationUrl Optional custom verification URL base
+   * @returns The generated verification token if the service returns one
+   */
+  async sendVerificationEmail(
+    email: string,
+    verificationUrl?: string
+  ): Promise<string | void> {
     const user = await this.userService.findUser(email);
     if (!user) throw new UserNotFoundError(email);
-    await this.verificationService.sendVerificationEmail(email);
+    return this.emailVerificationService.sendVerificationEmail(
+      email,
+      user,
+      verificationUrl
+    );
+  }
+
+  /**
+   * Send a password reset email to the user
+   * @param email The recipient's email address
+   * @param resetUrl Optional custom reset URL base
+   * @returns The generated reset token if the service returns one
+   */
+  async sendPasswordResetEmail(
+    email: string,
+    resetUrl?: string
+  ): Promise<string | void> {
+    const user = await this.userService.findUser(email);
+    if (!user) throw new UserNotFoundError(email);
+
+    // Check if the email verification service has the password reset method
+    return this.emailVerificationService.sendPasswordResetEmail(
+      email,
+      user,
+      undefined, // resetUrl parameter (not used when customResetUrlBase is provided)
+      resetUrl // customResetUrlBase parameter
+    );
+  }
+
+  /**
+   * Verify a password reset token
+   * @param userId The user ID
+   * @param token The reset token
+   * @returns Whether the token is valid
+   */
+  async verifyPasswordResetToken(
+    userId: string,
+    token: string
+  ): Promise<boolean> {
+    const user = await this.userService.findUser(userId);
+    if (!user) throw new UserNotFoundError(userId);
+
+    if (
+      this.emailVerificationService &&
+      'verifyPasswordResetToken' in this.emailVerificationService
+    ) {
+      return (this.emailVerificationService as any).verifyPasswordResetToken(
+        token,
+        userId
+      );
+    }
+
+    throw new Error(
+      'Password reset verification not supported by the email verification service'
+    );
   }
 
   async sendVerificationSms(phone: string) {
     const user = await this.userService.findUser(phone);
     if (!user) throw new UserNotFoundError(phone);
-    await this.verificationService.sendVerificationSms(phone);
+    await this.smsVerificationService.sendVerificationSms(phone, user);
   }
 
   async verifySms(userId: string, verificationCode: string) {
     const user = await this.userService.findUser(userId);
     if (!user) throw new UserNotFoundError(userId);
-    const isValid = this.verificationService.verifySms(verificationCode);
+    const isValid = await this.smsVerificationService.verifySms(
+      verificationCode,
+      user.phone,
+      user
+    );
     if (!isValid) throw new InvalidCodeError();
     await this.userService.updateUser(user.id, {
       ...user,
@@ -404,10 +491,38 @@ export class DynamicAuthManager<TUser extends User> {
     return { user, token };
   }
 
-  // Add password reset functionality
-  // TODO: fix properly
-  async resetPassword(userId: string, newPassword: string): Promise<void> {
+  /**
+   * Reset a user's password
+   * @param userId The user ID
+   * @param newPassword The new password
+   * @param token Optional reset token for token-based password reset
+   * @returns True if the password was reset successfully
+   */
+  async resetPassword(
+    userId: string,
+    newPassword: string,
+    token?: string
+  ): Promise<boolean> {
+    // If a token is provided, verify it using the email verification service
+    if (
+      token &&
+      this.emailVerificationService &&
+      'verifyPasswordResetToken' in this.emailVerificationService
+    ) {
+      const isValid = await (
+        this.emailVerificationService as any
+      ).verifyPasswordResetToken(token, userId);
+      if (!isValid) throw new InvalidCodeError();
+    }
+
+    // Get the user
+    const user = await this.userService.findUser(userId);
+    if (!user) throw new UserNotFoundError(userId);
+
+    // Hash the new password
     const hash = await hashPassword(newPassword);
+
+    // Update the user's password
     await this.internalConfig
       .knex(this.userService.getTable())
       .where(this.userService.getColumns().id, userId)
@@ -417,6 +532,20 @@ export class DynamicAuthManager<TUser extends User> {
           .getInternalConfig()
           .knex.fn.now(),
       });
+
+    // If a token was used, consume it
+    if (
+      token &&
+      this.emailVerificationService &&
+      'consumePasswordResetToken' in this.emailVerificationService
+    ) {
+      await (this.emailVerificationService as any).consumePasswordResetToken(
+        token,
+        userId
+      );
+    }
+
+    return true;
   }
 
   //TODO: fix mfa required flow properly

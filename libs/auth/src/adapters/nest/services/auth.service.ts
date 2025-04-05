@@ -86,8 +86,68 @@ export class AuthService<TUser extends User> {
     return this.authManager.refreshToken(refreshToken);
   }
 
+  /**
+   * Verify an email using a verification code
+   * @param userId The user ID
+   * @param code The verification code
+   * @returns The user and token
+   */
   async verifyEmail(userId: string, code: string) {
     return this.authManager.verifyEmail(userId, code);
+  }
+
+  /**
+   * Send a verification email to a user
+   * @param email The email address to send the verification to
+   * @param redirectUrl Optional custom verification URL base
+   * @returns The verification token if available
+   */
+  async sendVerificationEmail(
+    email: string,
+    redirectUrl?: string
+  ): Promise<string | void> {
+    return this.authManager.sendVerificationEmail(email, redirectUrl);
+  }
+
+  /**
+   * Send a password reset email to a user
+   * @param email The email address to send the reset email to
+   * @param redirectUrl Optional custom reset URL base
+   * @returns The reset token if available
+   */
+  async sendPasswordResetEmail(
+    email: string,
+    redirectUrl?: string
+  ): Promise<string | void> {
+    return this.authManager.sendPasswordResetEmail(email, redirectUrl);
+  }
+
+  /**
+   * Verify a password reset token
+   * @param userId The user ID
+   * @param token The reset token
+   * @returns Whether the token is valid
+   */
+  async verifyPasswordResetToken(
+    userId: string,
+    token: string
+  ): Promise<boolean> {
+    return this.authManager.verifyPasswordResetToken(userId, token);
+  }
+
+  /**
+   * Reset a user's password
+   * @param userId The user ID
+   * @param newPassword The new password
+   * @param token Optional reset token for token-based password reset
+   * @returns Whether the password was reset successfully
+   */
+  async resetPassword(
+    userId: string,
+    newPassword: string,
+    token?: string
+  ): Promise<boolean> {
+    return this.authManager.resetPassword(userId, newPassword, token);
   }
 
   async verifySms(userId: string, code: string) {
