@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { ForgebaseWebAuth } from '../ForgebaseWebAuth';
+import { ForgebaseWebAuth } from '../../ForgebaseWebAuth';
 import { 
   User, 
   AuthError, 
@@ -8,7 +8,7 @@ import {
   PasswordResetResponse,
   VerifyEmailResponse,
   VerifyResetTokenResponse
-} from '../types';
+} from '../../types';
 
 /**
  * Auth context interface

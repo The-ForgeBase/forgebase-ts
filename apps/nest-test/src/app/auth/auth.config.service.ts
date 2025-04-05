@@ -152,9 +152,8 @@ export class AuthConfigService implements OnModuleInit {
 
       const plunkVerificationService = new PlunkEmailVerificationService(db, {
         apiKey: process.env.PLUNK_API_KEY || '',
-        fromEmail: 'noreply@yourdomain.com',
-        fromName: 'Your App',
-        templateId: 'your-template-id',
+        fromEmail: 'nexthire@mail.nexthireapp.com',
+        fromName: 'NextHire',
         tokenExpiryMinutes: 30,
         resetTokenExpiryMinutes: 60, // 1 hour for password reset tokens
 

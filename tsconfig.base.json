@@ -31,6 +31,7 @@
       "@forgebase-ts/sdk/*": ["libs/sdk/src/*"],
       "@forgebase-ts/storage": ["libs/storage/src/index.ts"],
       "@forgebase-ts/web-auth": ["libs/web-auth/src/index.ts"],
+      "@forgebase-ts/web-auth/*": ["libs/web-auth/src/*"],
       "@spartan-ng/ui-accordion-helm": [
         "libs/studio-ui/ui-accordion-helm/src/index.ts"
       ],

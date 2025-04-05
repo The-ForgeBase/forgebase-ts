@@ -147,6 +147,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').notNullable();
+      table.string('kid').nullable(); // Key ID for JWT signing key
       table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
       // Foreign key to users table
@@ -159,6 +160,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table.index(['user_id']);
       table.index(['token']);
       table.index(['expires_at']);
+      table.index(['kid']);
     });
   }
 

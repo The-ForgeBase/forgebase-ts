@@ -206,6 +206,11 @@ export class JoseJwtSessionManager implements SessionManager {
 
         // Create a new token pair
         const newToken = await this.createSession(user);
+
+        delete user.password_hash; // Remove sensitive data
+        delete user.mfa_secret; // Remove sensitive data
+        delete user.mfa_recovery_codes; // Remove sensitive data
+
         return { user, token: newToken };
       }
 
@@ -224,6 +229,19 @@ export class JoseJwtSessionManager implements SessionManager {
         .first();
 
       if (!user) throw new Error('Invalid access token');
+
+      delete user.password_hash; // Remove sensitive data
+      delete user.mfa_secret; // Remove sensitive data
+      delete user.mfa_recovery_codes; // Remove sensitive data
+
+      // Clean up expired tokens
+      await this.knex('access_tokens')
+        .where('expires_at', '<=', new Date())
+        .delete();
+      await this.knex('refresh_tokens')
+        .where('expires_at', '<=', new Date())
+        .delete();
+
       return { user };
     }
   }

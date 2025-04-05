@@ -317,7 +317,7 @@ export class ForgebaseWebAuth {
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
       const response = await this._api.post<AuthResponse>('/auth/register', {
-        provider: 'password',
+        provider: 'local',
         ...credentials,
       });
 
@@ -339,7 +339,7 @@ export class ForgebaseWebAuth {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       const response = await this._api.post<AuthResponse>('/auth/login', {
-        provider: 'password',
+        provider: 'local',
         ...credentials,
       });
 

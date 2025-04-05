@@ -40,7 +40,7 @@ export const ResetPasswordEmail = ({
             </Text>
 
             <Section style={buttonContainer}>
-              <Button href={url} style={button} height={0} width={0}>
+              <Button href={url} style={button} height={0} width={100}>
                 Reset Password
               </Button>
             </Section>

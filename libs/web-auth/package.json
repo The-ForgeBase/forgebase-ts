@@ -12,13 +12,68 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
+      "require": "./src/index.js",
       "default": "./dist/index.js"
+    },
+    "./frameworks/react": {
+      "types": "./dist/frameworks/react/index.d.ts",
+      "import": "./dist/frameworks/react/index.js",
+      "require": "./src/frameworks/react/index.js",
+      "default": "./dist/frameworks/react/index.js"
+    },
+    "./frameworks/nextjs": {
+      "types": "./dist/frameworks/nextjs/index.d.ts",
+      "import": "./dist/frameworks/nextjs/index.js",
+      "require": "./src/frameworks/nextjs/index.js",
+      "default": "./dist/frameworks/nextjs/index.js"
+    },
+    "./frameworks/nextjs/app-router": {
+      "types": "./dist/frameworks/nextjs/app-router/index.d.ts",
+      "import": "./dist/frameworks/nextjs/app-router/index.js",
+      "require": "./src/frameworks/nextjs/app-router/index.js",
+      "default": "./dist/frameworks/nextjs/app-router/index.js"
+    },
+    "./frameworks/nextjs/pages-router": {
+      "types": "./dist/frameworks/nextjs/pages-router/index.d.ts",
+      "import": "./dist/frameworks/nextjs/pages-router/index.js",
+      "require": "./src/frameworks/nextjs/pages-router/index.js",
+      "default": "./dist/frameworks/nextjs/pages-router/index.js"
+    },
+    "./frameworks/angular": {
+      "types": "./dist/frameworks/angular/index.d.ts",
+      "import": "./dist/frameworks/angular/index.js",
+      "require": "./src/frameworks/angular/index.js",
+      "default": "./dist/frameworks/angular/index.js"
+    },
+    "./frameworks/nitro": {
+      "types": "./dist/frameworks/nitro/index.d.ts",
+      "import": "./dist/frameworks/nitro/index.js",
+      "require": "./src/frameworks/nitro/index.js",
+      "default": "./dist/frameworks/nitro/index.js"
     }
   },
   "typesVersions": {
     "*": {
       ".": [
         "./dist/index.d.ts"
+      ],
+      "frameworks/react": [
+        "./dist/frameworks/react/index.d.ts"
+      ],
+      "frameworks/nextjs": [
+        "./dist/frameworks/nextjs/index.d.ts"
+      ],
+      "frameworks/nextjs/app-router": [
+        "./dist/frameworks/nextjs/app-router/index.d.ts"
+      ],
+      "frameworks/nextjs/pages-router": [
+        "./dist/frameworks/nextjs/pages-router/index.d.ts"
+      ],
+      "frameworks/angular": [
+        "./dist/frameworks/angular/index.d.ts"
+      ],
+      "frameworks/nitro": [
+        "./dist/frameworks/nitro/index.d.ts"
       ]
     }
   },

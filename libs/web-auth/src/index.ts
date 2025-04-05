@@ -3,9 +3,7 @@ export * from './types';
 export * from './storage';
 export * from './utils';
 
-// Framework integrations
-export * from './integrations/react';
-export * from './integrations/nextjs'; // Pages Router
-export * from './integrations/nextjs-app-router'; // App Router
-export * from './integrations/nitro'; // Nitro Framework (Nuxt, Analog.js)
-export * from './integrations/angular'; // Angular
+// Note: Framework integrations are now available as separate imports
+// For example:
+// import { useAuth } from '@forgebase-ts/web-auth/react';
+// import { authMiddleware } from '@forgebase-ts/web-auth/nextjs/app-router';
