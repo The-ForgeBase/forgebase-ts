@@ -11,6 +11,9 @@ export * from './utils/token-verifier'; // Export TokenVerifier for external ser
 export * from './lib/password';
 export * from './lib/sanitize';
 
+// User table extension utilities
+export * from './utils';
+
 // Provider exports
 export * from './providers';
 
