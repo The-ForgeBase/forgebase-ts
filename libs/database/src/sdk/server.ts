@@ -2,8 +2,7 @@ import type knex from 'knex';
 import type { DatabaseAdapter } from '../adapters/base';
 import { DatabaseFeature, getAdapter } from '../adapters/index';
 
-// types.ts
-export type WhereOperator =
+type WhereOperator =
   | '='
   | '!='
   | '>'
@@ -17,7 +16,7 @@ export type WhereOperator =
   | 'is null'
   | 'is not null';
 
-export interface WhereClause {
+interface WhereClause {
   field: string;
   operator: WhereOperator;
   value: any;
@@ -91,25 +90,36 @@ interface AggregateOptions {
   alias?: string;
 }
 
-export interface RawExpression {
+interface RawExpression {
   sql: string;
   bindings?: any[];
 }
 
-export type GroupOperator = 'AND' | 'OR';
+// Add SubQueryConfig interface for whereExists
+interface SubQueryConfig {
+  tableName: string;
+  params: QueryParams;
+  joinCondition?: {
+    leftField: string;
+    operator: WhereOperator;
+    rightField: string;
+  };
+}
 
-export interface WhereGroup {
+type GroupOperator = 'AND' | 'OR';
+
+interface WhereGroup {
   type: GroupOperator;
   clauses: (WhereClause | WhereGroup)[];
 }
 
-export interface HavingClause {
+interface HavingClause {
   field: string;
   operator: WhereOperator;
   value: any;
 }
 
-export interface WindowFunctionAdvanced extends WindowFunction {
+interface WindowFunctionAdvanced extends WindowFunction {
   over?: {
     partitionBy?: string[];
     orderBy?: OrderByClause[];
@@ -130,7 +140,7 @@ export interface QueryParams {
   whereNotNull?: string[];
   whereIn?: Record<string, any[]>;
   whereNotIn?: Record<string, any[]>;
-  whereExists?: RawExpression[];
+  whereExists?: SubQueryConfig[];
   whereGroups?: Array<{ type: 'AND' | 'OR'; clauses: WhereClause[] }>;
   orderBy?: OrderByClause[];
   groupBy?: string[];
@@ -158,219 +168,233 @@ export class QueryHandler {
   }
 
   buildQuery(params: QueryParams, query: knex.Knex.QueryBuilder) {
-    try {
-      // Add select handling at the start of query building
-      if (params.select?.length) {
-        query = query.select(params.select);
-      }
+    // Add select handling at the start of query building
+    if (params.select?.length) {
+      query = query.select(params.select);
+    }
 
-      // 1. CTEs and Window Functions (must come first)
-      // Handle CTEs first
-      if (params.ctes?.length) {
-        params.ctes.forEach((cte) => {
-          query = query.with(cte.name, (qb: knex.Knex.QueryBuilder) =>
-            this.buildQuery(cte.query.params, qb)
-          );
-        });
-      }
+    // 1. CTEs and Window Functions (must come first)
+    // Handle CTEs first
+    if (params.ctes?.length) {
+      params.ctes.forEach((cte) => {
+        query = query.with(cte.name, (qb: knex.Knex.QueryBuilder) =>
+          this.buildQuery(cte.query.params, qb)
+        );
+      });
+    }
 
-      // Handle recursive CTEs
-      if (params.recursiveCtes?.length) {
-        params.recursiveCtes.forEach((cte) => {
-          query = query.withRecursive(cte.name, (qb) => {
-            return qb.from(() => {
-              const initial = this.knex(cte.initialQuery.tableName)
-                .select('*')
-                .where(cte.initialQuery.params.filter || {});
+    // Handle recursive CTEs
+    if (params.recursiveCtes?.length) {
+      params.recursiveCtes.forEach((cte) => {
+        query = query.withRecursive(cte.name, (qb) => {
+          return qb.from(() => {
+            const initial = this.knex(cte.initialQuery.tableName)
+              .select('*')
+              .where(cte.initialQuery.params.filter || {});
 
-              const recursive = this.knex(cte.recursiveQuery.tableName)
-                .select('*')
-                .where(cte.recursiveQuery.params.filter || {});
+            const recursive = this.knex(cte.recursiveQuery.tableName)
+              .select('*')
+              .where(cte.recursiveQuery.params.filter || {});
 
-              if (cte.unionAll) {
-                return initial.unionAll(recursive);
-              }
-              return initial.union(recursive);
-            });
+            if (cte.unionAll) {
+              return initial.unionAll(recursive);
+            }
+            return initial.union(recursive);
           });
         });
-      }
+      });
+    }
 
-      // Apply regular window functions first
-      if (
-        params.windowFunctions &&
-        this.adapter.supportsFeature(DatabaseFeature.WindowFunctions)
-      ) {
-        params.windowFunctions.forEach((wf) => {
+    // Apply regular window functions first
+    if (
+      params.windowFunctions &&
+      this.adapter.supportsFeature(DatabaseFeature.WindowFunctions)
+    ) {
+      params.windowFunctions.forEach((wf) => {
+        const windowClause = this.adapter.buildWindowFunction(wf);
+        query = query.select(this.knex.raw(windowClause));
+      });
+    }
+
+    // Apply enhanced window functions second
+    if (
+      params.advancedWindows &&
+      this.adapter.supportsFeature(DatabaseFeature.WindowFunctions)
+    ) {
+      if (params.advancedWindows?.length) {
+        params.advancedWindows.forEach((wf) => {
           const windowClause = this.adapter.buildWindowFunction(wf);
           query = query.select(this.knex.raw(windowClause));
         });
       }
-
-      // Apply enhanced window functions second
-      if (
-        params.advancedWindows &&
-        this.adapter.supportsFeature(DatabaseFeature.WindowFunctions)
-      ) {
-        if (params.advancedWindows?.length) {
-          params.advancedWindows.forEach((wf) => {
-            let windowClause = this.adapter.buildWindowFunction(wf);
-            query = query.select(this.knex.raw(windowClause));
-          });
-        }
-      }
-
-      // Apply basic filters
-      if (params.filter) {
-        query = query.where(params.filter);
-      }
-
-      // Handle raw expressions
-      if (params.rawExpressions?.length) {
-        params.rawExpressions.forEach(({ sql, bindings }) => {
-          query = query.whereRaw(sql, bindings);
-        });
-      }
-
-      // Handle aggregates
-      if (params.aggregates?.length) {
-        params.aggregates.forEach(({ type, field, alias }) => {
-          const column = alias || `${type}_${field}`;
-          switch (type) {
-            case 'count':
-              query = query.count(field as any, { as: column });
-              break;
-            case 'sum':
-              query = query.sum(field as any, { as: column });
-              break;
-            case 'avg':
-              query = query.avg(field as any, { as: column });
-              break;
-            case 'min':
-              query = query.min(field as any, { as: column });
-              break;
-            case 'max':
-              query = query.max(field as any, { as: column });
-              break;
-          }
-        });
-      }
-
-      // Apply raw where clauses
-      if (params.whereRaw) {
-        params.whereRaw.forEach((clause) => {
-          query = query.where(clause.field, clause.operator, clause.value);
-        });
-      }
-
-      // Apply where between clauses
-      if (params.whereBetween) {
-        params.whereBetween.forEach((clause) => {
-          query = query.whereBetween(clause.field, clause.value);
-        });
-      }
-
-      // Apply where null/not null
-      if (params.whereNull) {
-        params.whereNull.forEach((field) => {
-          query = query.whereNull(field);
-        });
-      }
-
-      if (params.whereNotNull) {
-        params.whereNotNull.forEach((field) => {
-          query = query.whereNotNull(field);
-        });
-      }
-
-      // Apply where in/not in
-      if (params.whereIn) {
-        Object.entries(params.whereIn).forEach(([field, values]) => {
-          query = query.whereIn(field, values);
-        });
-      }
-
-      if (params.whereNotIn) {
-        Object.entries(params.whereNotIn).forEach(([field, values]) => {
-          query = query.whereNotIn(field, values);
-        });
-      }
-
-      // Apply where exists
-      if (params.whereExists) {
-        params.whereExists.forEach(({ sql, bindings }) => {
-          query = query.whereExists(function (this: any) {
-            this.raw(sql, bindings);
-          });
-        });
-      }
-
-      // Apply grouped where clauses
-      if (params.whereGroups) {
-        params.whereGroups.forEach((group) => {
-          query = query.where(function (this: any) {
-            group.clauses.forEach((clause) => {
-              const method =
-                clause.boolean?.toLowerCase() === 'or' ? 'orWhere' : 'where';
-              this[method](clause.field, clause.operator, clause.value);
-            });
-          });
-        });
-      }
-
-      // Apply group by
-      if (params.groupBy) {
-        query = query.groupBy(params.groupBy);
-      }
-
-      // Apply having
-      if (params.having) {
-        params.having.forEach((clause) => {
-          query = query.having(clause.field, clause.operator, clause.value);
-        });
-      }
-
-      // Update order by handling with adapter
-      if (params.orderBy) {
-        const orderByClauses = this.adapter.buildOrderByClause(params.orderBy);
-        query = query.orderBy(orderByClauses);
-      }
-
-      // Apply pagination
-      if (params.limit) {
-        query = query.limit(params.limit);
-      }
-
-      if (params.offset) {
-        query = query.offset(params.offset);
-      }
-
-      // // Handle post-query transformations
-      // if (params.transforms) {
-      //   const transforms = params.transforms;
-      //   query = query.then((results: any[]) => {
-      //     let transformed = results;
-
-      //     if (transforms.compute) {
-      //       transformed = this.applyComputations(transformed, transforms.compute);
-      //     }
-
-      //     if (transforms.groupBy) {
-      //       transformed = this.applyGrouping(transformed, transforms.groupBy);
-      //     }
-
-      //     if (transforms.pivot) {
-      //       transformed = this.applyPivot(transformed, transforms.pivot);
-      //     }
-
-      //     return transformed;
-      //   });
-      // }
-
-      return query;
-    } catch (error) {
-      throw error;
     }
+
+    // Apply basic filters
+    if (params.filter) {
+      query = query.where(params.filter);
+    }
+
+    // Handle raw expressions
+    if (params.rawExpressions?.length) {
+      params.rawExpressions.forEach(({ sql, bindings }) => {
+        query = query.whereRaw(sql, bindings);
+      });
+    }
+
+    // Handle aggregates
+    if (params.aggregates?.length) {
+      params.aggregates.forEach(({ type, field, alias }) => {
+        const column = alias || `${type}_${field}`;
+        switch (type) {
+          case 'count':
+            query = query.count(field as any, { as: column });
+            break;
+          case 'sum':
+            query = query.sum(field as any, { as: column });
+            break;
+          case 'avg':
+            query = query.avg(field as any, { as: column });
+            break;
+          case 'min':
+            query = query.min(field as any, { as: column });
+            break;
+          case 'max':
+            query = query.max(field as any, { as: column });
+            break;
+        }
+      });
+    }
+
+    // Apply raw where clauses
+    if (params.whereRaw) {
+      params.whereRaw.forEach((clause) => {
+        query = query.where(clause.field, clause.operator, clause.value);
+      });
+    }
+
+    // Apply where between clauses
+    if (params.whereBetween) {
+      params.whereBetween.forEach((clause) => {
+        query = query.whereBetween(clause.field, clause.value);
+      });
+    }
+
+    // Apply where null/not null
+    if (params.whereNull) {
+      params.whereNull.forEach((field) => {
+        query = query.whereNull(field);
+      });
+    }
+
+    if (params.whereNotNull) {
+      params.whereNotNull.forEach((field) => {
+        query = query.whereNotNull(field);
+      });
+    }
+
+    // Apply where in/not in
+    if (params.whereIn) {
+      Object.entries(params.whereIn).forEach(([field, values]) => {
+        query = query.whereIn(field, values);
+      });
+    }
+
+    if (params.whereNotIn) {
+      Object.entries(params.whereNotIn).forEach(([field, values]) => {
+        query = query.whereNotIn(field, values);
+      });
+    }
+
+    // Apply where exists
+    if (params.whereExists) {
+      params.whereExists.forEach((subQueryConfig) => {
+        query = query.whereExists((builder) => {
+          // Create a new builder for the subquery
+          const subQuery = this.knex(subQueryConfig.tableName);
+
+          // Apply the subquery parameters
+          this.buildQuery(subQueryConfig.params, subQuery);
+
+          // If we have a join condition, add it to the subquery
+          if (subQueryConfig.joinCondition) {
+            const { leftField, operator, rightField } =
+              subQueryConfig.joinCondition;
+            // Use the parent table reference with knex.raw to create a proper correlated subquery
+            subQuery.where(
+              rightField,
+              operator,
+              this.knex.raw(`??`, [`${query['_single'].table}.${leftField}`])
+            );
+          }
+
+          return subQuery;
+        });
+      });
+    }
+
+    // Apply grouped where clauses
+    if (params.whereGroups) {
+      params.whereGroups.forEach((group) => {
+        query = query.where(function (this: any) {
+          group.clauses.forEach((clause) => {
+            const method =
+              clause.boolean?.toLowerCase() === 'or' ? 'orWhere' : 'where';
+            this[method](clause.field, clause.operator, clause.value);
+          });
+        });
+      });
+    }
+
+    // Apply group by
+    if (params.groupBy) {
+      query = query.groupBy(params.groupBy);
+    }
+
+    // Apply having
+    if (params.having) {
+      params.having.forEach((clause) => {
+        query = query.having(clause.field, clause.operator, clause.value);
+      });
+    }
+
+    // Update order by handling with adapter
+    if (params.orderBy) {
+      const orderByClauses = this.adapter.buildOrderByClause(params.orderBy);
+      query = query.orderBy(orderByClauses);
+    }
+
+    // Apply pagination
+    if (params.limit) {
+      query = query.limit(params.limit);
+    }
+
+    if (params.offset) {
+      query = query.offset(params.offset);
+    }
+
+    // // Handle post-query transformations
+    // if (params.transforms) {
+    //   const transforms = params.transforms;
+    //   query = query.then((results: any[]) => {
+    //     let transformed = results;
+
+    //     if (transforms.compute) {
+    //       transformed = this.applyComputations(transformed, transforms.compute);
+    //     }
+
+    //     if (transforms.groupBy) {
+    //       transformed = this.applyGrouping(transformed, transforms.groupBy);
+    //     }
+
+    //     if (transforms.pivot) {
+    //       transformed = this.applyPivot(transformed, transforms.pivot);
+    //     }
+
+    //     return transformed;
+    //   });
+    // }
+
+    return query;
   }
 
   // private buildWindowFunction(wf: any): string {

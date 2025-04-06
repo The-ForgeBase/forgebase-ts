@@ -4,6 +4,7 @@ export * from './utils/inspector';
 export * from './knex-hooks';
 export * from './permissionService';
 export * from './rlsManager';
+export * from './rlsFunctionRegistry';
 export * from './schema';
 export * from './sdk/server';
 export * from './database';

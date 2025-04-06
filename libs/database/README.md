@@ -411,6 +411,8 @@ nx test database --testPathPattern=postgres
 
 1. **Row-Level Security**:
 
+### Basic RLS
+
 ```typescript
 // Enable RLS
 const db = createForgeDatabase({
@@ -430,6 +432,112 @@ await db.setPermissions('documents', {
           valueType: 'userContext',
           value: 'userId',
         },
+      },
+    ],
+  },
+});
+
+// Advanced RLS with customSql
+// Example: Limit free users to 5 CVs, but allow pro users unlimited CVs
+await db.setPermissions('cvs', {
+  operations: {
+    INSERT: [
+      {
+        allow: 'customSql',
+        customSql: `
+          SELECT 1 WHERE
+            -- Check if user is on pro plan
+            EXISTS (SELECT 1 FROM subscriptions WHERE user_id = :userId AND plan_type = 'pro')
+            -- OR check if user is on free plan but has fewer than 5 CVs
+            OR (
+              NOT EXISTS (SELECT 1 FROM subscriptions WHERE user_id = :userId AND plan_type = 'pro')
+              AND (SELECT COUNT(*) FROM cvs WHERE user_id = :userId) < 5
+            )
+        `,
+      },
+    ],
+  },
+});
+
+// Advanced RLS with custom functions
+// Register a custom RLS function
+import { rlsFunctionRegistry } from '@forgebase-ts/database';
+
+// Register a function that checks subscription limits
+rlsFunctionRegistry.register('checkSubscriptionLimits', async (userContext, row, knex) => {
+  if (!knex) return false;
+
+  // Check if user is on pro plan
+  const proSub = await knex('subscriptions').where({ user_id: userContext.userId, plan_type: 'pro' }).first();
+
+  if (proSub) return true; // Pro users can create unlimited resources
+
+  // For free users, check resource count
+  const count = await knex('cvs').where({ user_id: userContext.userId }).count('id as count').first();
+
+  return count && count.count < 5; // Allow if less than 5 resources
+});
+
+// Use the registered function in permissions
+await db.setPermissions('cvs', {
+  operations: {
+    INSERT: [
+      {
+        allow: 'customFunction',
+        customFunction: 'checkSubscriptionLimits',
+      },
+    ],
+  },
+});
+```
+
+### Custom SQL RLS
+
+For complex permission rules that require database queries, use the `customSql` rule type. This allows you to write SQL queries that can access multiple tables and use the full power of SQL to determine permissions.
+
+### Custom Function RLS
+
+For the most flexible permission rules, you can register custom JavaScript functions that will be executed during permission checks. These functions have access to:
+
+- The user context (userId, role, etc.)
+- The row data being accessed
+- The database connection (knex instance)
+
+#### Comparison between customSql and customFunction
+
+| Feature | customSql | customFunction |
+|---------|-----------|---------------|
+| Database Access | Yes (SQL only) | Yes (full Knex API) |
+| Language | SQL | JavaScript/TypeScript |
+| External API Calls | No | Yes |
+| Complexity | Limited by SQL | Unlimited |
+| Performance | Generally faster | May be slower |
+| Reusability | Limited | High |
+| Debugging | SQL errors only | Full error handling |
+| Testability | Difficult | Easy to unit test |
+
+To use custom functions:
+
+1. Register your functions at application startup
+2. Reference them by name in your permission rules
+
+```typescript
+// Register functions during app initialization
+import { rlsFunctionRegistry } from '@forgebase-ts/database';
+
+rlsFunctionRegistry.register('myCustomCheck', async (userContext, row, knex) => {
+  // Implement complex permission logic here
+  // Can use async/await, make database queries, call external services, etc.
+  return true; // Return true to grant access, false to deny
+});
+
+// Later, use the function in permission rules
+await db.setPermissions('myTable', {
+  operations: {
+    UPDATE: [
+      {
+        allow: 'customFunction',
+        customFunction: 'myCustomCheck',
       },
     ],
   },

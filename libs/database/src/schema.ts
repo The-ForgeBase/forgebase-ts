@@ -17,32 +17,26 @@ import { createColumn, updateColumn } from './utils/column-utils';
 
 export async function addForeignKey(params: AddForeignKeyParams, knex: Knex) {
   const { tableName, column, foreignTableName, foreignColumn } = params;
-  try {
-    await knex.schema.table(tableName, (table) => {
-      table.foreign(column).references(foreignColumn).inTable(foreignTableName);
-    });
 
-    return {
-      message: 'Foreign key added successfully',
-    };
-  } catch (error) {
-    throw error;
-  }
+  await knex.schema.table(tableName, (table) => {
+    table.foreign(column).references(foreignColumn).inTable(foreignTableName);
+  });
+
+  return {
+    message: 'Foreign key added successfully',
+  };
 }
 
 export async function dropForeignKey(params: DropForeignKeyParams, knex: Knex) {
   const { tableName, column } = params;
-  try {
-    await knex.schema.table(tableName, (table) => {
-      table.dropForeign(column);
-    });
 
-    return {
-      message: 'Foreign key dropped successfully',
-    };
-  } catch (error) {
-    throw error;
-  }
+  await knex.schema.table(tableName, (table) => {
+    table.dropForeign(column);
+  });
+
+  return {
+    message: 'Foreign key dropped successfully',
+  };
 }
 
 export async function modifySchema(knex: Knex, params: ModifySchemaParams) {
@@ -86,13 +80,9 @@ export async function modifySchema(knex: Knex, params: ModifySchemaParams) {
 }
 
 export async function truncateTable(tableName: string, knex: Knex) {
-  try {
-    await knex(tableName).truncate();
+  await knex(tableName).truncate();
 
-    return {
-      message: 'Table truncated',
-    };
-  } catch (error) {
-    throw error;
-  }
+  return {
+    message: 'Table truncated',
+  };
 }

@@ -56,6 +56,12 @@ export interface ForeignKey {
   };
 }
 
+export type CustomRlsFunction = (
+  userContext: UserContext,
+  row: Record<string, unknown>,
+  knex?: Knex
+) => Promise<boolean> | boolean;
+
 export type PermissionRule = {
   allow:
     | 'public'
@@ -67,11 +73,13 @@ export type PermissionRule = {
     | 'teams'
     | 'static'
     | 'fieldCheck'
-    | 'customSql';
+    | 'customSql'
+    | 'customFunction';
   labels?: string[]; // Array of required labels
   teams?: string[]; // Array of required teams
   static?: boolean; // Static true/false value
   customSql?: string; // Custom SQL condition (full SQL)
+  customFunction?: string; // Name of registered custom function
   fieldCheck?: FieldCheck; // Field-based rules
   roles?: string[];
 };

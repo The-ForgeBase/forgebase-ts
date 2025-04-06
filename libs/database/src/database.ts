@@ -208,7 +208,9 @@ export class ForgeDatabase {
             tableName,
             'SELECT',
             user,
-            this.permissionService
+            this.permissionService,
+            undefined,
+            this.hooks.getKnexInstance()
           );
 
         if (!initialStatus && !initialHasFieldCheck) {
@@ -241,7 +243,8 @@ export class ForgeDatabase {
           'SELECT',
           user,
           this.permissionService,
-          records
+          records,
+          this.hooks.getKnexInstance()
         );
 
         if (!status) {
@@ -296,7 +299,9 @@ export class ForgeDatabase {
             tableName,
             'INSERT',
             user,
-            this.permissionService
+            this.permissionService,
+            undefined,
+            this.hooks.getKnexInstance()
           );
 
         if (!initialStatus && !initialHasFieldCheck) {
@@ -320,7 +325,8 @@ export class ForgeDatabase {
           'INSERT',
           user,
           this.permissionService,
-          records
+          records,
+          this.hooks.getKnexInstance()
         );
 
         if (!status) {
@@ -373,7 +379,9 @@ export class ForgeDatabase {
             tableName,
             'UPDATE',
             user,
-            this.permissionService
+            this.permissionService,
+            undefined,
+            this.hooks.getKnexInstance()
           );
 
         if (!initialStatus && !initialHasFieldCheck) {
@@ -408,7 +416,8 @@ export class ForgeDatabase {
           'UPDATE',
           user,
           this.permissionService,
-          record[0]
+          record[0],
+          this.hooks.getKnexInstance()
         );
 
         if (!status) {
@@ -453,7 +462,9 @@ export class ForgeDatabase {
             tableName,
             'DELETE',
             user,
-            this.permissionService
+            this.permissionService,
+            undefined,
+            this.hooks.getKnexInstance()
           );
 
         if (!initialStatus && !initialHasFieldCheck) {
@@ -486,7 +497,8 @@ export class ForgeDatabase {
           'DELETE',
           user,
           this.permissionService,
-          record
+          record,
+          this.hooks.getKnexInstance()
         );
         if (!status) {
           throw new Error(
