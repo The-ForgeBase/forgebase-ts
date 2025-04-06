@@ -203,17 +203,24 @@ export class ForgeDatabase {
           throw new Error('User is required to query a record');
         }
 
-        const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
-          await enforcePermissions(
-            tableName,
-            'SELECT',
-            user,
-            this.permissionService,
-            undefined,
-            this.hooks.getKnexInstance()
-          );
+        const {
+          status: initialStatus,
+          hasFieldCheck: initialHasFieldCheck,
+          hasCustomFunction: initialHasCustomFunction,
+        } = await enforcePermissions(
+          tableName,
+          'SELECT',
+          user,
+          this.permissionService,
+          undefined,
+          this.hooks.getKnexInstance()
+        );
 
-        if (!initialStatus && !initialHasFieldCheck) {
+        if (
+          !initialStatus &&
+          !initialHasFieldCheck &&
+          !initialHasCustomFunction
+        ) {
           throw new Error(
             `User does not have permission to query table "${tableName}"`
           );
@@ -294,17 +301,24 @@ export class ForgeDatabase {
           throw new Error('User is required to create a record');
         }
 
-        const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
-          await enforcePermissions(
-            tableName,
-            'INSERT',
-            user,
-            this.permissionService,
-            undefined,
-            this.hooks.getKnexInstance()
-          );
+        const {
+          status: initialStatus,
+          hasFieldCheck: initialHasFieldCheck,
+          hasCustomFunction: initialHasCustomFunction,
+        } = await enforcePermissions(
+          tableName,
+          'INSERT',
+          user,
+          this.permissionService,
+          undefined,
+          this.hooks.getKnexInstance()
+        );
 
-        if (!initialStatus && !initialHasFieldCheck) {
+        if (
+          !initialStatus &&
+          !initialHasFieldCheck &&
+          !initialHasCustomFunction
+        ) {
           throw new Error(
             `User does not have permission to create record in table "${tableName}"`
           );
@@ -374,17 +388,24 @@ export class ForgeDatabase {
           throw new Error('User is required to update a record');
         }
 
-        const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
-          await enforcePermissions(
-            tableName,
-            'UPDATE',
-            user,
-            this.permissionService,
-            undefined,
-            this.hooks.getKnexInstance()
-          );
+        const {
+          status: initialStatus,
+          hasFieldCheck: initialHasFieldCheck,
+          hasCustomFunction: initialHasCustomFunction,
+        } = await enforcePermissions(
+          tableName,
+          'UPDATE',
+          user,
+          this.permissionService,
+          undefined,
+          this.hooks.getKnexInstance()
+        );
 
-        if (!initialStatus && !initialHasFieldCheck) {
+        if (
+          !initialStatus &&
+          !initialHasFieldCheck &&
+          !initialHasCustomFunction
+        ) {
           throw new Error(
             `User does not have permission to delete record with id ${id}`
           );
@@ -457,17 +478,24 @@ export class ForgeDatabase {
           throw new Error('User is required to delete a record');
         }
 
-        const { status: initialStatus, hasFieldCheck: initialHasFieldCheck } =
-          await enforcePermissions(
-            tableName,
-            'DELETE',
-            user,
-            this.permissionService,
-            undefined,
-            this.hooks.getKnexInstance()
-          );
+        const {
+          status: initialStatus,
+          hasFieldCheck: initialHasFieldCheck,
+          hasCustomFunction: initialHasCustomFunction,
+        } = await enforcePermissions(
+          tableName,
+          'DELETE',
+          user,
+          this.permissionService,
+          undefined,
+          this.hooks.getKnexInstance()
+        );
 
-        if (!initialStatus && !initialHasFieldCheck) {
+        if (
+          !initialStatus &&
+          !initialHasFieldCheck &&
+          !initialHasCustomFunction
+        ) {
           throw new Error(
             `User does not have permission to delete record with id ${id}`
           );

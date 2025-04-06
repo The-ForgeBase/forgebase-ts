@@ -211,6 +211,7 @@ export async function enforcePermissions(
   status: boolean;
   message?: string;
   hasFieldCheck: boolean;
+  hasCustomFunction: boolean;
 }> {
   const tablePermissions = (await permissionService.getPermissionsForTable(
     tableName
@@ -222,6 +223,7 @@ export async function enforcePermissions(
       status: false,
       message: `No permissions defined for table "${tableName}"`,
       hasFieldCheck: false,
+      hasCustomFunction: false,
     };
   }
 
@@ -231,6 +233,7 @@ export async function enforcePermissions(
       status: false,
       message: `No permissions defined for operation "${operation}" on table "${tableName}"`,
       hasFieldCheck: false,
+      hasCustomFunction: false,
     };
   }
 
@@ -238,26 +241,104 @@ export async function enforcePermissions(
 
   // Early return if no rules
   if (!rules || rules.length === 0) {
-    return { row: rows, status: true, hasFieldCheck: false };
+    return {
+      row: rows,
+      status: true,
+      hasFieldCheck: false,
+      hasCustomFunction: false,
+    };
   }
 
-  // Separate rules into fieldCheck and non-fieldCheck
+  // Separate rules into different types
   const fieldCheckRules = rules.filter((rule) => rule.allow === 'fieldCheck');
-  const nonFieldCheckRules = rules.filter(
-    (rule) => rule.allow !== 'fieldCheck'
+  const customFunctionRules = rules.filter(
+    (rule) => rule.allow === 'customFunction'
+  );
+  const simpleRules = rules.filter(
+    (rule) => rule.allow !== 'fieldCheck' && rule.allow !== 'customFunction'
   );
 
-  // First check non-fieldCheck rules
-  if (nonFieldCheckRules.length > 0) {
+  // First check simple rules that don't need row data
+  if (simpleRules.length > 0) {
     // Check each rule and find the first one that grants access
-    for (const rule of nonFieldCheckRules) {
+    for (const rule of simpleRules) {
       const hasAccess = await evaluatePermission([rule], userContext, {}, knex);
       if (hasAccess) {
         return {
           row: rows,
           status: true,
           hasFieldCheck: false,
+          hasCustomFunction: false,
         };
+      }
+    }
+  }
+
+  // Check customFunction rules if no simple rules matched
+  // These need row data like fieldCheck rules
+  if (customFunctionRules.length > 0) {
+    // If no rows provided but we need to check with custom functions, return early
+    if (!rows) {
+      return {
+        row: undefined,
+        status: false,
+        hasFieldCheck: false,
+        hasCustomFunction: true,
+        message: 'Custom function check required, please provide row data',
+      };
+    }
+
+    // Handle array of rows
+    if (Array.isArray(rows)) {
+      const result: Row[] = [];
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        // Filter rows based on custom function rules
+        const filteredChunk = [];
+        for (const row of chunk) {
+          // Check each row against all custom function rules
+          for (const rule of customFunctionRules) {
+            const hasAccess = await evaluatePermission(
+              [rule],
+              userContext,
+              row,
+              knex
+            );
+            if (hasAccess) {
+              filteredChunk.push(row);
+              break; // Move to the next row once we find a rule that grants access
+            }
+          }
+        }
+        result.push(...filteredChunk);
+      }
+
+      // If any rows passed the custom function checks, return success
+      if (result.length > 0) {
+        return {
+          row: result,
+          status: true,
+          hasFieldCheck: false,
+          hasCustomFunction: false,
+        };
+      }
+    } else {
+      // Handle single row
+      for (const rule of customFunctionRules) {
+        const hasAccess = await evaluatePermission(
+          [rule],
+          userContext,
+          rows,
+          knex
+        );
+        if (hasAccess) {
+          return {
+            row: rows,
+            status: true,
+            hasFieldCheck: false,
+            hasCustomFunction: false,
+          };
+        }
       }
     }
   }
@@ -271,6 +352,7 @@ export async function enforcePermissions(
         row: undefined,
         status: false,
         hasFieldCheck: true,
+        hasCustomFunction: false,
         message: 'Field-level check required, please provide row data',
       };
     }
@@ -303,6 +385,7 @@ export async function enforcePermissions(
         row: result,
         status: result.length > 0,
         hasFieldCheck: false,
+        hasCustomFunction: false,
         message:
           result.length === 0
             ? 'No rows matched the field-level permission rules'
@@ -326,6 +409,7 @@ export async function enforcePermissions(
       row: rows,
       status: hasFieldAccess,
       hasFieldCheck: false,
+      hasCustomFunction: false,
       message: !hasFieldAccess
         ? `User does not have field-level permission to perform operation "${operation}" on table "${tableName}"`
         : undefined,
@@ -337,6 +421,7 @@ export async function enforcePermissions(
     row: rows,
     status: false,
     hasFieldCheck: false,
+    hasCustomFunction: false,
     message: `User does not have permission to perform operation "${operation}" on table "${tableName}"`,
   };
 }
