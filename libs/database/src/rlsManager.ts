@@ -24,7 +24,8 @@ export async function evaluatePermission(
 
       case 'role':
         if (!rule.roles || rule.roles.length === 0) {
-          return false;
+          // If no roles specified, continue to next rule
+          continue;
         }
         if (
           rule.roles &&
@@ -33,17 +34,23 @@ export async function evaluatePermission(
         ) {
           return true;
         }
-        return false;
+        // If we reach here, the role rule didn't match
+        // Continue to the next rule instead of returning false
+        continue;
 
       case 'auth':
         if (userContext.userId) {
           return true;
         }
-        break;
+        // If we reach here, the auth rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'guest':
         if (!userContext.userId) return true;
-        break;
+        // If we reach here, the guest rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'labels':
         if (
@@ -54,7 +61,9 @@ export async function evaluatePermission(
         ) {
           return true;
         }
-        break;
+        // If we reach here, the labels rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'teams':
         if (
@@ -65,13 +74,17 @@ export async function evaluatePermission(
         ) {
           return true;
         }
-        break;
+        // If we reach here, the teams rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'static':
         if (typeof rule.static === 'boolean') {
           return rule.static;
         }
-        break;
+        // If we reach here, the static rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'fieldCheck':
         if (rule.fieldCheck) {
@@ -108,7 +121,9 @@ export async function evaluatePermission(
               break;
           }
         }
-        break;
+        // If we reach here, the fieldCheck rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'customSql':
         if (rule.customSql && knex) {
@@ -162,7 +177,9 @@ export async function evaluatePermission(
             return false;
           }
         }
-        break;
+        // If we reach here, the customSql rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'customFunction':
         if (rule.customFunction) {
@@ -176,10 +193,26 @@ export async function evaluatePermission(
               return false;
             }
 
+            // console.log(
+            //   `Executing custom RLS function "${rule.customFunction}" with userContext:`,
+            //   userContext,
+            //   'and row data:',
+            //   row
+            // );
+
             // Execute the custom function with userContext and row data
             const result = await Promise.resolve(
               customFn(userContext, row, knex)
             );
+
+            // console.log(
+            //   `Custom RLS function "${rule.customFunction}" returned:`,
+            //   !!result,
+            //   'for userContext:',
+            //   userContext,
+            //   'and row data:',
+            //   row
+            // );
             return !!result;
           } catch (error) {
             console.error(
@@ -189,7 +222,9 @@ export async function evaluatePermission(
             return false;
           }
         }
-        break;
+        // If we reach here, the customFunction rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
     }
   }
   return false;

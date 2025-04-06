@@ -507,6 +507,63 @@ describe('RLS Manager', () => {
       // Restore console.log
       consoleSpy.mockRestore();
     });
+
+    test('should continue to next rule if first rule returns false', async () => {
+      // Create rules where the first one will fail but the second will pass
+      const rules: PermissionRule[] = [
+        {
+          allow: 'role',
+          roles: ['superadmin'], // adminUser has role 'admin', not 'superadmin'
+        },
+        {
+          allow: 'customFunction',
+          customFunction: 'shouldBeCalled',
+        },
+      ];
+
+      // Register a function that will return true
+      const testFn = jest.fn().mockReturnValue(true);
+      rlsFunctionRegistry.register('shouldBeCalled', testFn);
+
+      // The first rule should fail, but the second rule should pass
+      const result = await evaluatePermission(rules, adminUser, {}, mockKnex);
+
+      // Overall result should be true because the second rule passed
+      expect(result).toBe(true);
+
+      // The custom function should have been called
+      expect(testFn).toHaveBeenCalledTimes(1);
+      expect(testFn).toHaveBeenCalledWith(adminUser, {}, mockKnex);
+    });
+
+    test('should continue to customSql rule if previous rules return false', async () => {
+      // Create rules where the first one will fail but the SQL rule will pass
+      const rules: PermissionRule[] = [
+        {
+          allow: 'role',
+          roles: ['superadmin'], // Will fail for adminUser
+        },
+        {
+          allow: 'customSql',
+          customSql: 'SELECT 1 FROM users WHERE id = :userId',
+        },
+      ];
+
+      // Mock the SQL query to return a successful result
+      mockKnex.raw.mockResolvedValueOnce([[{ count: 1 }]]);
+
+      // The first rule should fail, but the SQL rule should pass
+      const result = await evaluatePermission(rules, adminUser, {}, mockKnex);
+
+      // Overall result should be true because the SQL rule passed
+      expect(result).toBe(true);
+
+      // The SQL query should have been executed
+      expect(mockKnex.raw).toHaveBeenCalledTimes(1);
+      expect(mockKnex.raw).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT 1 FROM users WHERE id = 1')
+      );
+    });
   });
 
   describe('enforcePermissions', () => {
@@ -749,7 +806,10 @@ describe('RLS Manager', () => {
 
     test('should handle multiple rule types', async () => {
       // Register a custom function with debugging
-      const checkOwnershipFn = async (userContext, row) => {
+      const checkOwnershipFn = async (
+        userContext: UserContext,
+        row: Record<string, unknown>
+      ) => {
         // Log the values for debugging
         console.log('checkOwnership called with:', {
           userId: userContext.userId,
@@ -824,6 +884,89 @@ describe('RLS Manager', () => {
       );
 
       expect(userOtherResult.status).toBe(false);
+    });
+
+    test('should evaluate rules in sequence until one passes', async () => {
+      // Create a test setup with multiple rule types in sequence
+      // 1. A role rule that will fail for regular users
+      // 2. A customSql rule that will fail
+      // 3. A customFunction rule that will pass for specific rows
+
+      console.log(
+        'Testing multiple rule types in sequence with custom function'
+      );
+
+      // Register a custom function that checks if the user is the owner
+      const isOwnerFn = jest
+        .fn()
+        .mockImplementation(
+          (userContext: UserContext, row: Record<string, unknown>) => {
+            return row.owner_id === userContext.userId;
+          }
+        );
+      rlsFunctionRegistry.register('isOwner', isOwnerFn);
+
+      // Set up permissions with multiple rules in sequence
+      mockPermissionService.setMockPermissions('test_table', {
+        operations: {
+          SELECT: [
+            // Rule 1: Only admins can access (will fail for regular users)
+            { allow: 'role', roles: ['admin'] },
+
+            // Rule 2: SQL rule that will fail (returns no results)
+            {
+              allow: 'customSql',
+              customSql:
+                'SELECT 1 FROM users WHERE id = :userId AND role = "superadmin"',
+            },
+
+            // Rule 3: Custom function that checks ownership (will pass for owned rows)
+            {
+              allow: 'customFunction',
+              customFunction: 'isOwner',
+            },
+          ],
+        },
+      });
+
+      // Mock SQL query to return no results (fail)
+      mockKnex.raw.mockResolvedValueOnce([]);
+
+      // Test with regular user and their own row
+      // Rule 1 will fail (not admin)
+      // Rule 2 will fail (SQL returns no results)
+      // Rule 3 should pass (user is owner)
+      const result = await enforcePermissions(
+        'test_table',
+        'SELECT',
+        regularUser,
+        mockPermissionService as any,
+        userOwnedRow,
+        mockKnex
+      );
+
+      // The overall result should be true because the third rule passes
+      expect(result.status).toBe(true);
+
+      // Verify that all rules were evaluated in sequence
+      expect(mockKnex.raw).toHaveBeenCalledTimes(1); // SQL rule was evaluated
+      expect(isOwnerFn).toHaveBeenCalledTimes(1); // Custom function was evaluated
+
+      // Test with regular user and admin's row
+      // All rules should fail
+      mockKnex.raw.mockResolvedValueOnce([]); // Reset mock for second call
+
+      const failResult = await enforcePermissions(
+        'test_table',
+        'SELECT',
+        regularUser,
+        mockPermissionService as any,
+        adminOwnedRow,
+        mockKnex
+      );
+
+      // The overall result should be false because all rules fail
+      expect(failResult.status).toBe(false);
     });
   });
 });
