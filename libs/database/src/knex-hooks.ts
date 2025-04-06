@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 // hookableDb.ts
 import EventEmitter from 'events';
 import type { Knex } from 'knex';

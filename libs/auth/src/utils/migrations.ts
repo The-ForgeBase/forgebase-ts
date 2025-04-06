@@ -123,9 +123,11 @@ export async function addColumns(
             break;
           case 'uuid':
             if (
-              ['Client_SQLite3', 'Client_BetterSQLite3', 'Client_Libsql'].includes(
-                trx.client.constructor.name
-              )
+              [
+                'Client_SQLite3',
+                'Client_BetterSQLite3',
+                'Client_Libsql',
+              ].includes(trx.client.constructor.name)
             ) {
               column = table.string(field.name, 36);
             } else {
@@ -149,6 +151,14 @@ export async function addColumns(
 
         if (field.default !== undefined) {
           column.defaultTo(field.default);
+        }
+
+        // Add foreign key constraint if specified
+        if (field.foreignKeys) {
+          table
+            .foreign(field.foreignKeys.columnName)
+            .references(`${field.foreignKeys.references.columnName}`)
+            .inTable(`${field.foreignKeys.references.tableName}`);
         }
       }
     });
@@ -196,12 +206,12 @@ export async function renameColumn(
 
     // Get existing columns
     const existingColumns = await trx.table(tableName).columnInfo();
-    
+
     // Check if old column exists
     if (!Object.keys(existingColumns).includes(oldName)) {
       throw new Error(`Column ${oldName} does not exist in ${tableName}`);
     }
-    
+
     // Check if new column name already exists
     if (Object.keys(existingColumns).includes(newName)) {
       throw new Error(`Column ${newName} already exists in ${tableName}`);
@@ -242,20 +252,26 @@ export async function modifyColumn(
     // Get existing columns
     const existingColumns = await trx.table(tableName).columnInfo();
     const columnToModify = oldName || field.name;
-    
+
     // Check if column exists
     if (!Object.keys(existingColumns).includes(columnToModify)) {
-      throw new Error(`Column ${columnToModify} does not exist in ${tableName}`);
+      throw new Error(
+        `Column ${columnToModify} does not exist in ${tableName}`
+      );
     }
 
     // For SQLite, we need to recreate the table
-    if (['Client_SQLite3', 'Client_BetterSQLite3', 'Client_Libsql'].includes(
-      trx.client.constructor.name
-    )) {
+    if (
+      ['Client_SQLite3', 'Client_BetterSQLite3', 'Client_Libsql'].includes(
+        trx.client.constructor.name
+      )
+    ) {
       // SQLite doesn't support altering columns directly
       // We need to create a new table, copy data, and drop the old table
       // This is a simplified approach and may not work for all cases
-      throw new Error('Modifying columns in SQLite is not supported directly. Please use a migration with a new table.');
+      throw new Error(
+        'Modifying columns in SQLite is not supported directly. Please use a migration with a new table.'
+      );
     } else {
       // For other databases, we can alter the column
       await trx.schema.alterTable(tableName, (table) => {
@@ -398,7 +414,12 @@ export async function migrateData(
   knex: Knex,
   options: DataMigrationOptions
 ): Promise<void> {
-  const { transform, tableName = 'users', transaction = true, batchSize = 100 } = options;
+  const {
+    transform,
+    tableName = 'users',
+    transaction = true,
+    batchSize = 100,
+  } = options;
 
   const operation = async (trx: Knex.Transaction | Knex) => {
     // Check if table exists
@@ -408,13 +429,13 @@ export async function migrateData(
     }
 
     // Get total count
-    const { count } = await trx(tableName)
-      .count('* as count')
-      .first() as { count: number };
-    
+    const { count } = (await trx(tableName).count('* as count').first()) as {
+      count: number;
+    };
+
     // Process in batches
     const totalBatches = Math.ceil(count / batchSize);
-    
+
     for (let batch = 0; batch < totalBatches; batch++) {
       // Get batch of rows
       const rows = await trx(tableName)
@@ -422,13 +443,11 @@ export async function migrateData(
         .orderBy('id')
         .limit(batchSize)
         .offset(batch * batchSize);
-      
+
       // Transform each row and update
       for (const row of rows) {
         const transformedData = transform(row);
-        await trx(tableName)
-          .where('id', row.id)
-          .update(transformedData);
+        await trx(tableName).where('id', row.id).update(transformedData);
       }
     }
   };

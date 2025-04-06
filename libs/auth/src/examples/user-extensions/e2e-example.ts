@@ -1,6 +1,16 @@
 import { Knex } from 'knex';
-import { DynamicAuthManager, User, KnexUserService, KnexConfigStore, LocalAuthProvider, BasicSessionManager } from '../../index';
-import { extendUserTable, UserFieldDefinition } from '../../utils/user-extension';
+import {
+  DynamicAuthManager,
+  User,
+  KnexUserService,
+  KnexConfigStore,
+  LocalAuthProvider,
+  BasicSessionManager,
+} from '../../index';
+import {
+  extendUserTable,
+  UserFieldDefinition,
+} from '../../utils/user-extension';
 import { validateUserDataWithZod } from '../../utils/validation';
 import { generateTypeInterface } from '../../utils/type-generation';
 import { addColumns, migrateData } from '../../utils/migrations';
@@ -19,6 +29,7 @@ export interface ExtendedUser extends User {
   login_count?: number;
   last_active_at?: Date;
   preferences?: Record<string, any>;
+  team_id?: string; // Foreign key to teams table
 }
 
 /**
@@ -29,7 +40,7 @@ export const customFields: UserFieldDefinition[] = [
     name: 'first_name',
     type: 'string',
     nullable: true,
-    description: 'User\'s first name',
+    description: "User's first name",
     validation: {
       maxLength: 100,
     },
@@ -38,7 +49,7 @@ export const customFields: UserFieldDefinition[] = [
     name: 'last_name',
     type: 'string',
     nullable: true,
-    description: 'User\'s last name',
+    description: "User's last name",
     validation: {
       maxLength: 100,
     },
@@ -47,7 +58,7 @@ export const customFields: UserFieldDefinition[] = [
     name: 'display_name',
     type: 'string',
     nullable: true,
-    description: 'User\'s display name (defaults to first + last name)',
+    description: "User's display name (defaults to first + last name)",
     validation: {
       maxLength: 200,
     },
@@ -57,7 +68,7 @@ export const customFields: UserFieldDefinition[] = [
     type: 'string',
     nullable: true,
     default: 'free',
-    description: 'User\'s subscription tier',
+    description: "User's subscription tier",
     validation: {
       pattern: '^(free|basic|premium|enterprise)$',
     },
@@ -66,7 +77,7 @@ export const customFields: UserFieldDefinition[] = [
     name: 'subscription_expires_at',
     type: 'timestamp',
     nullable: true,
-    description: 'When the user\'s subscription expires',
+    description: "When the user's subscription expires",
   },
   {
     name: 'is_premium',
@@ -101,6 +112,19 @@ export const customFields: UserFieldDefinition[] = [
     nullable: true,
     description: 'User preferences as JSON',
   },
+  {
+    name: 'team_id',
+    type: 'uuid',
+    nullable: true,
+    description: "Reference to the user's team",
+    foreignKeys: {
+      columnName: 'team_id',
+      references: {
+        tableName: 'teams',
+        columnName: 'id',
+      },
+    },
+  },
 ];
 
 /**
@@ -112,7 +136,7 @@ export async function e2eExample(knex: Knex): Promise<void> {
     interfaceName: 'ExtendedUser',
     fields: customFields,
   });
-  
+
   console.log('Generated TypeScript interface:');
   console.log(typeCode);
 
@@ -128,16 +152,16 @@ export async function e2eExample(knex: Knex): Promise<void> {
   console.log('Setting up auth manager...');
   const configStore = new KnexConfigStore(knex);
   await configStore.initialize();
-  
+
   const config = await configStore.getConfig();
-  
+
   const userService = new KnexUserService<ExtendedUser>(config, {
     knex,
     tableName: 'users',
   });
-  
+
   const sessionManager = new BasicSessionManager(config);
-  
+
   const authManager = new DynamicAuthManager<ExtendedUser>(
     configStore,
     {
@@ -149,7 +173,7 @@ export async function e2eExample(knex: Knex): Promise<void> {
     undefined,
     { knex }
   );
-  
+
   // Step 4: Register a user with custom fields
   console.log('Registering user...');
   const userData = {
@@ -166,18 +190,18 @@ export async function e2eExample(knex: Knex): Promise<void> {
       },
     },
   };
-  
+
   // Validate user data
   const validationResult = validateUserDataWithZod(userData, customFields);
   if (!validationResult.valid) {
     console.error('Validation errors:', validationResult.errors);
     throw new Error('Invalid user data');
   }
-  
+
   // Register user
   const user = await authManager.register(userData);
   console.log('User registered:', user);
-  
+
   // Step 5: Update user with more custom fields
   console.log('Updating user...');
   await userService.updateUser(user.id, {
@@ -186,59 +210,64 @@ export async function e2eExample(knex: Knex): Promise<void> {
     login_count: 1,
     last_active_at: new Date(),
   });
-  
+
   // Step 6: Retrieve updated user
   const updatedUser = await userService.findUserById(user.id);
   console.log('Updated user:', updatedUser);
-  
+
   // Step 7: Demonstrate a data migration
   console.log('Performing data migration...');
   await migrateData(knex, {
     transform: (user) => {
       // Example: Set is_premium based on subscription_tier
-      const isPremium = ['premium', 'enterprise'].includes(user.subscription_tier);
-      
+      const isPremium = ['premium', 'enterprise'].includes(
+        user.subscription_tier
+      );
+
       return {
         ...user,
         is_premium: isPremium,
       };
     },
   });
-  
+
   // Step 8: Query users with custom fields
   console.log('Querying users with custom fields...');
   const premiumUsers = await knex('users')
     .where('is_premium', true)
     .count('* as count')
     .first();
-    
+
   console.log(`Number of premium users: ${premiumUsers?.count || 0}`);
-  
+
   const activeUsers = await knex('users')
-    .where('last_active_at', '>=', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) // Last 30 days
+    .where(
+      'last_active_at',
+      '>=',
+      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    ) // Last 30 days
     .count('* as count')
     .first();
-    
-  console.log(`Number of active users in the last 30 days: ${activeUsers?.count || 0}`);
-  
+
+  console.log(
+    `Number of active users in the last 30 days: ${activeUsers?.count || 0}`
+  );
+
   // Step 9: Login with extended user
   console.log('Logging in user...');
   const loginResult = await authManager.login({
     email: userData.email,
     password: userData.password,
   });
-  
+
   console.log('Login successful:', loginResult);
-  
+
   // Step 10: Update login count
   console.log('Updating login count...');
-  await knex('users')
-    .where('id', user.id)
-    .increment('login_count', 1)
-    .update({
-      last_active_at: knex.fn.now(),
-    });
-    
+  await knex('users').where('id', user.id).increment('login_count', 1).update({
+    last_active_at: knex.fn.now(),
+  });
+
   const finalUser = await userService.findUserById(user.id);
   console.log('Final user state:', finalUser);
 }
@@ -249,20 +278,20 @@ export async function e2eExample(knex: Knex): Promise<void> {
 export function apiEndpointExample(req: any, res: any) {
   // This is a mock example of how you might use the extended user in an API
   const user = req.user as ExtendedUser;
-  
+
   // Check if user is premium
   if (!user.is_premium) {
     return res.status(403).json({
       error: 'This endpoint requires a premium subscription',
     });
   }
-  
+
   // Use custom fields in business logic
   const greeting = user.display_name || user.name || user.email;
-  
+
   // Apply user preferences
   const theme = user.preferences?.theme || 'light';
-  
+
   return res.json({
     message: `Hello, ${greeting}!`,
     subscription: {

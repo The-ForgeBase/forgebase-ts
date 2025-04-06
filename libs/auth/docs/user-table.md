@@ -8,22 +8,22 @@ The ForgeBase Auth library uses a default user table schema that provides essent
 
 The default user table is created with the following schema:
 
-| Field Name | Type | Description | Nullable | Default |
-|------------|------|-------------|----------|---------|
-| id | uuid | Primary key identifier | No | UUID generated |
-| email | string | User's email address | No | None |
-| phone | string | User's phone number | Yes | None |
-| name | string | User's display name | Yes | None |
-| picture | string | URL to user's profile picture | Yes | None |
-| password_hash | string | Hashed password | Yes | None |
-| email_verified | boolean | Whether email is verified | No | false |
-| phone_verified | boolean | Whether phone is verified | No | false |
-| mfa_enabled | boolean | Whether MFA is enabled | No | false |
-| mfa_secret | string | Secret for MFA | Yes | None |
-| mfa_recovery_codes | json | Recovery codes for MFA | Yes | None |
-| last_login_at | timestamp | Last login timestamp | Yes | None |
-| created_at | timestamp | Creation timestamp | No | Current time |
-| updated_at | timestamp | Last update timestamp | No | Current time |
+| Field Name         | Type      | Description                   | Nullable | Default        |
+| ------------------ | --------- | ----------------------------- | -------- | -------------- |
+| id                 | uuid      | Primary key identifier        | No       | UUID generated |
+| email              | string    | User's email address          | No       | None           |
+| phone              | string    | User's phone number           | Yes      | None           |
+| name               | string    | User's display name           | Yes      | None           |
+| picture            | string    | URL to user's profile picture | Yes      | None           |
+| password_hash      | string    | Hashed password               | Yes      | None           |
+| email_verified     | boolean   | Whether email is verified     | No       | false          |
+| phone_verified     | boolean   | Whether phone is verified     | No       | false          |
+| mfa_enabled        | boolean   | Whether MFA is enabled        | No       | false          |
+| mfa_secret         | string    | Secret for MFA                | Yes      | None           |
+| mfa_recovery_codes | json      | Recovery codes for MFA        | Yes      | None           |
+| last_login_at      | timestamp | Last login timestamp          | Yes      | None           |
+| created_at         | timestamp | Creation timestamp            | No       | Current time   |
+| updated_at         | timestamp | Last update timestamp         | No       | Current time   |
 
 ## TypeScript Types
 
@@ -51,6 +51,39 @@ export interface BaseUser {
 // Generic type for extending with custom fields
 export type User<T extends Record<string, unknown> = {}> = BaseUser & T;
 ```
+
+## Extending with Foreign Keys
+
+When extending the user table, you can also define foreign key relationships to other tables:
+
+```typescript
+import { extendUserTable } from '@forgebase-ts/auth/utils/user-extension';
+
+// Define a field with a foreign key relationship
+const fields = [
+  {
+    name: 'organization_id',
+    type: 'uuid',
+    nullable: true,
+    description: "Reference to the user's organization",
+    foreignKeys: {
+      columnName: 'organization_id',
+      references: {
+        tableName: 'organizations',
+        columnName: 'id',
+      },
+    },
+  },
+];
+
+// Extend the user table with the foreign key
+await extendUserTable(knex, {
+  fields,
+  migrateExisting: true,
+});
+```
+
+This creates a foreign key constraint from the `organization_id` column in the user table to the `id` column in the `organizations` table.
 
 ## Related Tables
 

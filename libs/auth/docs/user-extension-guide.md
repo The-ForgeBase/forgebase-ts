@@ -50,14 +50,27 @@ const customFields = [
     name: 'company_name',
     type: 'string',
     nullable: true,
-    description: 'User\'s company name',
+    description: "User's company name",
   },
   {
     name: 'subscription_tier',
     type: 'string',
     nullable: false,
     default: 'free',
-    description: 'User\'s subscription tier',
+    description: "User's subscription tier",
+  },
+  {
+    name: 'organization_id',
+    type: 'uuid',
+    nullable: true,
+    description: "Reference to the user's organization",
+    foreignKeys: {
+      columnName: 'organization_id',
+      references: {
+        tableName: 'organizations',
+        columnName: 'id',
+      },
+    },
   },
 ];
 
@@ -324,16 +337,16 @@ if (!validationResult.valid) {
 function canViewField(user, targetUser, fieldName) {
   // Self can view all their own fields
   if (user.id === targetUser.id) return true;
-  
+
   // Admins can view all fields
   if (user.is_admin) return true;
-  
+
   // Field-specific rules
   const sensitiveFields = ['tax_id', 'business_address'];
   if (sensitiveFields.includes(fieldName)) {
     return false;
   }
-  
+
   return true;
 }
 ```
@@ -477,7 +490,7 @@ async function setupEcommerceUser(knex: Knex) {
   await extendUserTable(knex, {
     fields: ecommerceFields,
   });
-  
+
   // Add indexes for performance
   await knex.schema.alterTable('users', (table) => {
     table.index('loyalty_points');
@@ -503,7 +516,7 @@ async function createEcommerceUser(knex: Knex) {
       loyalty_points: 100,
     })
     .returning('*');
-    
+
   return user[0];
 }
 ```

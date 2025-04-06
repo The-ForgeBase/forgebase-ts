@@ -1305,6 +1305,19 @@ const customFields: UserFieldDefinition[] = [
       pattern: '^(free|basic|premium|enterprise)$',
     },
   },
+  {
+    name: 'organization_id',
+    type: 'uuid',
+    nullable: true,
+    description: "Reference to the user's organization",
+    foreignKeys: {
+      columnName: 'organization_id',
+      references: {
+        tableName: 'organizations',
+        columnName: 'id',
+      },
+    },
+  },
 ];
 
 // Extend the user table

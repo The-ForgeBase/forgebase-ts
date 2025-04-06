@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-escape */
 import { Knex } from 'knex';
-import { ColumnType } from '@forgebase-ts/database';
+import { ColumnType, ForeignKey } from '@forgebase-ts/database';
 import { User } from '../types';
 
 /**
@@ -14,6 +14,7 @@ export interface UserFieldDefinition {
   default?: any;
   description?: string;
   validation?: UserFieldValidation;
+  foreignKeys?: ForeignKey;
 }
 
 /**
@@ -146,6 +147,14 @@ export async function extendUserTable(
 
       if (field.default !== undefined) {
         column.defaultTo(field.default);
+      }
+
+      // Foregn key
+      if (field.foreignKeys) {
+        table
+          .foreign(field.foreignKeys.columnName)
+          .references(`${field.foreignKeys.references.columnName}`)
+          .inTable(`${field.foreignKeys.references.tableName}`);
       }
     }
   });
