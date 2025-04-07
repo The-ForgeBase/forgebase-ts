@@ -2,7 +2,9 @@
   "name": "@forgebase-ts/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "build": "nx build docs"
+  },
   "private": true,
   "dependencies": {
     "@analogjs/content": "1.15.0",

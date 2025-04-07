@@ -20,6 +20,12 @@ export default defineConfig(({ mode }) => {
         allow: ['.'],
       },
     },
+    optimizeDeps: {
+      include: ['@ng-icons/core'],
+    },
+    ssr: {
+      noExternal: ['@ng-icons/core'],
+    },
     plugins: [analog(), nxViteTsPaths()],
     test: {
       globals: true,
