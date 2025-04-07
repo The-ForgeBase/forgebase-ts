@@ -7,7 +7,7 @@ import { WebSocketManager } from './websocket/WebSocketManager';
 type MutationType = 'create' | 'update' | 'delete';
 
 type QueryFunction<T extends {}> = (
-  query: Knex.QueryBuilder<T, T[]>
+  query: Knex.QueryBuilder<T, any>
 ) => Promise<T[]>;
 
 type MutationFunction<T extends {}> = (
@@ -62,11 +62,16 @@ class KnexHooks {
   async query<T extends {}>(
     tableName: string,
     queryFn: QueryFunction<T>,
-    context?: HookContext
+    context?: HookContext,
+    trx?: Knex.Transaction
   ): Promise<T[]> {
     this.events.emit('beforeQuery', { tableName, context });
     await this.beforeQuery(tableName, context);
-    const result = await queryFn(this.knex(tableName));
+
+    // Use transaction if provided, otherwise use the knex instance
+    const queryBuilder = trx ? trx<T>(tableName) : this.knex<T>(tableName);
+    const result = await queryFn(queryBuilder);
+
     this.events.emit('afterQuery', { tableName, result, context });
     await this.afterQuery(tableName, result, context);
     return result;
@@ -78,7 +83,8 @@ class KnexHooks {
     mutationType: MutationType,
     mutationFn: MutationFunction<T>,
     data?: any,
-    context?: HookContext
+    context?: HookContext,
+    trx?: Knex.Transaction
   ): Promise<any> {
     this.events.emit('beforeMutation', {
       tableName,
@@ -88,7 +94,10 @@ class KnexHooks {
     });
 
     await this.beforeMutation(tableName, mutationType, data, context);
-    const result = await mutationFn(this.knex<T>(tableName));
+
+    // Use transaction if provided, otherwise use the knex instance
+    const queryBuilder = trx ? trx<T>(tableName) : this.knex<T>(tableName);
+    const result = await mutationFn(queryBuilder);
 
     this.events.emit('afterMutation', {
       tableName,

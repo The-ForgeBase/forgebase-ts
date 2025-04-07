@@ -93,6 +93,7 @@ Our mission is to simplify backend development by providing a highly flexible, l
 - [API Reference](#api-reference)
   - [ForgeDatabase](#forgedatabase)
   - [SchemaInspector](#schemainspector)
+  - [Transactions](#transactions)
 - [Building](#building)
 - [Running Tests](#running-tests)
 - [Security Best Practices](#security-best-practices)
@@ -389,6 +390,137 @@ class SchemaInspector {
 }
 ```
 
+#### Transactions
+
+All database operations in the ForgeDatabase library support transactions, allowing you to perform multiple operations atomically. This ensures data consistency and prevents partial updates in case of errors.
+
+There are two ways to use transactions in ForgeDatabase:
+
+1. **Explicit Transactions**: Pass a transaction object to each method
+2. **Implicit Transactions**: Use the built-in transaction method
+
+##### Explicit Transactions
+
+```typescript
+// Import the necessary modules
+import { createForgeDatabase } from '@forgebase-ts/database';
+import knex from 'knex';
+
+// Initialize the database
+const knexInstance = knex({
+  client: 'sqlite3',
+  connection: {
+    filename: './database.sqlite',
+  },
+  useNullAsDefault: true,
+});
+
+const db = createForgeDatabase({ db: knexInstance });
+
+// Example: Using explicit transactions for multiple operations
+async function createUserWithProfile() {
+  // Start a transaction
+  await knexInstance.transaction(async (trx) => {
+    // Create a user
+    const user = await db.endpoints.data.create(
+      {
+        tableName: 'users',
+        data: { name: 'John Doe', email: 'john@example.com' },
+      },
+      { userId: 1 }, // user context
+      false, // isSystem
+      trx // pass the transaction
+    );
+
+    // Create a profile linked to the user
+    await db.endpoints.data.create(
+      {
+        tableName: 'profiles',
+        data: {
+          user_id: user[0].id,
+          bio: 'Software developer',
+        },
+      },
+      { userId: 1 },
+      false,
+      trx
+    );
+
+    // If any operation fails, the entire transaction will be rolled back
+  });
+}
+```
+
+##### Implicit Transactions
+
+ForgeDatabase also provides a built-in transaction method that automatically handles transactions for you:
+
+```typescript
+// Example: Using the built-in transaction method
+async function createUserWithProfile() {
+  // Use the built-in transaction method
+  await db.transaction(async (trx) => {
+    // Create a user
+    const user = await db.endpoints.data.create(
+      {
+        tableName: 'users',
+        data: { name: 'John Doe', email: 'john@example.com' },
+      },
+      { userId: 1 }, // user context
+      false, // isSystem
+      trx // pass the transaction
+    );
+
+    // Create a profile linked to the user
+    await db.endpoints.data.create(
+      {
+        tableName: 'profiles',
+        data: {
+          user_id: user[0].id,
+          bio: 'Software developer',
+        },
+      },
+      { userId: 1 },
+      false,
+      trx
+    );
+  });
+}
+```
+
+##### Automatic Transaction Management
+
+All database operations in ForgeDatabase now automatically create a transaction if one is not provided. This makes the code more backward compatible and easier to use:
+
+```typescript
+// Example: Using automatic transaction management
+async function createUserWithProfile() {
+  // Create a user - transaction is created automatically
+  const user = await db.endpoints.data.create(
+    {
+      tableName: 'users',
+      data: { name: 'John Doe', email: 'john@example.com' },
+    },
+    { userId: 1 } // user context
+  );
+
+  // Create a profile - transaction is created automatically
+  await db.endpoints.data.create(
+    {
+      tableName: 'profiles',
+      data: {
+        user_id: user[0].id,
+        bio: 'Software developer',
+      },
+    },
+    { userId: 1 }
+  );
+
+  // Note: These are two separate transactions. For atomic operations,
+  // use one of the transaction methods above.
+}
+```
+
 ## Building
 
 Run `nx build database` to build the library.
@@ -505,16 +637,16 @@ For the most flexible permission rules, you can register custom JavaScript funct
 
 #### Comparison between customSql and customFunction
 
-| Feature | customSql | customFunction |
-|---------|-----------|---------------|
-| Database Access | Yes (SQL only) | Yes (full Knex API) |
-| Language | SQL | JavaScript/TypeScript |
-| External API Calls | No | Yes |
-| Complexity | Limited by SQL | Unlimited |
-| Performance | Generally faster | May be slower |
-| Reusability | Limited | High |
-| Debugging | SQL errors only | Full error handling |
-| Testability | Difficult | Easy to unit test |
+| Feature            | customSql        | customFunction        |
+| ------------------ | ---------------- | --------------------- |
+| Database Access    | Yes (SQL only)   | Yes (full Knex API)   |
+| Language           | SQL              | JavaScript/TypeScript |
+| External API Calls | No               | Yes                   |
+| Complexity         | Limited by SQL   | Unlimited             |
+| Performance        | Generally faster | May be slower         |
+| Reusability        | Limited          | High                  |
+| Debugging          | SQL errors only  | Full error handling   |
+| Testability        | Difficult        | Easy to unit test     |
 
 To use custom functions:
 

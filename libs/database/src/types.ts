@@ -190,30 +190,60 @@ export interface PermissionParams {
   permissions?: TablePermissions;
 }
 
+export interface ForgeDatabase {
+  endpoints: ForgeDatabaseEndpoints;
+  getKnexInstance(): Knex;
+  transaction<T>(callback: (trx: Knex.Transaction) => Promise<T>): Promise<T>;
+}
+
 export interface ForgeDatabaseEndpoints {
   schema: {
-    get: () => Promise<DatabaseSchema>;
-    create: (params: SchemaCreateParams) => Promise<{
+    get: (trx?: Knex.Transaction) => Promise<DatabaseSchema>;
+    create: (
+      params: SchemaCreateParams,
+      trx?: Knex.Transaction
+    ) => Promise<{
       message: string;
       tablename: string;
       action: string;
     }>;
-    delete: (tableName: string) => Promise<{
+    delete: (
+      tableName: string,
+      trx?: Knex.Transaction
+    ) => Promise<{
       message: string;
       tablename: string;
       action: string;
     }>;
-    modify: (params: ModifySchemaParams) => Promise<any>;
-    addForeingKey: (params: AddForeignKeyParams) => Promise<any>;
-    dropForeignKey: (params: DropForeignKeyParams) => Promise<any>;
-    truncateTable: (tableName: string) => Promise<any>;
-    getTables: () => Promise<string[]>;
-    getTableSchema: (tableName: string) => Promise<{
+    modify: (
+      params: ModifySchemaParams,
+      trx?: Knex.Transaction
+    ) => Promise<any>;
+    addForeingKey: (
+      params: AddForeignKeyParams,
+      trx?: Knex.Transaction
+    ) => Promise<any>;
+    dropForeignKey: (
+      params: DropForeignKeyParams,
+      trx?: Knex.Transaction
+    ) => Promise<any>;
+    truncateTable: (tableName: string, trx?: Knex.Transaction) => Promise<any>;
+    getTables: (trx?: Knex.Transaction) => Promise<string[]>;
+    getTableSchema: (
+      tableName: string,
+      trx?: Knex.Transaction
+    ) => Promise<{
       name: string;
       info: TableInfo;
     }>;
-    getTablePermissions: (tableName: string) => Promise<TablePermissions>;
-    getTableSchemaWithPermissions: (tableName: string) => Promise<{
+    getTablePermissions: (
+      tableName: string,
+      trx?: Knex.Transaction
+    ) => Promise<TablePermissions>;
+    getTableSchemaWithPermissions: (
+      tableName: string,
+      trx?: Knex.Transaction
+    ) => Promise<{
       name: string;
       info: TableInfo;
       permissions: TablePermissions;
@@ -224,26 +254,33 @@ export interface ForgeDatabaseEndpoints {
       tableName: string,
       params: DataQueryParams,
       user?: UserContext,
-      isSystem?: boolean
+      isSystem?: boolean,
+      trx?: Knex.Transaction
     ) => Promise<T[]>;
     create: (
       params: DataMutationParams,
       user?: UserContext,
-      isSystem?: boolean
+      isSystem?: boolean,
+      trx?: Knex.Transaction
     ) => Promise<any>;
     update: (
       params: DataMutationParams,
       user?: UserContext,
-      isSystem?: boolean
+      isSystem?: boolean,
+      trx?: Knex.Transaction
     ) => Promise<any>;
     delete: (
       params: DataDeleteParams,
       user?: UserContext,
-      isSystem?: boolean
+      isSystem?: boolean,
+      trx?: Knex.Transaction
     ) => Promise<any>;
   };
   permissions: {
-    get: (params: PermissionParams) => Promise<TablePermissions | undefined>;
-    set: (params: PermissionParams) => Promise<any>;
+    get: (
+      params: PermissionParams,
+      trx?: Knex.Transaction
+    ) => Promise<TablePermissions | undefined>;
+    set: (params: PermissionParams, trx?: Knex.Transaction) => Promise<any>;
   };
 }

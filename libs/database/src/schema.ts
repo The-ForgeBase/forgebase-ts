@@ -15,10 +15,17 @@ import { createColumn, updateColumn } from './utils/column-utils';
 //   }
 // }
 
-export async function addForeignKey(params: AddForeignKeyParams, knex: Knex) {
+export async function addForeignKey(
+  params: AddForeignKeyParams,
+  knex: Knex,
+  trx?: Knex.Transaction
+) {
   const { tableName, column, foreignTableName, foreignColumn } = params;
 
-  await knex.schema.table(tableName, (table) => {
+  // Use transaction if provided, otherwise use the knex instance
+  const schemaBuilder = trx ? trx.schema : knex.schema;
+
+  await schemaBuilder.table(tableName, (table) => {
     table.foreign(column).references(foreignColumn).inTable(foreignTableName);
   });
 
@@ -27,10 +34,17 @@ export async function addForeignKey(params: AddForeignKeyParams, knex: Knex) {
   };
 }
 
-export async function dropForeignKey(params: DropForeignKeyParams, knex: Knex) {
+export async function dropForeignKey(
+  params: DropForeignKeyParams,
+  knex: Knex,
+  trx?: Knex.Transaction
+) {
   const { tableName, column } = params;
 
-  await knex.schema.table(tableName, (table) => {
+  // Use transaction if provided, otherwise use the knex instance
+  const schemaBuilder = trx ? trx.schema : knex.schema;
+
+  await schemaBuilder.table(tableName, (table) => {
     table.dropForeign(column);
   });
 
@@ -39,13 +53,20 @@ export async function dropForeignKey(params: DropForeignKeyParams, knex: Knex) {
   };
 }
 
-export async function modifySchema(knex: Knex, params: ModifySchemaParams) {
+export async function modifySchema(
+  knex: Knex,
+  params: ModifySchemaParams,
+  trx?: Knex.Transaction
+) {
   const { tableName, action, columns } = params;
 
   try {
+    // Use transaction if provided, otherwise use the knex instance
+    const schemaBuilder = trx ? trx.schema : knex.schema;
+
     switch (action) {
       case 'addColumn':
-        await knex.schema.alterTable(tableName, (table) => {
+        await schemaBuilder.alterTable(tableName, (table) => {
           columns.forEach((col: any) => createColumn(table, col, knex));
         });
         return {
@@ -53,7 +74,7 @@ export async function modifySchema(knex: Knex, params: ModifySchemaParams) {
         };
 
       case 'deleteColumn':
-        await knex.schema.alterTable(tableName, (table) => {
+        await schemaBuilder.alterTable(tableName, (table) => {
           columns.forEach((col: any) => table.dropColumn(col.name));
         });
         return {
@@ -63,7 +84,7 @@ export async function modifySchema(knex: Knex, params: ModifySchemaParams) {
       case 'updateColumn':
         // Handle each column update sequentially
         for (const col of columns as UpdateColumnDefinition[]) {
-          await updateColumn(knex, tableName, col);
+          await updateColumn(knex, tableName, col, trx);
         }
 
         return {
@@ -79,8 +100,14 @@ export async function modifySchema(knex: Knex, params: ModifySchemaParams) {
   }
 }
 
-export async function truncateTable(tableName: string, knex: Knex) {
-  await knex(tableName).truncate();
+export async function truncateTable(
+  tableName: string,
+  knex: Knex,
+  trx?: Knex.Transaction
+) {
+  // Use transaction if provided, otherwise use the knex instance
+  const queryBuilder = trx ? trx(tableName) : knex(tableName);
+  await queryBuilder.truncate();
 
   return {
     message: 'Table truncated',

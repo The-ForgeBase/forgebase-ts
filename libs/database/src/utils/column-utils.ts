@@ -117,7 +117,8 @@ export function createColumn(
 async function dropExistingForeignKeys(
   knex: Knex,
   tableName: string,
-  columnName: string
+  columnName: string,
+  trx?: Knex.Transaction
 ) {
   const inspector = SchemaInspector(knex);
   // Get foreign key constraints
@@ -125,7 +126,9 @@ async function dropExistingForeignKeys(
 
   for (const fk of foreignKeys) {
     if (fk.column === columnName) {
-      await knex.schema.alterTable(tableName, (table) => {
+      // Use transaction if provided, otherwise use the knex instance
+      const schemaBuilder = trx ? trx.schema : knex.schema;
+      await schemaBuilder.alterTable(tableName, (table) => {
         table.dropForeign(fk.column);
       });
     }
@@ -136,18 +139,21 @@ async function dropExistingForeignKeys(
 export async function updateColumn(
   knex: Knex,
   tableName: string,
-  columnDef: UpdateColumnDefinition
+  columnDef: UpdateColumnDefinition,
+  trx?: Knex.Transaction
 ) {
   // First, check and drop any existing foreign keys
-  await dropExistingForeignKeys(knex, tableName, columnDef.currentName);
+  await dropExistingForeignKeys(knex, tableName, columnDef.currentName, trx);
 
   // Then do all modifications in a single alter table call
-  await knex.schema.alterTable(tableName, (table) => {
+  // Use transaction if provided, otherwise use the knex instance
+  const schemaBuilder = trx ? trx.schema : knex.schema;
+  await schemaBuilder.alterTable(tableName, (table) => {
     // Drop the existing column
     table.dropColumn(columnDef.currentName);
 
     // Recreate the column with new definition
-    let column = createColumn(
+    const column = createColumn(
       table,
       {
         name: columnDef.newName || columnDef.currentName,

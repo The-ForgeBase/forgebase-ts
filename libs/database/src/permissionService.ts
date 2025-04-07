@@ -26,7 +26,8 @@ class PermissionService {
   }
 
   async getPermissionsForTable(
-    tableName: string
+    tableName: string,
+    trx?: Knex.Transaction
   ): Promise<TablePermissions | any> {
     // Check cache first
     const cachedPermissions = this.cache.get(tableName);
@@ -35,7 +36,9 @@ class PermissionService {
     }
 
     // If not in cache, fetch from database
-    const result = await this.knex('table_permissions')
+    // Use transaction if provided, otherwise use the knex instance
+    const queryBuilder = trx ? trx : this.knex;
+    const result = await queryBuilder('table_permissions')
       .where({ table_name: tableName })
       .first();
 
@@ -48,9 +51,12 @@ class PermissionService {
 
   async setPermissionsForTable(
     tableName: string,
-    permissions: TablePermissions
+    permissions: TablePermissions,
+    trx?: Knex.Transaction
   ): Promise<TablePermissions> {
-    await this.knex('table_permissions')
+    // Use transaction if provided, otherwise use the knex instance
+    const queryBuilder = trx ? trx : this.knex;
+    await queryBuilder('table_permissions')
       .insert({
         table_name: tableName,
         permissions: JSON.stringify(permissions),
@@ -64,8 +70,13 @@ class PermissionService {
     return permissions;
   }
 
-  async deletePermissionsForTable(tableName: string): Promise<void> {
-    await this.knex('table_permissions')
+  async deletePermissionsForTable(
+    tableName: string,
+    trx?: Knex.Transaction
+  ): Promise<void> {
+    // Use transaction if provided, otherwise use the knex instance
+    const queryBuilder = trx ? trx : this.knex;
+    await queryBuilder('table_permissions')
       .where({ table_name: tableName })
       .delete();
 
