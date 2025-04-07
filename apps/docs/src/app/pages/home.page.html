@@ -495,6 +495,262 @@
   </div>
 </section>
 
+<!-- Language Support Section -->
+<section
+  id="languages"
+  class="mx-auto max-w-7xl px-6 space-y-6 py-8 md:py-12 lg:py-24"
+>
+  <div class="max-w-[58rem]" [ngClass]="container">
+    <h2 [ngClass]="subHeading">Language Support</h2>
+    <p class="max-w-[42rem]" [ngClass]="lead">
+      ForgeBase is being actively developed across multiple programming
+      languages to support diverse development ecosystems.
+    </p>
+  </div>
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+    <!-- JavaScript/TypeScript Card -->
+    <div hlmCard class="transition-all hover:shadow-lg">
+      <div hlmCardHeader>
+        <div class="flex items-center gap-2">
+          <ng-icon
+            hlm
+            name="diTypescriptOriginal"
+            size="lg"
+            class="text-primary !overflow-visible"
+          ></ng-icon>
+          <h3 hlmCardTitle>JavaScript/TypeScript</h3>
+        </div>
+        <p hlmCardDescription>
+          Full-featured implementation with comprehensive SDK support
+        </p>
+      </div>
+      <div hlmCardContent>
+        <ul class="list-none space-y-2 text-sm text-muted-foreground">
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Runtime agnostic
+          </li>
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Node.js, Deno & Bun support
+          </li>
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Web & mobile SDKs
+          </li>
+          <li class="flex items-center">
+            <span
+              class="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary"
+            >
+              Alpha
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Go Card -->
+    <div hlmCard class="transition-all hover:shadow-lg">
+      <div hlmCardHeader>
+        <div class="flex items-center gap-2">
+          <ng-icon
+            hlm
+            name="diGoOriginalWordmark"
+            size="lg"
+            class="text-primary !overflow-visible"
+          ></ng-icon>
+          <h3 hlmCardTitle>Go</h3>
+        </div>
+        <p hlmCardDescription>
+          High-performance implementation for server environments
+        </p>
+      </div>
+      <div hlmCardContent>
+        <ul class="list-none space-y-2 text-sm text-muted-foreground">
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Concurrent processing
+          </li>
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Low memory footprint
+          </li>
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Cloud-native ready
+          </li>
+          <li class="flex items-center">
+            <span
+              class="text-xs px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-500"
+            >
+              Work in Progress
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Rust Card -->
+    <div hlmCard class="transition-all hover:shadow-lg">
+      <div hlmCardHeader>
+        <div class="flex items-center gap-2">
+          <ng-icon
+            hlm
+            name="diRustOriginal"
+            size="lg"
+            class="text-primary !overflow-visible"
+          ></ng-icon>
+          <h3 hlmCardTitle>Rust</h3>
+        </div>
+        <p hlmCardDescription>Memory-safe, high-performance implementation</p>
+      </div>
+      <div hlmCardContent>
+        <ul class="list-none space-y-2 text-sm text-muted-foreground">
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Memory safety guarantees
+          </li>
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            WebAssembly support
+          </li>
+          <li class="flex items-center">
+            <span
+              class="text-xs px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-500"
+            >
+              Work in Progress
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PHP Card -->
+    <div hlmCard class="transition-all hover:shadow-lg">
+      <div hlmCardHeader>
+        <div class="flex items-center gap-2">
+          <ng-icon
+            hlm
+            name="diPhpOriginal"
+            size="lg"
+            class="text-primary !overflow-visible"
+          ></ng-icon>
+          <h3 hlmCardTitle>PHP</h3>
+        </div>
+        <p hlmCardDescription>Integration with popular PHP frameworks</p>
+      </div>
+      <div hlmCardContent>
+        <ul class="list-none space-y-2 text-sm text-muted-foreground">
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Laravel support
+          </li>
+
+          <li class="flex items-center">
+            <span
+              class="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground"
+            >
+              Planned
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Python Card -->
+    <div hlmCard class="transition-all hover:shadow-lg">
+      <div hlmCardHeader>
+        <div class="flex items-center gap-2">
+          <ng-icon
+            hlm
+            name="diPythonOriginal"
+            size="lg"
+            class="text-primary !overflow-visible"
+          ></ng-icon>
+          <h3 hlmCardTitle>Python</h3>
+        </div>
+        <p hlmCardDescription>
+          Easy-to-use implementation for data science and web
+        </p>
+      </div>
+      <div hlmCardContent>
+        <ul class="list-none space-y-2 text-sm text-muted-foreground">
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            Django integration
+          </li>
+          <li class="flex items-center">
+            <ng-icon
+              hlm
+              name="lucideCircleCheck"
+              size="sm"
+              class="mr-2 !overflow-visible"
+            ></ng-icon>
+            FastAPI support
+          </li>
+          <li class="flex items-center">
+            <span
+              class="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground"
+            >
+              Planned
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="space-y-6 py-8 md:py-12 lg:py-24">
   <div class="mx-auto space-y-12 text-center md:max-w-[64rem]">
     <!-- <spartan-three-hundred class="mt-12" /> -->

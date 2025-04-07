@@ -12,7 +12,15 @@ import {
   lucideServer,
   lucideShield,
   lucideStar,
+  lucideWand,
 } from '@ng-icons/lucide';
+import {
+  diGoOriginalWordmark,
+  diPhpOriginal,
+  diPythonOriginal,
+  diRustOriginal,
+  diTypescriptOriginal,
+} from '@ng-icons/devicon/original';
 import { HlmBadgeDirective } from '@spartan-ng/ui-badge-helm';
 import { HlmButtonDirective } from '@spartan-ng/ui-button-helm';
 import { HlmCardImports } from '@spartan-ng/ui-card-helm';
@@ -55,6 +63,12 @@ export const routeMeta: RouteMeta = {
       lucideArrowRight,
       lucideServer,
       lucideBolt,
+      lucideWand,
+      diTypescriptOriginal,
+      diGoOriginalWordmark,
+      diRustOriginal,
+      diPhpOriginal,
+      diPythonOriginal,
     }),
   ],
   templateUrl: './home.page.html',
