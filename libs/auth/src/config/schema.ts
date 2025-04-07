@@ -227,6 +227,8 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
  * Initialize admin-specific database tables
  */
 export async function initializeAdminTables(knex: Knex): Promise<void> {
+  console.log('Initializing admin tables...');
+
   // Admins Table
   const hasAdmins = await knex.schema.hasTable('internal_admins');
   if (!hasAdmins) {

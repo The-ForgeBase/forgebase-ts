@@ -49,9 +49,9 @@ export class DatabaseService {
           },
           useNullAsDefault: true,
           pool: {
-            min: 2,
-            max: 20,
-            acquireTimeoutMillis: 30000, // 30 seconds
+            min: 0,
+            max: 10,
+            acquireTimeoutMillis: 60000, // 60 seconds
             createTimeoutMillis: 30000,
             idleTimeoutMillis: 30000,
             reapIntervalMillis: 1000,
@@ -65,9 +65,9 @@ export class DatabaseService {
           client: 'pg',
           connection: this.config.config.connection,
           pool: {
-            min: 2,
-            max: 20,
-            acquireTimeoutMillis: 30000, // 30 seconds
+            min: 0,
+            max: 10,
+            acquireTimeoutMillis: 60000, // 60 seconds
             createTimeoutMillis: 30000,
             idleTimeoutMillis: 30000,
             reapIntervalMillis: 1000,
@@ -83,9 +83,9 @@ export class DatabaseService {
           },
           useNullAsDefault: true,
           pool: {
-            min: 2,
-            max: 20,
-            acquireTimeoutMillis: 30000, // 30 seconds
+            min: 0,
+            max: 10,
+            acquireTimeoutMillis: 60000, // 60 seconds
             createTimeoutMillis: 30000,
             idleTimeoutMillis: 30000,
             reapIntervalMillis: 1000,

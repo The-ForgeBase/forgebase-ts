@@ -105,7 +105,12 @@ export class ForgeDatabase {
   public async transaction<T>(
     callback: (trx: Knex.Transaction) => Promise<T>
   ): Promise<T> {
-    return await this.hooks.getKnexInstance().transaction(callback);
+    try {
+      return await this.hooks.getKnexInstance().transaction(callback);
+    } catch (error) {
+      console.error('Transaction error:', error);
+      throw error;
+    }
   }
 
   /**
@@ -123,11 +128,11 @@ export class ForgeDatabase {
       },
       create: async (payload: SchemaCreateParams, trx?: Knex.Transaction) => {
         // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.create(payload, newTrx);
-          });
-        }
+        // if (!trx) {
+        //   return this.transaction(async (newTrx) => {
+        //     return await this.endpoints.schema.create(payload, newTrx);
+        //   });
+        // }
 
         const { tableName, columns } = payload;
 

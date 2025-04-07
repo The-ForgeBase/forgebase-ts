@@ -192,7 +192,7 @@ export interface PermissionParams {
 
 export interface ForgeDatabaseEndpoints {
   schema: {
-    get: (trx?: Knex.Transaction) => Promise<DatabaseSchema>;
+    get: () => Promise<DatabaseSchema>;
     create: (
       params: SchemaCreateParams,
       trx?: Knex.Transaction
@@ -222,11 +222,8 @@ export interface ForgeDatabaseEndpoints {
       trx?: Knex.Transaction
     ) => Promise<any>;
     truncateTable: (tableName: string, trx?: Knex.Transaction) => Promise<any>;
-    getTables: (trx?: Knex.Transaction) => Promise<string[]>;
-    getTableSchema: (
-      tableName: string,
-      trx?: Knex.Transaction
-    ) => Promise<{
+    getTables: () => Promise<string[]>;
+    getTableSchema: (tableName: string) => Promise<{
       name: string;
       info: TableInfo;
     }>;
