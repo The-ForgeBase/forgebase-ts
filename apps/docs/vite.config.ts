@@ -26,7 +26,14 @@ export default defineConfig(({ mode }) => {
     ssr: {
       noExternal: ['@ng-icons/core'],
     },
-    plugins: [analog(), nxViteTsPaths()],
+    plugins: [
+      analog({
+        prerender: {
+          routes: ['/'],
+        },
+      }),
+      nxViteTsPaths(),
+    ],
     test: {
       globals: true,
       environment: 'jsdom',
