@@ -8,7 +8,7 @@ import { isSSR } from './utils';
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'forgebase_access_token',
   REFRESH_TOKEN: 'forgebase_refresh_token',
-  USER: 'forgebase_user',
+  // USER key removed to prevent storing user data locally
 };
 
 /**

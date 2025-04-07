@@ -6,7 +6,7 @@ import { AuthStorage } from './types';
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: '@forgebase_access_token',
   REFRESH_TOKEN: '@forgebase_refresh_token',
-  USER: '@forgebase_user'
+  // USER key removed to prevent storing user data locally
 };
 
 /**
@@ -15,7 +15,7 @@ export const STORAGE_KEYS = {
  */
 export class SecureStoreAdapter implements AuthStorage {
   private secureStore: any;
-  
+
   /**
    * Create a new SecureStoreAdapter
    * @param secureStore Instance of SecureStore or compatible API
@@ -23,7 +23,7 @@ export class SecureStoreAdapter implements AuthStorage {
   constructor(secureStore: any) {
     this.secureStore = secureStore;
   }
-  
+
   /**
    * Store a value securely
    * @param key Storage key
@@ -32,7 +32,7 @@ export class SecureStoreAdapter implements AuthStorage {
   async setItem(key: string, value: string): Promise<void> {
     await this.secureStore.setItemAsync(key, value);
   }
-  
+
   /**
    * Retrieve a stored value
    * @param key Storage key
@@ -41,7 +41,7 @@ export class SecureStoreAdapter implements AuthStorage {
   async getItem(key: string): Promise<string | null> {
     return await this.secureStore.getItemAsync(key);
   }
-  
+
   /**
    * Remove a stored value
    * @param key Storage key
@@ -58,15 +58,15 @@ export class SecureStoreAdapter implements AuthStorage {
  */
 export class MemoryStorageAdapter implements AuthStorage {
   private storage: Record<string, string> = {};
-  
+
   async setItem(key: string, value: string): Promise<void> {
     this.storage[key] = value;
   }
-  
+
   async getItem(key: string): Promise<string | null> {
     return this.storage[key] || null;
   }
-  
+
   async removeItem(key: string): Promise<void> {
     delete this.storage[key];
   }

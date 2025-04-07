@@ -233,22 +233,17 @@ export class ForgebaseWebAuth {
   }
 
   /**
-   * Initialize the SDK by loading user data from storage
+   * Initialize the SDK by loading tokens from storage
    */
   private async initialize(): Promise<void> {
     try {
-      const userJson = await this.storage.getItem(STORAGE_KEYS.USER);
-      if (userJson) {
-        this.currentUser = JSON.parse(userJson);
-      }
-
       this.accessToken = await this.storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       this.refreshToken = await this.storage.getItem(
         STORAGE_KEYS.REFRESH_TOKEN
       );
 
-      // If we have a token but no user, try to fetch the user
-      if (this.accessToken && !this.currentUser && !this.config.ssr) {
+      // If we have a token, try to fetch the user
+      if (this.accessToken && !this.config.ssr) {
         try {
           await this.fetchUserDetails();
         } catch (error) {
@@ -269,12 +264,6 @@ export class ForgebaseWebAuth {
    */
   private async storeAuthData(response: AuthResponse): Promise<void> {
     this.currentUser = response.user;
-
-    // Store user data
-    await this.storage.setItem(
-      STORAGE_KEYS.USER,
-      JSON.stringify(response.user)
-    );
 
     // Handle different token formats
     if (typeof response.token === 'string') {
@@ -307,7 +296,6 @@ export class ForgebaseWebAuth {
 
     await this.storage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     await this.storage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    await this.storage.removeItem(STORAGE_KEYS.USER);
   }
 
   /**
@@ -374,9 +362,27 @@ export class ForgebaseWebAuth {
   /**
    * Get the current authenticated user
    * @returns The current user or null if not authenticated
+   * @deprecated Use fetchUserDetails() instead to always get fresh user data
    */
   getCurrentUser(): User | null {
     return this.currentUser;
+  }
+
+  /**
+   * Get the current authenticated user, fetching from server if needed
+   * @returns Promise resolving to the current user or null if not authenticated
+   */
+  async getUser(): Promise<User | null> {
+    if (!this.isAuthenticated()) {
+      return null;
+    }
+
+    try {
+      return await this.fetchUserDetails();
+    } catch (error) {
+      console.error('Failed to fetch user details:', error);
+      return null;
+    }
   }
 
   /**
@@ -410,12 +416,8 @@ export class ForgebaseWebAuth {
     try {
       const response = await this._api.get<{ user: User }>('/auth/me');
 
-      // Update the stored user
+      // Update the in-memory user
       this.currentUser = response.data.user;
-      await this.storage.setItem(
-        STORAGE_KEYS.USER,
-        JSON.stringify(response.data.user)
-      );
 
       return response.data.user;
     } catch (error) {
@@ -491,13 +493,9 @@ export class ForgebaseWebAuth {
         }
       );
 
-      // If the response includes updated user data, update the stored user
+      // If the response includes updated user data, update the in-memory user
       if (response.data.user) {
         this.currentUser = response.data.user;
-        await this.storage.setItem(
-          STORAGE_KEYS.USER,
-          JSON.stringify(response.data.user)
-        );
       }
 
       return response.data;
@@ -779,8 +777,7 @@ export class ForgebaseWebAuth {
       }
     }
 
-    if (user && !this.config.ssr) {
-      this.storage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    }
+    // Store user in memory only, not in storage
+    // This ensures we always fetch fresh user data when needed
   }
 }

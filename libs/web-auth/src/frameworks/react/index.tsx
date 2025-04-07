@@ -75,9 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   initialAccessToken,
   initialRefreshToken,
 }) => {
-  const [user, setUser] = useState<User | null>(
-    initialUser || auth.getCurrentUser()
-  );
+  const [user, setUser] = useState<User | null>(initialUser || null);
   const [isLoading, setIsLoading] = useState<boolean>(!initialUser);
   const [error, setError] = useState<AuthError | null>(null);
 
@@ -98,12 +96,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
       setIsLoading(true);
       try {
-        // Try to fetch user details if we have a token
+        // Always fetch user details if we have a token
         if (auth.isAuthenticated()) {
           const user = await auth.fetchUserDetails();
           setUser(user);
         } else {
-          setUser(auth.getCurrentUser());
+          setUser(null);
         }
       } catch (err) {
         console.error('Failed to initialize auth:', err);

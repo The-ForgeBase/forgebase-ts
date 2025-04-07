@@ -164,16 +164,23 @@ export class ForgebaseAuth {
   }
 
   /**
-   * Initialize the SDK by loading user data from storage
+   * Initialize the SDK by loading tokens from storage
    */
   private async initialize(): Promise<void> {
     try {
-      const userJson = await this.storage.getItem(STORAGE_KEYS.USER);
-      if (userJson) {
-        this.currentUser = JSON.parse(userJson);
-      }
-
       this.accessToken = await this.storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+
+      // If we have a token, try to fetch the user
+      if (this.accessToken) {
+        try {
+          await this.fetchUserDetails();
+        } catch (error) {
+          console.error(
+            'Failed to fetch user details during initialization:',
+            error
+          );
+        }
+      }
     } catch (error) {
       console.error('Failed to initialize ForgebaseAuth:', error);
     }
@@ -185,12 +192,6 @@ export class ForgebaseAuth {
    */
   private async storeAuthData(response: AuthResponse): Promise<void> {
     this.currentUser = response.user;
-
-    // Store user data
-    await this.storage.setItem(
-      STORAGE_KEYS.USER,
-      JSON.stringify(response.user)
-    );
 
     // Handle different token formats
     if (typeof response.token === 'string') {
@@ -221,7 +222,6 @@ export class ForgebaseAuth {
 
     await this.storage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     await this.storage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    await this.storage.removeItem(STORAGE_KEYS.USER);
   }
 
   /**
@@ -288,9 +288,27 @@ export class ForgebaseAuth {
   /**
    * Get the current authenticated user from memory
    * @returns The current user or null if not authenticated
+   * @deprecated Use fetchUserDetails() instead to always get fresh user data
    */
   getCurrentUser(): User | null {
     return this.currentUser;
+  }
+
+  /**
+   * Get the current authenticated user, fetching from server if needed
+   * @returns Promise resolving to the current user or null if not authenticated
+   */
+  async getUser(): Promise<User | null> {
+    if (!this.isAuthenticated()) {
+      return null;
+    }
+
+    try {
+      return await this.fetchUserDetails();
+    } catch (error) {
+      console.error('Failed to fetch user details:', error);
+      return null;
+    }
   }
 
   /**
@@ -301,12 +319,8 @@ export class ForgebaseAuth {
     try {
       const response = await this._api.get<{ user: User }>('/auth/me');
 
-      // Update the stored user
+      // Update the in-memory user
       this.currentUser = response.data.user;
-      await this.storage.setItem(
-        STORAGE_KEYS.USER,
-        JSON.stringify(response.data.user)
-      );
 
       return response.data.user;
     } catch (error) {
@@ -335,7 +349,7 @@ export class ForgebaseAuth {
    * @returns True if the user is authenticated
    */
   isAuthenticated(): boolean {
-    return !!this.accessToken && !!this.currentUser;
+    return !!this.accessToken;
   }
 
   /**
@@ -390,13 +404,9 @@ export class ForgebaseAuth {
         }
       );
 
-      // If the response includes updated user data, update the stored user
+      // If the response includes updated user data, update the in-memory user
       if (response.data.user) {
         this.currentUser = response.data.user;
-        await this.storage.setItem(
-          STORAGE_KEYS.USER,
-          JSON.stringify(response.data.user)
-        );
       }
 
       return response.data;
