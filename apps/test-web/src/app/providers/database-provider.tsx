@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode, createContext, useContext } from 'react';
-import { DatabaseSDK } from '@forgebase-ts/sdk/database/client/client';
+import { DatabaseSDK } from '@forgebase-ts/sdk/database/client';
 import { useAuth } from '../hooks/useAuth';
 
 // Create a context for the database SDK
@@ -14,10 +14,12 @@ interface DatabaseProviderProps {
 
 export function DatabaseProvider({ children, apiUrl }: DatabaseProviderProps) {
   const { auth } = useAuth();
-  
+
   // Initialize the database SDK with the auth instance's axios instance
   // This ensures authenticated requests
+  console.log('DatabaseProvider', apiUrl);
   const databaseSDK = new DatabaseSDK(apiUrl, auth.api);
+  databaseSDK.setBaseUrl(apiUrl);
 
   return (
     <DatabaseContext.Provider value={databaseSDK}>

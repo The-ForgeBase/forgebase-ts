@@ -22,7 +22,7 @@ export default function RootLayout({
           initialAccessToken={authProps.accessToken}
           initialRefreshToken={authProps.refreshToken}
         >
-          <DatabaseProvider apiUrl="http://localhost:8000/api">
+          <DatabaseProvider apiUrl="http://localhost:8000/api/db">
             {children}
           </DatabaseProvider>
         </ClientAuthProvider>

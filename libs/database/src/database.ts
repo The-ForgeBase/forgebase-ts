@@ -348,16 +348,6 @@ export class ForgeDatabase {
           );
         }
 
-        if (initialStatus) {
-          // If the user has permission to query, proceed with the query
-          return this.hooks.query(
-            tableName,
-            (query) => this.queryHandler.buildQuery(queryParams, query),
-            queryParams,
-            trx
-          );
-        }
-
         const records = await this.hooks.query(
           tableName,
           (query) => this.queryHandler.buildQuery(queryParams, query),
@@ -365,7 +355,8 @@ export class ForgeDatabase {
           trx
         );
 
-        if (!records.length) {
+        if (initialStatus) {
+          // If the user has permission to query, proceed with the query
           return records;
         }
 

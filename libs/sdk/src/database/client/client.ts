@@ -230,11 +230,32 @@ export class DatabaseSDK {
   }
 
   /**
+   * Set a new base URL for API requests
+   * @param baseUrl The new base URL to use
+   */
+  setBaseUrl(baseUrl: string): void {
+    this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+
+    // Update the axios instance baseURL if it was created by this class
+    if (this.axiosInstance.defaults.baseURL) {
+      this.axiosInstance.defaults.baseURL = this.baseUrl;
+    }
+  }
+
+  /**
    * Get the axios instance used for API requests
    * @returns The axios instance
    */
   getAxiosInstance(): AxiosInstance {
     return this.axiosInstance;
+  }
+
+  /**
+   * Set a new axios instance for API requests
+   * @param axiosInstance The new axios instance to use
+   */
+  setAxiosInstance(axiosInstance: AxiosInstance): void {
+    this.axiosInstance = axiosInstance;
   }
 
   /**
@@ -274,7 +295,12 @@ export class DatabaseSDK {
         url,
         axiosConfig
       );
-      return response.data;
+      return {
+        records: response.data as T[],
+        params: params,
+        message: 'Records fetched successfully',
+        error: undefined,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || error.message);
@@ -320,7 +346,11 @@ export class DatabaseSDK {
         { data },
         axiosConfig
       );
-      return response.data;
+      return {
+        records: [response.data as T],
+        message: 'Record created successfully',
+        error: undefined,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || error.message);
@@ -351,7 +381,11 @@ export class DatabaseSDK {
         { data },
         axiosConfig
       );
-      return response.data;
+      return {
+        records: [response.data as T],
+        message: 'Record updated successfully',
+        error: undefined,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || error.message);
@@ -377,7 +411,11 @@ export class DatabaseSDK {
         `/${tableName}/${id}`,
         axiosConfig
       );
-      return response.data;
+      return {
+        message: 'Record deleted successfully',
+        error: undefined,
+        records: [],
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || error.message);

@@ -34,7 +34,7 @@ export const db = knex({
         db: {
           provider: 'sqlite',
           realtime: false,
-          enforceRls: false,
+          enforceRls: true,
           config: {},
           knex: db,
         },
