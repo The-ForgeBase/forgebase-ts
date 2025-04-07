@@ -14,6 +14,15 @@ const api = forgeApi({
       enforceRls: false,
       config: {
         filename: './database.sqlite',
+        pool: {
+          min: 2,
+          max: 20,
+          acquireTimeoutMillis: 30000, // 30 seconds
+          createTimeoutMillis: 30000,
+          idleTimeoutMillis: 30000,
+          reapIntervalMillis: 1000,
+          createRetryIntervalMillis: 100,
+        },
       },
     },
     storage: {

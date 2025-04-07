@@ -6,13 +6,14 @@ import { UserFieldDefinition } from './user-extension';
  * @param fields User field definitions
  * @returns Zod schema for validating user data
  */
+//FIXME: there is a bug in the zod schema generation
 export function createUserValidationSchema(
   fields: UserFieldDefinition[]
 ): z.ZodObject<any> {
-  const schemaFields: Record<string, z.ZodTypeAny> = {};
+  const schemaFields: Record<string, any> = {};
 
   for (const field of fields) {
-    let fieldSchema: z.ZodTypeAny;
+    let fieldSchema;
 
     // Create base schema based on field type
     switch (field.type) {
@@ -20,81 +21,82 @@ export function createUserValidationSchema(
       case 'text':
       case 'uuid':
         fieldSchema = z.string();
-        
+
         // Add string-specific validations
         if (field.validation?.minLength !== undefined) {
           fieldSchema = fieldSchema.min(field.validation.minLength, {
             message: `${field.name} must be at least ${field.validation.minLength} characters`,
           });
         }
-        
+
         if (field.validation?.maxLength !== undefined) {
           fieldSchema = fieldSchema.max(field.validation.maxLength, {
             message: `${field.name} must be at most ${field.validation.maxLength} characters`,
           });
         }
-        
+
         if (field.validation?.pattern !== undefined) {
-          const pattern = field.validation.pattern instanceof RegExp
-            ? field.validation.pattern
-            : new RegExp(field.validation.pattern);
-          
+          const pattern =
+            field.validation.pattern instanceof RegExp
+              ? field.validation.pattern
+              : new RegExp(field.validation.pattern);
+
           fieldSchema = fieldSchema.regex(pattern, {
             message: `${field.name} has an invalid format`,
           });
         }
-        
+
         if (field.validation?.isEmail) {
           fieldSchema = fieldSchema.email({
             message: `${field.name} must be a valid email address`,
           });
         }
-        
+
         if (field.validation?.isUrl) {
           fieldSchema = fieldSchema.url({
             message: `${field.name} must be a valid URL`,
           });
         }
-        
+
         break;
-        
+
       case 'integer':
       case 'bigInteger':
       case 'decimal':
       case 'float':
         fieldSchema = z.number();
-        
+
         // Add number-specific validations
         if (field.validation?.min !== undefined) {
           fieldSchema = fieldSchema.min(field.validation.min, {
             message: `${field.name} must be at least ${field.validation.min}`,
           });
         }
-        
+
         if (field.validation?.max !== undefined) {
           fieldSchema = fieldSchema.max(field.validation.max, {
             message: `${field.name} must be at most ${field.validation.max}`,
           });
         }
-        
+
         break;
-        
+
       case 'boolean':
         fieldSchema = z.boolean();
         break;
-        
+
       case 'datetime':
       case 'date':
       case 'time':
       case 'timestamp':
         fieldSchema = z.date();
         break;
-        
+
       case 'json':
       case 'jsonb':
         fieldSchema = z.record(z.any());
         break;
-        
+
       default:
         fieldSchema = z.any();
     }
@@ -143,22 +145,22 @@ export function validateUserDataWithZod(
   fields: UserFieldDefinition[]
 ): { valid: boolean; errors: Record<string, string> } {
   const schema = createUserValidationSchema(fields);
-  
+
   try {
     schema.parse(userData);
     return { valid: true, errors: {} };
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      
+
       for (const issue of error.errors) {
         const path = issue.path.join('.');
         errors[path] = issue.message;
       }
-      
+
       return { valid: false, errors };
     }
-    
+
     return {
       valid: false,
       errors: { _error: 'An unknown validation error occurred' },
@@ -223,29 +225,32 @@ export function validatePassword(
     requireNumber = true,
     requireSpecialChar = true,
   } = options;
-  
+
   const errors: string[] = [];
-  
+
   if (password.length < minLength) {
     errors.push(`Password must be at least ${minLength} characters long`);
   }
-  
+
   if (requireUppercase && !/[A-Z]/.test(password)) {
     errors.push('Password must contain at least one uppercase letter');
   }
-  
+
   if (requireLowercase && !/[a-z]/.test(password)) {
     errors.push('Password must contain at least one lowercase letter');
   }
-  
+
   if (requireNumber && !/\d/.test(password)) {
     errors.push('Password must contain at least one number');
   }
-  
-  if (requireSpecialChar && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
+
+  if (
+    requireSpecialChar &&
+    !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)
+  ) {
     errors.push('Password must contain at least one special character');
   }
-  
+
   return {
     valid: errors.length === 0,
     errors,

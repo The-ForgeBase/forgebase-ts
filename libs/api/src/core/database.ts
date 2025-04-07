@@ -48,6 +48,15 @@ export class DatabaseService {
             filename: this.config.config.filename,
           },
           useNullAsDefault: true,
+          pool: {
+            min: 2,
+            max: 20,
+            acquireTimeoutMillis: 30000, // 30 seconds
+            createTimeoutMillis: 30000,
+            idleTimeoutMillis: 30000,
+            reapIntervalMillis: 1000,
+            createRetryIntervalMillis: 100,
+          },
           ...this.config.config,
         });
         console.log('Using sqlite3');
@@ -55,6 +64,15 @@ export class DatabaseService {
         knexDb = knex({
           client: 'pg',
           connection: this.config.config.connection,
+          pool: {
+            min: 2,
+            max: 20,
+            acquireTimeoutMillis: 30000, // 30 seconds
+            createTimeoutMillis: 30000,
+            idleTimeoutMillis: 30000,
+            reapIntervalMillis: 1000,
+            createRetryIntervalMillis: 100,
+          },
           ...this.config.config,
         });
       } else if (this.config.provider === 'libsql') {
@@ -64,6 +82,15 @@ export class DatabaseService {
             filename: this.config.config.filename,
           },
           useNullAsDefault: true,
+          pool: {
+            min: 2,
+            max: 20,
+            acquireTimeoutMillis: 30000, // 30 seconds
+            createTimeoutMillis: 30000,
+            idleTimeoutMillis: 30000,
+            reapIntervalMillis: 1000,
+            createRetryIntervalMillis: 100,
+          },
           ...this.config.config,
         });
       } else {

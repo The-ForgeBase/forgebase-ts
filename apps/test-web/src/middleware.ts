@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
     redirectUnauthenticated: '/login',
     redirectAuthenticated: '/dashboard',
     publicPaths: ['/', '/login', '/register', '/api'],
-    authPaths: ['/dashboard', '/profile'],
+    authPaths: ['/dashboard', '/profile', '/database-test'],
   });
 }
 

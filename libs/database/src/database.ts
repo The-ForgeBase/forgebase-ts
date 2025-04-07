@@ -109,14 +109,6 @@ export class ForgeDatabase {
   }
 
   /**
-   * Get a transaction instance
-   * @returns Transaction instance
-   */
-  public async getTransaction(): Promise<Knex.Transaction> {
-    return await this.hooks.getKnexInstance().transaction();
-  }
-
-  /**
    * Get the endpoints for the database
    * @returns Endpoints for the database
    */
@@ -127,13 +119,6 @@ export class ForgeDatabase {
      */
     schema: {
       get: async (trx?: Knex.Transaction): Promise<DatabaseSchema> => {
-        // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.get(newTrx);
-          });
-        }
-
         return await this.dbInspector.getDatabaseSchema();
       },
       create: async (payload: SchemaCreateParams, trx?: Knex.Transaction) => {
@@ -186,12 +171,6 @@ export class ForgeDatabase {
         };
       },
       delete: async (tableName: string, trx?: Knex.Transaction) => {
-        // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.delete(tableName, newTrx);
-          });
-        }
         // Use transaction if provided, otherwise use the knex instance
         const schemaBuilder = trx
           ? trx.schema
@@ -207,12 +186,6 @@ export class ForgeDatabase {
         };
       },
       modify: async (payload: ModifySchemaParams, trx?: Knex.Transaction) => {
-        // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.modify(payload, newTrx);
-          });
-        }
         return await modifySchema(this.hooks.getKnexInstance(), payload, trx);
       },
       addForeingKey: async (
@@ -225,13 +198,13 @@ export class ForgeDatabase {
             return await this.endpoints.schema.addForeingKey(payload, newTrx);
           });
         }
+        // Use transaction if provided, otherwise use the knex instance
         return await addForeignKey(payload, this.hooks.getKnexInstance(), trx);
       },
       dropForeignKey: async (
         payload: DropForeignKeyParams,
         trx?: Knex.Transaction
       ) => {
-        // If no transaction is provided, create one internally
         if (!trx) {
           return this.transaction(async (newTrx) => {
             return await this.endpoints.schema.dropForeignKey(payload, newTrx);
@@ -253,16 +226,6 @@ export class ForgeDatabase {
         );
       },
       getTableSchema: async (tableName: string, trx?: Knex.Transaction) => {
-        // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.getTableSchema(
-              tableName,
-              newTrx
-            );
-          });
-        }
-
         const tableInfo = await this.dbInspector.getTableInfo(tableName);
         return {
           name: tableName,
@@ -270,13 +233,6 @@ export class ForgeDatabase {
         };
       },
       getTables: async (trx?: Knex.Transaction) => {
-        // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.getTables(newTrx);
-          });
-        }
-
         return await this.dbInspector.getTables();
       },
       getTablePermissions: async (
@@ -292,7 +248,6 @@ export class ForgeDatabase {
             );
           });
         }
-
         return await this.permissionService.getPermissionsForTable(
           tableName,
           trx
@@ -337,9 +292,17 @@ export class ForgeDatabase {
         isSystem = false,
         trx?: Knex.Transaction
       ) => {
-        // If no transaction is provided, create one internally
+        // If no transaction is provided, create one internally and manage it
         if (!trx) {
-          trx = await this.getTransaction();
+          return this.transaction(async (newTrx) => {
+            return await this.endpoints.data.query(
+              tableName,
+              params,
+              user,
+              isSystem,
+              newTrx
+            );
+          });
         }
 
         const queryParams = this.parseQueryParams(params);
@@ -425,9 +388,16 @@ export class ForgeDatabase {
         isSystem = false,
         trx?: Knex.Transaction
       ) => {
-        // If no transaction is provided, create one internally
+        // If no transaction is provided, create one internally and manage it
         if (!trx) {
-          trx = await this.getTransaction();
+          return this.transaction(async (newTrx) => {
+            return await this.endpoints.data.create(
+              params,
+              user,
+              isSystem,
+              newTrx
+            );
+          });
         }
 
         const { data, tableName } = params;
@@ -539,9 +509,16 @@ export class ForgeDatabase {
         isSystem = false,
         trx?: Knex.Transaction
       ) => {
-        // If no transaction is provided, create one internally
+        // If no transaction is provided, create one internally and manage it
         if (!trx) {
-          trx = await this.getTransaction();
+          return this.transaction(async (newTrx) => {
+            return await this.endpoints.data.update(
+              params,
+              user,
+              isSystem,
+              newTrx
+            );
+          });
         }
 
         const { id, tableName, data } = params;
@@ -642,9 +619,16 @@ export class ForgeDatabase {
         isSystem = false,
         trx?: Knex.Transaction
       ) => {
-        // If no transaction is provided, create one internally
+        // If no transaction is provided, create one internally and manage it
         if (!trx) {
-          trx = await this.getTransaction();
+          return this.transaction(async (newTrx) => {
+            return await this.endpoints.data.delete(
+              params,
+              user,
+              isSystem,
+              newTrx
+            );
+          });
         }
 
         const { id, tableName } = params;
@@ -742,7 +726,9 @@ export class ForgeDatabase {
       get: async (params: PermissionParams, trx?: Knex.Transaction) => {
         // If no transaction is provided, create one internally
         if (!trx) {
-          trx = await this.getTransaction();
+          return this.transaction(async (newTrx) => {
+            return await this.endpoints.permissions.get(params, newTrx);
+          });
         }
 
         const { tableName } = params;
@@ -750,9 +736,11 @@ export class ForgeDatabase {
       },
 
       set: async (params: PermissionParams, trx?: Knex.Transaction) => {
-        // If no transaction is provided, create one internally
+        // If no transaction is provided, create one internally and manage it
         if (!trx) {
-          trx = await this.getTransaction();
+          return this.transaction(async (newTrx) => {
+            return await this.endpoints.permissions.set(params, newTrx);
+          });
         }
 
         const { tableName, permissions } = params;

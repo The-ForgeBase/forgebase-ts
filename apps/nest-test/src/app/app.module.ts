@@ -12,6 +12,15 @@ export const db = knex({
     filename: ':memory:',
   },
   useNullAsDefault: true,
+  pool: {
+    min: 2,
+    max: 20,
+    acquireTimeoutMillis: 30000, // 30 seconds
+    createTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+    reapIntervalMillis: 1000,
+    createRetryIntervalMillis: 100,
+  },
 });
 
 @Module({

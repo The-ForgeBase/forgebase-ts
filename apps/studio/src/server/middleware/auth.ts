@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
     console.log('Is protected route:', isProtectedRoute);
     try {
       const redirectResult = await sendRedirect(event, '/signin', 401);
-      console.log('Redirect result:', redirectResult);
+      // console.log('Redirect result:', redirectResult);
       return redirectResult;
     } catch (error) {
       console.error('Error during redirect:', error);

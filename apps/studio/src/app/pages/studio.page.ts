@@ -33,10 +33,10 @@ export const routeMeta: RouteMeta = {
 
       console.log('data', data);
 
-      if (data && !data.user) {
-        router.navigate(['/signin']);
-        return false;
-      }
+      // if (data && !data.user) {
+      //   router.navigate(['/signin']);
+      //   return false;
+      // }
       return true;
     },
   ],

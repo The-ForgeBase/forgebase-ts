@@ -18,6 +18,12 @@ export default function DashboardPage() {
             <Link href="/profile" className="text-blue-500 hover:underline">
               Profile
             </Link>
+            <Link
+              href="/database-test"
+              className="text-blue-500 hover:underline"
+            >
+              Database Test
+            </Link>
             <LogoutButton />
           </div>
         </div>

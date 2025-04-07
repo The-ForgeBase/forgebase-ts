@@ -190,12 +190,6 @@ export interface PermissionParams {
   permissions?: TablePermissions;
 }
 
-export interface ForgeDatabase {
-  endpoints: ForgeDatabaseEndpoints;
-  getKnexInstance(): Knex;
-  transaction<T>(callback: (trx: Knex.Transaction) => Promise<T>): Promise<T>;
-}
-
 export interface ForgeDatabaseEndpoints {
   schema: {
     get: (trx?: Knex.Transaction) => Promise<DatabaseSchema>;

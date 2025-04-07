@@ -1,6 +1,7 @@
 import { getAppRouterAuthProps } from '@forgebase-ts/web-auth/frameworks/nextjs/app-router';
 import './global.css';
 import ClientAuthProvider from './providers/auth-provider';
+import { DatabaseProvider } from './providers/database-provider';
 
 export const metadata = {
   title: 'Welcome to test-web',
@@ -21,7 +22,9 @@ export default function RootLayout({
           initialAccessToken={authProps.accessToken}
           initialRefreshToken={authProps.refreshToken}
         >
-          {children}
+          <DatabaseProvider apiUrl="http://localhost:8000/api">
+            {children}
+          </DatabaseProvider>
         </ClientAuthProvider>
       </body>
     </html>
