@@ -1,20 +1,20 @@
 type FieldKeys<T> = keyof T;
 
 export type WhereOperator =
-  | "="
-  | "!="
-  | ">"
-  | ">="
-  | "<"
-  | "<="
-  | "like"
-  | "in"
-  | "not in"
-  | "between"
-  | "is null"
-  | "is not null";
+  | '='
+  | '!='
+  | '>'
+  | '>='
+  | '<'
+  | '<='
+  | 'like'
+  | 'in'
+  | 'not in'
+  | 'between'
+  | 'is null'
+  | 'is not null';
 
-export type GroupOperator = "AND" | "OR";
+export type GroupOperator = 'AND' | 'OR';
 
 export interface WhereClause<T> {
   field: FieldKeys<T>;
@@ -30,15 +30,15 @@ export interface WhereGroup<T> {
 
 export interface WhereBetweenClause<T> {
   field: FieldKeys<T>;
-  operator: "between";
+  operator: 'between';
   value: [any, any];
   boolean?: GroupOperator;
 }
 
 export interface OrderByClause<T> {
   field: FieldKeys<T>;
-  direction?: "asc" | "desc";
-  nulls?: "first" | "last";
+  direction?: 'asc' | 'desc';
+  nulls?: 'first' | 'last';
 }
 
 export interface RawExpression {
@@ -53,27 +53,27 @@ export interface HavingClause<T> {
 }
 
 export interface AggregateOptions<T> {
-  type: "count" | "sum" | "avg" | "min" | "max";
+  type: 'count' | 'sum' | 'avg' | 'min' | 'max';
   field: FieldKeys<T>;
   alias?: string;
 }
 
 export interface WindowFunction<T> {
   type:
-    | "row_number"
-    | "rank"
-    | "dense_rank"
-    | "lag"
-    | "lead"
-    | "first_value"
-    | "last_value"
-    | "sum"
-    | "avg"
-    | "count"
-    | "min"
-    | "max"
-    | "nth_value"
-    | "ntile";
+    | 'row_number'
+    | 'rank'
+    | 'dense_rank'
+    | 'lag'
+    | 'lead'
+    | 'first_value'
+    | 'last_value'
+    | 'sum'
+    | 'avg'
+    | 'count'
+    | 'min'
+    | 'max'
+    | 'nth_value'
+    | 'ntile';
   field?: FieldKeys<T>;
   alias: string;
   partitionBy?: FieldKeys<T>[];
@@ -102,7 +102,7 @@ export interface TransformConfig<T> {
 export interface ExplainOptions {
   analyze?: boolean;
   verbose?: boolean;
-  format?: "text" | "json";
+  format?: 'text' | 'json';
 }
 
 export interface RecursiveCTE<T extends Record<string, any>> extends CTE<T> {
@@ -117,9 +117,9 @@ export interface WindowFunctionAdvanced<T> extends WindowFunction<T> {
     partitionBy?: FieldKeys<T>[];
     orderBy?: OrderByClause<T>[];
     frame?: {
-      type: "ROWS" | "RANGE";
-      start: "UNBOUNDED PRECEDING" | "CURRENT ROW" | number;
-      end?: "UNBOUNDED FOLLOWING" | "CURRENT ROW" | number;
+      type: 'ROWS' | 'RANGE';
+      start: 'UNBOUNDED PRECEDING' | 'CURRENT ROW' | number;
+      end?: 'UNBOUNDED FOLLOWING' | 'CURRENT ROW' | number;
     };
   };
   filter?: WhereClause<T>[];
@@ -156,7 +156,7 @@ export interface QueryParams<T extends Record<string, any>> {
   groupBy?: FieldKeys<T>[];
   having?: HavingClause<T>[];
   aggregates?: AggregateOptions<T>[];
-  rawExpressions?: RawExpression[];
+  // rawExpressions removed for security reasons
   limit?: number;
   offset?: number;
   windowFunctions?: WindowFunction<T>[];
@@ -184,7 +184,7 @@ export class DatabaseSDK {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash if present
+    this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
   }
 
   /**
@@ -213,7 +213,7 @@ export class DatabaseSDK {
     }
 
     const url = `${this.baseUrl}/${tableName}${
-      queryParams.toString() ? `?${queryParams.toString()}` : ""
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
     }`;
 
     return this.fetchApi<ApiResponse<T>>(url);
@@ -226,7 +226,7 @@ export class DatabaseSDK {
 
     // any param that is type of object should be serialized to JSON
     Object.entries(params).forEach(([key, value]) => {
-      if (typeof value === "object") {
+      if (typeof value === 'object') {
         serialized[key] = JSON.stringify(value);
       } else {
         serialized[key] = value.toString();
@@ -248,9 +248,9 @@ export class DatabaseSDK {
     const url = `${this.baseUrl}/${tableName}`;
 
     return this.fetchApi<ApiResponse<T>>(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ data }),
     });
@@ -269,9 +269,9 @@ export class DatabaseSDK {
     const url = `${this.baseUrl}/${tableName}/${id}`;
 
     return this.fetchApi<ApiResponse<T>>(url, {
-      method: "PUT",
+      method: 'PUT',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ data }),
     });
@@ -287,7 +287,7 @@ export class DatabaseSDK {
     const url = `${this.baseUrl}/${tableName}/${id}`;
 
     return this.fetchApi<ApiResponse<never>>(url, {
-      method: "DELETE",
+      method: 'DELETE',
     });
   }
 
@@ -303,8 +303,8 @@ export class DatabaseSDK {
    * Validates data object
    */
   private validateData(data: Record<string, any>): void {
-    if (typeof data !== "object" || Object.keys(data).length === 0) {
-      throw new Error("Invalid data: must be a non-empty object");
+    if (typeof data !== 'object' || Object.keys(data).length === 0) {
+      throw new Error('Invalid data: must be a non-empty object');
     }
   }
 
@@ -334,7 +334,7 @@ export class DatabaseSDK {
     } catch (error) {
       throw error instanceof Error
         ? error
-        : new Error("An unknown error occurred");
+        : new Error('An unknown error occurred');
     }
   }
 }
@@ -379,7 +379,7 @@ class QueryBuilder<T extends Record<string, any>> {
    * Advanced window function
    */
   windowAdvanced(
-    type: WindowFunction<T>["type"],
+    type: WindowFunction<T>['type'],
     alias: string,
     config: Partial<WindowFunctionAdvanced<T>>
   ): this {
@@ -400,9 +400,9 @@ class QueryBuilder<T extends Record<string, any>> {
    * Add a window function
    */
   window(
-    type: WindowFunction<T>["type"],
+    type: WindowFunction<T>['type'],
     alias: string,
-    config: Partial<Omit<WindowFunction<T>, "type" | "alias">> = {}
+    config: Partial<Omit<WindowFunction<T>, 'type' | 'alias'>> = {}
   ): this {
     if (!this.params.windowFunctions) {
       this.params.windowFunctions = [];
@@ -428,7 +428,7 @@ class QueryBuilder<T extends Record<string, any>> {
     partitionBy?: string[],
     orderBy?: OrderByClause<T>[]
   ): this {
-    return this.window("row_number", alias, { partitionBy, orderBy });
+    return this.window('row_number', alias, { partitionBy, orderBy });
   }
 
   rank(
@@ -436,7 +436,7 @@ class QueryBuilder<T extends Record<string, any>> {
     partitionBy?: string[],
     orderBy?: OrderByClause<T>[]
   ): this {
-    return this.window("rank", alias, { partitionBy, orderBy });
+    return this.window('rank', alias, { partitionBy, orderBy });
   }
 
   lag(
@@ -445,7 +445,7 @@ class QueryBuilder<T extends Record<string, any>> {
     partitionBy?: string[],
     orderBy?: OrderByClause<T>[]
   ): this {
-    return this.window("lag", alias, { field, partitionBy, orderBy });
+    return this.window('lag', alias, { field, partitionBy, orderBy });
   }
 
   lead(
@@ -454,7 +454,7 @@ class QueryBuilder<T extends Record<string, any>> {
     partitionBy?: string[],
     orderBy?: OrderByClause<T>[]
   ): this {
-    return this.window("lead", alias, { field, partitionBy, orderBy });
+    return this.window('lead', alias, { field, partitionBy, orderBy });
   }
 
   /**
@@ -467,7 +467,7 @@ class QueryBuilder<T extends Record<string, any>> {
   ): this {
     let query: QueryBuilder<T>;
 
-    if (typeof queryOrCallback === "function") {
+    if (typeof queryOrCallback === 'function') {
       query = new QueryBuilder(this.sdk, this.tableName);
       queryOrCallback(query);
     } else {
@@ -553,7 +553,7 @@ class QueryBuilder<T extends Record<string, any>> {
     operatorOrValue?: WhereOperator | any,
     value?: any
   ): this {
-    if (typeof fieldOrConditions === "object") {
+    if (typeof fieldOrConditions === 'object') {
       this.params.filter = {
         ...this.params.filter,
         ...fieldOrConditions,
@@ -585,7 +585,7 @@ class QueryBuilder<T extends Record<string, any>> {
     }
     this.params.whereBetween.push({
       field,
-      operator: "between",
+      operator: 'between',
       value: range,
     });
     return this;
@@ -630,21 +630,21 @@ class QueryBuilder<T extends Record<string, any>> {
   // Order by
   orderBy(
     field: FieldKeys<T>,
-    direction?: "asc" | "desc",
-    nulls?: "first" | "last"
+    direction?: 'asc' | 'desc',
+    nulls?: 'first' | 'last'
   ): this;
   orderBy(options: OrderByClause<T>): this;
   orderBy(
     fieldOrOptions: FieldKeys<T> | OrderByClause<T>,
-    direction?: "asc" | "desc",
-    nulls?: "first" | "last"
+    direction?: 'asc' | 'desc',
+    nulls?: 'first' | 'last'
   ): this {
     if (!this.params.orderBy) {
       this.params.orderBy = [];
     }
 
-    if (typeof fieldOrOptions === "string") {
-      direction = direction || "asc";
+    if (typeof fieldOrOptions === 'string') {
+      direction = direction || 'asc';
       this.params.orderBy.push({
         field: fieldOrOptions as FieldKeys<T>,
         direction,
@@ -671,14 +671,14 @@ class QueryBuilder<T extends Record<string, any>> {
    * Start an OR where group
    */
   orWhere(callback: (query: QueryBuilder<T>) => void): this {
-    return this.whereGroup("OR", callback);
+    return this.whereGroup('OR', callback);
   }
 
   /**
    * Start an AND where group
    */
   andWhere(callback: (query: QueryBuilder<T>) => void): this {
-    return this.whereGroup("AND", callback);
+    return this.whereGroup('AND', callback);
   }
 
   /**
@@ -724,19 +724,7 @@ class QueryBuilder<T extends Record<string, any>> {
   //   return this;
   // }
 
-  /**
-   * Add a raw expression
-   */
-  rawExpression(sql: string, bindings?: any[]): this {
-    if (!this.params.rawExpressions) {
-      this.params.rawExpressions = [];
-    }
-    this.params.rawExpressions.push({
-      sql,
-      bindings,
-    });
-    return this;
-  }
+  // rawExpression method removed for security reasons
 
   /**
    * Group by clause
@@ -764,7 +752,7 @@ class QueryBuilder<T extends Record<string, any>> {
    * Add an aggregate function
    */
   aggregate(
-    type: AggregateOptions<T>["type"],
+    type: AggregateOptions<T>['type'],
     field: FieldKeys<T>,
     alias?: string
   ): this {
@@ -778,36 +766,36 @@ class QueryBuilder<T extends Record<string, any>> {
   /**
    * Shorthand for count aggregate
    */
-  count(field: FieldKeys<T> = "*", alias?: string): this {
-    return this.aggregate("count", field, alias);
+  count(field: FieldKeys<T> = '*', alias?: string): this {
+    return this.aggregate('count', field, alias);
   }
 
   /**
    * Shorthand for sum aggregate
    */
   sum(field: FieldKeys<T>, alias?: string): this {
-    return this.aggregate("sum", field, alias);
+    return this.aggregate('sum', field, alias);
   }
 
   /**
    * Shorthand for average aggregate
    */
   avg(field: FieldKeys<T>, alias?: string): this {
-    return this.aggregate("avg", field, alias);
+    return this.aggregate('avg', field, alias);
   }
 
   /**
    * Shorthand for minimum aggregate
    */
   min(field: FieldKeys<T>, alias?: string): this {
-    return this.aggregate("min", field, alias);
+    return this.aggregate('min', field, alias);
   }
 
   /**
    * Shorthand for maximum aggregate
    */
   max(field: FieldKeys<T>, alias?: string): this {
-    return this.aggregate("max", field, alias);
+    return this.aggregate('max', field, alias);
   }
 
   // Get query parameters without executing
@@ -884,7 +872,7 @@ class QueryBuilder<T extends Record<string, any>> {
 
   private pivotResults(
     records: T[],
-    pivot: TransformConfig<T>["pivot"]
+    pivot: TransformConfig<T>['pivot']
   ): any[] {
     // Implementation of pivot logic
     return records;
@@ -938,11 +926,5 @@ class QueryBuilder<T extends Record<string, any>> {
 //     .avg("amount", "average_amount")
 //     .execute();
 
-//   // Raw expressions
-//   db.table<User>("users")
-//     .rawExpression("EXTRACT(YEAR FROM created_at) = ?", [2024])
-//     .groupBy("role")
-//     .having("count", ">", 5)
-//     .count("id", "count")
-//     .execute();
+//   // Raw expressions removed for security reasons
 // }

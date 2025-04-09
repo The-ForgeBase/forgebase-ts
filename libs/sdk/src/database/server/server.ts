@@ -151,7 +151,7 @@ interface QueryParams {
   groupBy?: string[];
   having?: HavingClause[];
   aggregates?: AggregateOptions[];
-  rawExpressions?: RawExpression[];
+  // rawExpressions removed for security reasons
   limit?: number;
   offset?: number;
   windowFunctions?: WindowFunction[];
@@ -239,12 +239,7 @@ export class QueryHandler {
       query = query.where(params.filter);
     }
 
-    // Handle raw expressions
-    if (params.rawExpressions?.length) {
-      params.rawExpressions.forEach(({ sql, bindings }) => {
-        query = query.whereRaw(sql, bindings);
-      });
-    }
+    // Raw expressions handling removed for security reasons
 
     // Handle aggregates
     if (params.aggregates?.length) {

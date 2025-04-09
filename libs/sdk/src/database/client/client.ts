@@ -156,7 +156,7 @@ export interface QueryParams<T extends Record<string, any>> {
   groupBy?: FieldKeys<T>[];
   having?: HavingClause<T>[];
   aggregates?: AggregateOptions<T>[];
-  rawExpressions?: RawExpression[];
+  // rawExpressions removed for security reasons
   limit?: number;
   offset?: number;
   windowFunctions?: WindowFunction<T>[];
@@ -921,19 +921,7 @@ class QueryBuilder<T extends Record<string, any>> {
     return this.params;
   }
 
-  /**
-   * Add a raw expression
-   */
-  rawExpression(sql: string, bindings?: any[]): this {
-    if (!this.params.rawExpressions) {
-      this.params.rawExpressions = [];
-    }
-    this.params.rawExpressions.push({
-      sql,
-      bindings,
-    });
-    return this;
-  }
+  // rawExpression method removed for security reasons
 
   /**
    * Group by clause
@@ -1171,11 +1159,5 @@ class QueryBuilder<T extends Record<string, any>> {
 //     .avg("amount", "average_amount")
 //     .execute();
 
-//   // Raw expressions
-//   db.table<User>("users")
-//     .rawExpression("EXTRACT(YEAR FROM created_at) = ?", [2024])
-//     .groupBy("role")
-//     .having("count", ">", 5)
-//     .count("id", "count")
-//     .execute();
+//   // Raw expressions removed for security reasons
 // }
