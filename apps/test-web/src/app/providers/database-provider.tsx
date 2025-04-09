@@ -18,7 +18,12 @@ export function DatabaseProvider({ children, apiUrl }: DatabaseProviderProps) {
   // Initialize the database SDK with the auth instance's axios instance
   // This ensures authenticated requests
   console.log('DatabaseProvider', apiUrl);
-  const databaseSDK = new DatabaseSDK(apiUrl, auth.api);
+  const authInterceptor = auth.getAuthInterceptors();
+  const databaseSDK = new DatabaseSDK({
+    baseUrl: apiUrl,
+    axiosConfig: {},
+    authInterceptors: authInterceptor,
+  });
   databaseSDK.setBaseUrl(apiUrl);
 
   return (

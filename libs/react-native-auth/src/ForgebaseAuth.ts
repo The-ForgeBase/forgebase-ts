@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 import {
   AuthError,
   AuthErrorType,
@@ -570,6 +570,151 @@ export class ForgebaseAuth {
    */
   get api(): AxiosInstance {
     return this._api;
+  }
+
+  /**
+   * Get the auth interceptors to apply to another axios instance
+   * This allows developers to add authentication to their own axios instances
+   * @returns Object containing request and response interceptors
+   */
+  getAuthInterceptors() {
+    return {
+      request: async (config: any) => {
+        // If we don't have the token in memory, try to get it from storage
+        if (!this.accessToken) {
+          this.accessToken = await this.storage.getItem(
+            STORAGE_KEYS.ACCESS_TOKEN
+          );
+        }
+
+        // If we have a token, add it to the request headers
+        if (this.accessToken && config.headers) {
+          config.headers['Authorization'] = `Bearer ${this.accessToken}`;
+
+          // Add refresh token to headers if available
+          const refreshToken = await this.getRefreshToken();
+          if (refreshToken) {
+            config.headers['X-Refresh-Token'] = refreshToken;
+          }
+        }
+
+        return config;
+      },
+      response: {
+        onFulfilled: async (response: AxiosResponse) => {
+          return response;
+        },
+        onRejected: async (error: AxiosError) => {
+          const statusCode = error.response?.status;
+          const errorData = error.response?.data as Record<string, unknown>;
+          const originalRequest = error.config;
+
+          // Handle different error types
+          if (!error.response) {
+            throw new AuthError(
+              'Network error. Please check your internet connection.',
+              AuthErrorType.NETWORK_ERROR
+            );
+          }
+
+          // Handle token expiration - attempt to refresh token
+          if (
+            statusCode === 401 &&
+            originalRequest &&
+            !(originalRequest as any)._retry
+          ) {
+            // Mark the request as retried to prevent infinite loops
+            (originalRequest as any)._retry = true;
+
+            try {
+              // Try to refresh the token
+              const refreshResult = await this.refreshAccessToken();
+
+              if (refreshResult) {
+                // Update the Authorization header with the new token
+                originalRequest.headers[
+                  'Authorization'
+                ] = `Bearer ${this.accessToken}`;
+
+                // Return a new axios instance to retry the original request
+                return axios(originalRequest);
+              }
+            } catch (refreshError) {
+              console.error('Token refresh failed:', refreshError);
+              // Continue with the error handling below
+            }
+          }
+
+          switch (statusCode) {
+            case 400:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Invalid request',
+                AuthErrorType.INVALID_CREDENTIALS,
+                statusCode
+              );
+            case 401:
+              // Only clear tokens if we couldn't refresh
+              this.clearTokens();
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Unauthorized',
+                AuthErrorType.INVALID_TOKEN,
+                statusCode
+              );
+            case 404:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Resource not found',
+                AuthErrorType.USER_NOT_FOUND,
+                statusCode
+              );
+            case 409:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Conflict',
+                AuthErrorType.EMAIL_ALREADY_EXISTS,
+                statusCode
+              );
+            case 403:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Verification required',
+                AuthErrorType.VERIFICATION_REQUIRED,
+                statusCode
+              );
+            case 500:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Server error',
+                AuthErrorType.SERVER_ERROR,
+                statusCode
+              );
+            default:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Unknown error',
+                AuthErrorType.UNKNOWN_ERROR,
+                statusCode
+              );
+          }
+        },
+      },
+    };
+  }
+
+  /**
+   * Apply auth interceptors to an external axios instance
+   * This allows developers to add authentication to their own axios instances
+   * @param axiosInstance The axios instance to apply interceptors to
+   * @returns The axios instance with auth interceptors applied
+   */
+  applyAuthInterceptors(axiosInstance: AxiosInstance): AxiosInstance {
+    const interceptors = this.getAuthInterceptors();
+
+    // Add request interceptor
+    axiosInstance.interceptors.request.use(interceptors.request);
+
+    // Add response interceptors
+    axiosInstance.interceptors.response.use(
+      interceptors.response.onFulfilled,
+      interceptors.response.onRejected
+    );
+
+    return axiosInstance;
   }
 
   /**

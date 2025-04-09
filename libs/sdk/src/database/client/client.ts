@@ -1,3 +1,6 @@
+/* eslint-disable prefer-const */
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+
 type FieldKeys<T> = keyof T;
 
 export type WhereOperator =
@@ -191,7 +194,13 @@ export interface ApiResponse<T extends Record<string, any>> {
   id?: number;
 }
 
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+export interface AuthInterceptors {
+  request: (config: any) => Promise<any> | any;
+  response: {
+    onFulfilled: (response: any) => Promise<any> | any;
+    onRejected: (error: any) => Promise<any> | any;
+  };
+}
 
 export class DatabaseSDK {
   private baseUrl: string;
@@ -202,13 +211,20 @@ export class DatabaseSDK {
    * @param baseUrl The base URL for API requests
    * @param axiosInstance Optional custom axios instance (e.g., from ForgebaseAuth)
    * @param axiosConfig Optional axios configuration
+   * @param authInterceptors Optional auth interceptors to apply to the axios instance
    */
-  constructor(
-    baseUrl: string,
-    axiosInstance?: AxiosInstance,
-    axiosConfig: AxiosRequestConfig = {}
-  ) {
+  constructor(options: {
+    baseUrl: string;
+    axiosInstance?: AxiosInstance;
+    axiosConfig?: AxiosRequestConfig;
+    authInterceptors?: AuthInterceptors;
+  }) {
+    let { baseUrl, axiosInstance, axiosConfig, authInterceptors } = options;
     this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+
+    if (!axiosConfig) {
+      axiosConfig = {};
+    }
 
     // Use the provided axios instance or create a new one
     if (axiosInstance) {
@@ -218,6 +234,11 @@ export class DatabaseSDK {
         baseURL: this.baseUrl,
         ...axiosConfig,
       });
+
+      // Apply auth interceptors if provided
+      if (authInterceptors) {
+        this.applyAuthInterceptors(authInterceptors);
+      }
     }
   }
 
@@ -256,6 +277,21 @@ export class DatabaseSDK {
    */
   setAxiosInstance(axiosInstance: AxiosInstance): void {
     this.axiosInstance = axiosInstance;
+  }
+
+  /**
+   * Apply auth interceptors to the axios instance
+   * @param authInterceptors The auth interceptors to apply
+   */
+  applyAuthInterceptors(authInterceptors: AuthInterceptors): void {
+    // Add request interceptor
+    this.axiosInstance.interceptors.request.use(authInterceptors.request);
+
+    // Add response interceptors
+    this.axiosInstance.interceptors.response.use(
+      authInterceptors.response.onFulfilled,
+      authInterceptors.response.onRejected
+    );
   }
 
   /**
@@ -849,7 +885,7 @@ class QueryBuilder<T extends Record<string, any>> {
     }
 
     // Create a new SDK instance for the subquery
-    const subquerySdk = new DatabaseSDK(this.sdk.getBaseUrl());
+    const subquerySdk = new DatabaseSDK({ baseUrl: this.sdk.getBaseUrl() });
 
     // Get the subquery builder
     const subquery = subqueryBuilder(subquerySdk);
@@ -888,7 +924,7 @@ class QueryBuilder<T extends Record<string, any>> {
     }
 
     // Create a new SDK instance for the subquery
-    const subquerySdk = new DatabaseSDK(this.sdk.getBaseUrl());
+    const subquerySdk = new DatabaseSDK({ baseUrl: this.sdk.getBaseUrl() });
 
     // Build the subquery
     const subQueryBuilder = subquerySdk.table(tableName);

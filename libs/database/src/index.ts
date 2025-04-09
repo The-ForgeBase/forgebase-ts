@@ -9,3 +9,4 @@ export * from './schema';
 export * from './sdk/server';
 export * from './database';
 export * from './adapters';
+export * from './errors';

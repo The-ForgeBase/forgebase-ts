@@ -3,6 +3,7 @@ import { PermissionService } from './permissionService';
 import { enforcePermissions } from './rlsManager';
 import { DBInspector, type DatabaseSchema } from './utils/inspector';
 import { KnexHooks } from './knex-hooks';
+import { AuthenticationRequiredError, PermissionDeniedError } from './errors';
 import type {
   AddForeignKeyParams,
   DataDeleteParams,
@@ -322,7 +323,9 @@ export class ForgeDatabase {
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new Error('User is required to query a record');
+          throw new AuthenticationRequiredError(
+            'Authentication required to query records'
+          );
         }
 
         const {
@@ -343,7 +346,7 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new Error(
+          throw new PermissionDeniedError(
             `User does not have permission to query table "${tableName}"`
           );
         }
@@ -370,7 +373,7 @@ export class ForgeDatabase {
         );
 
         if (!status) {
-          throw new Error(
+          throw new PermissionDeniedError(
             `User does not have permission to query table "${tableName}"`
           );
         }
@@ -428,7 +431,9 @@ export class ForgeDatabase {
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new Error('User is required to create a record');
+          throw new AuthenticationRequiredError(
+            'Authentication required to create records'
+          );
         }
 
         const {
@@ -449,7 +454,7 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new Error(
+          throw new PermissionDeniedError(
             `User does not have permission to create record in table "${tableName}"`
           );
         }
@@ -482,7 +487,7 @@ export class ForgeDatabase {
         }
 
         if (!row || (Array.isArray(row) && row.length === 0)) {
-          throw new Error(
+          throw new PermissionDeniedError(
             `User does not have permission to create this record in table "${tableName}"`
           );
         }
@@ -533,7 +538,9 @@ export class ForgeDatabase {
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new Error('User is required to update a record');
+          throw new AuthenticationRequiredError(
+            'Authentication required to update records'
+          );
         }
 
         const {
@@ -592,7 +599,7 @@ export class ForgeDatabase {
         );
 
         if (!status) {
-          throw new Error(
+          throw new PermissionDeniedError(
             `User does not have permission to update record with id ${id}`
           );
         }
@@ -641,7 +648,9 @@ export class ForgeDatabase {
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new Error('User is required to delete a record');
+          throw new AuthenticationRequiredError(
+            'Authentication required to delete records'
+          );
         }
 
         const {
@@ -662,7 +671,7 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new Error(
+          throw new PermissionDeniedError(
             `User does not have permission to delete record with id ${id}`
           );
         }
@@ -698,7 +707,7 @@ export class ForgeDatabase {
           this.hooks.getKnexInstance()
         );
         if (!status) {
-          throw new Error(
+          throw new PermissionDeniedError(
             `User does not have permission to delete record with id ${id}`
           );
         }

@@ -14,7 +14,12 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ForgeApiService } from './forge-api.service';
-import { DataMutationParams, DataQueryParams } from '@forgebase-ts/database';
+import {
+  DataMutationParams,
+  DataQueryParams,
+  AuthenticationRequiredError,
+  PermissionDeniedError,
+} from '@forgebase-ts/database';
 import { ApiAdmin } from './decorators/admin.decorator';
 import { ApiPublic } from './decorators/public.decorator';
 import { AdminGuard } from './guards/admin.guard';
@@ -301,10 +306,16 @@ export class ForgeApiController {
       return { id };
     } catch (error) {
       console.error('Error creating item:', error);
-      throw new HttpException(
-        error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      if (error instanceof AuthenticationRequiredError) {
+        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+      } else if (error instanceof PermissionDeniedError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else {
+        throw new HttpException(
+          error.message || 'Internal server error',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
     }
   }
 
@@ -321,10 +332,16 @@ export class ForgeApiController {
         .query(collection, query, req['user'], req['isSystem']);
     } catch (error) {
       console.error('Error querying items:', error);
-      throw new HttpException(
-        error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      if (error instanceof AuthenticationRequiredError) {
+        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+      } else if (error instanceof PermissionDeniedError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else {
+        throw new HttpException(
+          error.message || 'Internal server error',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
     }
   }
 
@@ -345,10 +362,16 @@ export class ForgeApiController {
         .query(collection, query, req['user'], req['isSystem']);
     } catch (error) {
       console.error('Error getting item by id:', error);
-      throw new HttpException(
-        error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      if (error instanceof AuthenticationRequiredError) {
+        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+      } else if (error instanceof PermissionDeniedError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else {
+        throw new HttpException(
+          error.message || 'Internal server error',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
     }
   }
 
@@ -381,10 +404,16 @@ export class ForgeApiController {
       return { success: true };
     } catch (error) {
       console.error('Error updating item:', error);
-      throw new HttpException(
-        error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      if (error instanceof AuthenticationRequiredError) {
+        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+      } else if (error instanceof PermissionDeniedError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else {
+        throw new HttpException(
+          error.message || 'Internal server error',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
     }
   }
 
@@ -404,10 +433,16 @@ export class ForgeApiController {
       return { success: true };
     } catch (error) {
       console.error('Error deleting item:', error);
-      throw new HttpException(
-        error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      if (error instanceof AuthenticationRequiredError) {
+        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+      } else if (error instanceof PermissionDeniedError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else {
+        throw new HttpException(
+          error.message || 'Internal server error',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
     }
   }
 }

@@ -64,6 +64,19 @@ const isAuthenticated = auth.isAuthenticated();
 
 // Logout
 await auth.logout();
+
+// Get the API instance for making authenticated requests
+const api = auth.api;
+
+// Make an authenticated request
+const response = await api.get('/protected-endpoint');
+
+// Get auth interceptors to apply to another axios instance
+const authInterceptors = auth.getAuthInterceptors();
+
+// Apply auth interceptors to your own axios instance
+const myAxios = axios.create({ baseURL: 'https://api.example.com' });
+auth.applyAuthInterceptors(myAxios);
 ```
 
 ## React Integration
