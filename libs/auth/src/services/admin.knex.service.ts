@@ -5,12 +5,13 @@ import {
   InternalAdmin,
 } from '../types/admin';
 import { hashPassword, verifyPasswordHash } from '../lib/password';
+import { AuthAdminsTable } from '../config';
 
 /**
  * Knex-based implementation of AdminService
  */
 export class KnexAdminService implements AdminService {
-  private readonly tableName = 'internal_admins';
+  private readonly tableName = AuthAdminsTable;
 
   constructor(private knex: Knex) {}
 

@@ -1,3 +1,4 @@
+import { AuthUsersTable } from './config';
 import { hashPassword } from './lib/password';
 import {
   AuthConfig,
@@ -17,13 +18,13 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
   constructor(config: AuthConfig, internalConfig: AuthInternalConfig<TUser>) {
     this.config = config;
     this.internalConfig = internalConfig;
-    this.table = internalConfig.tableName || 'users';
+    this.table = AuthUsersTable;
     this.columns = {
-      id: internalConfig.userColumns?.id || 'id',
-      email: internalConfig.userColumns?.email || 'email',
-      passwordHash: internalConfig.userColumns?.passwordHash || 'password_hash',
-      createdAt: internalConfig.userColumns?.createdAt || 'created_at',
-      updatedAt: internalConfig.userColumns?.updatedAt || 'updated_at',
+      id: 'id',
+      email: 'email',
+      passwordHash: 'password_hash',
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
     };
   }
 

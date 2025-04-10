@@ -1,12 +1,28 @@
 import { Knex } from 'knex';
 import { AuthConfig } from '../types';
+import {
+  AuthAccessTokensTable,
+  AuthAdminAuditLogsTable,
+  AuthAdminSessionsTable,
+  AuthAdminsTable,
+  AuthAPIKeysTable,
+  AuthConfigTable,
+  AuthCryptoKeysTable,
+  AuthOAuthProvidersTable,
+  AuthOAuthStatesTable,
+  AuthPasswordlessTokensTable,
+  AuthRefreshTokensTable,
+  AuthSessionsTable,
+  AuthUsersTable,
+  AuthVerificationTokensTable,
+} from '.';
 
 export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   // Auth Config Table
   console.log('Initializing auth schema...');
-  const hasAuthConfig = await knex.schema.hasTable('auth_config');
+  const hasAuthConfig = await knex.schema.hasTable(AuthConfigTable);
   if (!hasAuthConfig) {
-    await knex.schema.createTable('auth_config', (table) => {
+    await knex.schema.createTable(AuthConfigTable, (table) => {
       table.increments('id');
       table.json('config').notNullable();
       table.timestamp('created_at').defaultTo(knex.fn.now());
@@ -15,9 +31,9 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   }
 
   // Crypto Keys Table for JWT signing
-  const hasCryptoKeys = await knex.schema.hasTable('crypto_keys');
+  const hasCryptoKeys = await knex.schema.hasTable(AuthCryptoKeysTable);
   if (!hasCryptoKeys) {
-    await knex.schema.createTable('crypto_keys', (table) => {
+    await knex.schema.createTable(AuthCryptoKeysTable, (table) => {
       table.string('kid').primary(); // Key ID
       table.string('algorithm').notNullable(); // Signing algorithm
       table.text('private_key').notNullable(); // Private key in JWK format
@@ -30,9 +46,9 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   }
 
   // OAuth Providers Table
-  const hasAuthProviders = await knex.schema.hasTable('oauth_providers');
+  const hasAuthProviders = await knex.schema.hasTable(AuthOAuthProvidersTable);
   if (!hasAuthProviders) {
-    await knex.schema.createTable('oauth_providers', (table) => {
+    await knex.schema.createTable(AuthOAuthProvidersTable, (table) => {
       table.increments('id');
       table.string('name').notNullable().unique();
       table.json('config').notNullable();
@@ -41,14 +57,29 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
     });
   }
 
+  // AuthOAuthStatesTable
+  const hasAuthStates = await knex.schema.hasTable(AuthOAuthStatesTable);
+  if (!hasAuthStates) {
+    await knex.schema.createTable(AuthOAuthStatesTable, (table) => {
+      table.string('state').primary();
+      table.string('code_verifier').nullable();
+      table.timestamp('created_at').defaultTo(knex.fn.now());
+      table.timestamp('updated_at').defaultTo(knex.fn.now());
+    });
+  }
+
   // Users Table
-  const hasUsers = await knex.schema.hasTable('users');
+  const hasUsers = await knex.schema.hasTable(AuthUsersTable);
   if (!hasUsers) {
-    await knex.schema.createTable('users', (table) => {
+    await knex.schema.createTable(AuthUsersTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.string('email').index().unique().notNullable();
       table.string('phone').unique().nullable();
       table.string('name').nullable();
+      table.string('labels').nullable();
+      table.string('teams').nullable();
+      table.string('permissions').nullable();
+      table.string('role').defaultTo('user').notNullable();
       table.string('picture').nullable();
       table.string('password_hash').nullable();
       table.boolean('email_verified').defaultTo(false);
@@ -67,34 +98,24 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
     console.log('Users table created');
   }
 
-  // OAuth Accounts Table
-  const hasOAuthAccounts = await knex.schema.hasTable('oauth_accounts');
-  if (!hasOAuthAccounts) {
-    await knex.schema.createTable('oauth_accounts', (table) => {
+  // Passwpordless tokens Table
+  const hasPasswordlessTokens = await knex.schema.hasTable(
+    AuthPasswordlessTokensTable
+  );
+  if (!hasPasswordlessTokens) {
+    await knex.schema.createTable(AuthPasswordlessTokensTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
-      table.uuid('user_id').notNullable();
-      table.string('provider').notNullable();
-      table.string('provider_user_id').notNullable();
-      table.json('provider_data').nullable();
+      table.string('token').notNullable();
+      table.string('email').notNullable();
+      table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
-
-      // Foreign key to users table
-      table
-        .foreign('user_id')
-        .references('id')
-        .inTable('users')
-        .onDelete('CASCADE');
-      // Composite unique constraint
-      table.unique(['provider', 'provider_user_id']);
-      // Index for faster lookups
-      table.index(['user_id']);
     });
   }
 
   // Sessions Table
-  const hasSessions = await knex.schema.hasTable('sessions');
+  const hasSessions = await knex.schema.hasTable(AuthSessionsTable);
   if (!hasSessions) {
-    await knex.schema.createTable('sessions', (table) => {
+    await knex.schema.createTable(AuthSessionsTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').unique();
@@ -105,7 +126,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table
         .foreign('user_id')
         .references('id')
-        .inTable('users')
+        .inTable(AuthUsersTable)
         .onDelete('CASCADE');
       // Indexes for performance
       table.index(['user_id']);
@@ -115,10 +136,10 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
 
   // Verification Tokens Table (for email/phone verification and password reset)
   const hasVerificationTokens = await knex.schema.hasTable(
-    'verification_tokens'
+    AuthVerificationTokensTable
   );
   if (!hasVerificationTokens) {
-    await knex.schema.createTable('verification_tokens', (table) => {
+    await knex.schema.createTable(AuthVerificationTokensTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').notNullable();
@@ -130,7 +151,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table
         .foreign('user_id')
         .references('id')
-        .inTable('users')
+        .inTable(AuthUsersTable)
         .onDelete('CASCADE');
       // Indexes for performance
       table.index(['user_id']);
@@ -141,9 +162,9 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   }
 
   //Access Tokens Table
-  const hasAccessTokens = await knex.schema.hasTable('access_tokens');
+  const hasAccessTokens = await knex.schema.hasTable(AuthAccessTokensTable);
   if (!hasAccessTokens) {
-    await knex.schema.createTable('access_tokens', (table) => {
+    await knex.schema.createTable(AuthAccessTokensTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').notNullable();
@@ -154,7 +175,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table
         .foreign('user_id')
         .references('id')
-        .inTable('users')
+        .inTable(AuthUsersTable)
         .onDelete('CASCADE');
       // Indexes for performance
       table.index(['user_id']);
@@ -165,9 +186,9 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   }
 
   //Refresh Tokens Table
-  const hasRefreshTokens = await knex.schema.hasTable('refresh_tokens');
+  const hasRefreshTokens = await knex.schema.hasTable(AuthRefreshTokensTable);
   if (!hasRefreshTokens) {
-    await knex.schema.createTable('refresh_tokens', (table) => {
+    await knex.schema.createTable(AuthRefreshTokensTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').notNullable();
@@ -177,7 +198,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table
         .foreign('user_id')
         .references('id')
-        .inTable('users')
+        .inTable(AuthUsersTable)
         .onDelete('CASCADE');
       // Indexes for performance
       table.index(['user_id']);
@@ -187,9 +208,9 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   }
 
   // API Keys Table
-  const hasApiKeys = await knex.schema.hasTable('api_keys');
+  const hasApiKeys = await knex.schema.hasTable(AuthAPIKeysTable);
   if (!hasApiKeys) {
-    await knex.schema.createTable('api_keys', (table) => {
+    await knex.schema.createTable(AuthAPIKeysTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('key_prefix').notNullable();
@@ -204,7 +225,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table
         .foreign('user_id')
         .references('id')
-        .inTable('users')
+        .inTable(AuthUsersTable)
         .onDelete('CASCADE');
 
       // Composite index for faster lookups
@@ -230,9 +251,9 @@ export async function initializeAdminTables(knex: Knex): Promise<void> {
   console.log('Initializing admin tables...');
 
   // Admins Table
-  const hasAdmins = await knex.schema.hasTable('internal_admins');
+  const hasAdmins = await knex.schema.hasTable(AuthAdminsTable);
   if (!hasAdmins) {
-    await knex.schema.createTable('internal_admins', (table) => {
+    await knex.schema.createTable(AuthAdminsTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.string('email').index().unique().notNullable();
       table.string('name').nullable();
@@ -246,11 +267,9 @@ export async function initializeAdminTables(knex: Knex): Promise<void> {
   }
 
   // Admin Sessions Table
-  const hasAdminSessions = await knex.schema.hasTable(
-    'internal_admin_sessions'
-  );
+  const hasAdminSessions = await knex.schema.hasTable(AuthAdminSessionsTable);
   if (!hasAdminSessions) {
-    await knex.schema.createTable('internal_admin_sessions', (table) => {
+    await knex.schema.createTable(AuthAdminSessionsTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('admin_id').notNullable();
       table.string('token').unique().notNullable();
@@ -261,7 +280,7 @@ export async function initializeAdminTables(knex: Knex): Promise<void> {
       table
         .foreign('admin_id')
         .references('id')
-        .inTable('internal_admins')
+        .inTable(AuthAdminsTable)
         .onDelete('CASCADE');
 
       // Indexes for performance
@@ -271,11 +290,9 @@ export async function initializeAdminTables(knex: Knex): Promise<void> {
   }
 
   // Admin Audit Logs Table
-  const hasAdminAuditLogs = await knex.schema.hasTable(
-    'internal_admin_audit_logs'
-  );
+  const hasAdminAuditLogs = await knex.schema.hasTable(AuthAdminAuditLogsTable);
   if (!hasAdminAuditLogs) {
-    await knex.schema.createTable('internal_admin_audit_logs', (table) => {
+    await knex.schema.createTable(AuthAdminAuditLogsTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('admin_id').notNullable();
       table.string('action').notNullable();
@@ -288,7 +305,7 @@ export async function initializeAdminTables(knex: Knex): Promise<void> {
       table
         .foreign('admin_id')
         .references('id')
-        .inTable('internal_admins')
+        .inTable(AuthAdminsTable)
         .onDelete('CASCADE');
 
       // Indexes for performance

@@ -61,18 +61,6 @@ export type AuthConfig = z.infer<typeof AuthConfigSchema>;
 
 export interface AuthInternalConfig<TUser extends User> {
   knex: Knex;
-  tableName?: string;
-  userColumns?: {
-    id?: string;
-    email?: string;
-    phone?: string;
-    name?: string;
-    smsVerified?: boolean;
-    emailVerified?: boolean;
-    passwordHash?: string;
-    createdAt?: string;
-    updatedAt?: string;
-  };
   mfaService?: MfaService;
   rateLimiter?: RateLimiter;
   emailVerificationService?: EmailVerificationService<TUser>;
@@ -175,6 +163,10 @@ export interface BaseUser {
   name?: string;
   phone?: string;
   picture?: string;
+  permissions?: string | string[];
+  role?: string;
+  labels?: string | string[];
+  teams?: string | string[];
   password_hash?: string;
   email_verified: boolean;
   phone_verified: boolean;

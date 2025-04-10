@@ -5,6 +5,7 @@ import { Knex } from 'knex';
 import axios from 'axios';
 import { OAuthUser } from '.';
 import { ArcticFetchError, OAuth2RequestError } from 'arctic';
+import { AuthOAuthStatesTable } from '../../config';
 
 export interface GoogleUserAttributes {
   sub: string;
@@ -56,7 +57,7 @@ export class GoogleOAuthProvider<
         config.scopes
       );
 
-      await this.config.knex('oauth_states').insert({
+      await this.config.knex(AuthOAuthStatesTable).insert({
         state,
         code_verifier: codeVerifier,
       });
@@ -74,7 +75,7 @@ export class GoogleOAuthProvider<
   ): Promise<{ accessToken: string }> {
     try {
       const { code_verifier, state: storedState } = await this.config
-        .knex('oauth_states')
+        .knex(AuthOAuthStatesTable)
         .where('state', state)
         .first();
 
@@ -89,7 +90,10 @@ export class GoogleOAuthProvider<
       );
       const accessToken = tokens.accessToken();
 
-      await this.config.knex('oauth_states').where('state', state).delete();
+      await this.config
+        .knex(AuthOAuthStatesTable)
+        .where('state', state)
+        .delete();
 
       return { accessToken };
     } catch (error) {

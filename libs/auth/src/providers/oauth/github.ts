@@ -5,6 +5,7 @@ import { Knex } from 'knex';
 import axios from 'axios';
 import { OAuthUser } from '.';
 import { ArcticFetchError, OAuth2RequestError } from 'arctic';
+import { AuthOAuthStatesTable } from '../../config';
 
 export interface GitHubUserAttributes {
   id: number;
@@ -48,12 +49,9 @@ export class GitHubOAuthProvider<
       const codeVerifier = arctic.generateCodeVerifier();
       const config = await this.getConfig();
       const github = await this.getGitHubClient();
-      const url = github.createAuthorizationURL(
-        state,
-        config.scopes
-      );
+      const url = github.createAuthorizationURL(state, config.scopes);
 
-      await this.config.knex('oauth_states').insert({
+      await this.config.knex(AuthOAuthStatesTable).insert({
         state,
         code_verifier: codeVerifier,
       });
@@ -71,7 +69,7 @@ export class GitHubOAuthProvider<
   ): Promise<{ accessToken: string }> {
     try {
       const { code_verifier, state: storedState } = await this.config
-        .knex('oauth_states')
+        .knex(AuthOAuthStatesTable)
         .where('state', state)
         .first();
 
@@ -80,12 +78,13 @@ export class GitHubOAuthProvider<
       }
 
       const github = await this.getGitHubClient();
-      const tokens = await github.validateAuthorizationCode(
-        code,
-      );
+      const tokens = await github.validateAuthorizationCode(code);
       const accessToken = tokens.accessToken();
 
-      await this.config.knex('oauth_states').where('state', state).delete();
+      await this.config
+        .knex(AuthOAuthStatesTable)
+        .where('state', state)
+        .delete();
 
       return { accessToken };
     } catch (error) {
@@ -98,7 +97,7 @@ export class GitHubOAuthProvider<
       throw new Error(error.message);
     }
   }
-  
+
   async getUserProfile(accessToken: string): Promise<OAuthUser> {
     try {
       // Get user data
@@ -110,17 +109,20 @@ export class GitHubOAuthProvider<
       });
 
       const userData: GitHubUserAttributes = response.data;
-      
+
       // Get user email if not provided in profile
       let email = userData.email;
       if (!email) {
-        const emailsResponse = await axios('https://api.github.com/user/emails', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Accept: 'application/vnd.github.v3+json',
-          },
-        });
-        
+        const emailsResponse = await axios(
+          'https://api.github.com/user/emails',
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/vnd.github.v3+json',
+            },
+          }
+        );
+
         // Find primary email
         const primaryEmail = emailsResponse.data.find((e: any) => e.primary);
         if (primaryEmail) {

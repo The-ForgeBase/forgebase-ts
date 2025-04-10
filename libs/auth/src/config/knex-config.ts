@@ -1,8 +1,9 @@
 import { Knex } from 'knex';
 import { ConfigStore, AuthConfig, AuthConfigSchema } from '../types';
+import { AuthConfigTable } from '.';
 
 export class KnexConfigStore implements ConfigStore {
-  private tableName = 'auth_config';
+  private tableName = AuthConfigTable;
 
   constructor(
     private knex: Knex,
@@ -29,7 +30,7 @@ export class KnexConfigStore implements ConfigStore {
   };
 
   async getConfig(): Promise<AuthConfig> {
-    if (Date.now() < this.cache.expires) return this.cache.value!;
+    if (Date.now() < this.cache.expires) return this.cache.value;
 
     const result = await this.knex(this.tableName)
       .orderBy('created_at', 'desc')
@@ -65,7 +66,7 @@ export class KnexConfigStore implements ConfigStore {
           period: 30,
         },
       });
-      console.log('Inserting default config:', typeof defaultConfig);
+      // console.log('Inserting default config:', typeof defaultConfig);
       const [id] = await this.knex(this.tableName)
         .insert({ config: defaultConfig })
         .returning('id');
@@ -74,7 +75,7 @@ export class KnexConfigStore implements ConfigStore {
       return configWithId;
     }
 
-    console.log('Loaded config from database:', typeof result.config);
+    // console.log('Loaded config from database:', typeof result.config);
 
     // Parse the JSON string into an object before validating with Zod
     const configObject =

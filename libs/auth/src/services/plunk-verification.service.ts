@@ -8,6 +8,7 @@ import {
   createPlunkTransporter,
   generateSimpleVerificationEmail,
 } from './email-templates';
+import { AuthVerificationTokensTable } from '../config';
 
 export interface PlunkVerificationConfig {
   apiKey: string;
@@ -97,7 +98,7 @@ export interface PlunkVerificationConfig {
 export class PlunkEmailVerificationService<TUser extends User>
   implements EmailVerificationService<TUser>
 {
-  private readonly tableName = 'verification_tokens';
+  private readonly tableName = AuthVerificationTokensTable;
   private readonly tokenExpiryMinutes: number;
   private transporter: Transporter | null = null;
 

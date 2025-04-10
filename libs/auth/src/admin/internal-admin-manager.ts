@@ -12,6 +12,7 @@ import { KnexAdminService } from '../services/admin.knex.service';
 import { ConfigStore } from '../types';
 import { AuthConfig } from '../types';
 import { initializeAdminTables } from '../config/schema';
+import { AuthAdminAuditLogsTable } from '../config';
 
 /**
  * Admin audit log interface
@@ -462,7 +463,7 @@ export class InternalAdminManager {
    * @param logEntry Log entry data
    */
   private async createAuditLog(logEntry: AuditLogEntry): Promise<void> {
-    await this.knex('internal_admin_audit_logs').insert({
+    await this.knex(AuthAdminAuditLogsTable).insert({
       admin_id: logEntry.admin_id,
       action: logEntry.action,
       details: logEntry.details ? JSON.stringify(logEntry.details) : null,
@@ -494,7 +495,7 @@ export class InternalAdminManager {
 
     const offset = (page - 1) * limit;
 
-    let query = this.knex('internal_admin_audit_logs')
+    let query = this.knex(AuthAdminAuditLogsTable)
       .select('*')
       .orderBy('created_at', 'desc')
       .limit(limit)
@@ -506,9 +507,7 @@ export class InternalAdminManager {
 
     const logs = await query;
 
-    let countQuery = this.knex('internal_admin_audit_logs').count(
-      'id as count'
-    );
+    let countQuery = this.knex(AuthAdminAuditLogsTable).count('id as count');
 
     if (adminId) {
       countQuery = countQuery.where({ admin_id: adminId });

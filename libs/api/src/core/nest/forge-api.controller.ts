@@ -299,7 +299,7 @@ export class ForgeApiController {
           tableName: collection,
           data,
         },
-        req['user'],
+        req['userContext'],
         req['isSystem']
       );
 
@@ -329,7 +329,7 @@ export class ForgeApiController {
     try {
       return await this.forgeApiService
         .getDatabaseService()
-        .query(collection, query, req['user'], req['isSystem']);
+        .query(collection, query, req['userContext'], req['isSystem']);
     } catch (error) {
       console.error('Error querying items:', error);
       if (error instanceof AuthenticationRequiredError) {
@@ -359,7 +359,7 @@ export class ForgeApiController {
       const query: DataQueryParams = { filter: { id: itemId }, select: ['*'] };
       return await this.forgeApiService
         .getDatabaseService()
-        .query(collection, query, req['user'], req['isSystem']);
+        .query(collection, query, req['userContext'], req['isSystem']);
     } catch (error) {
       console.error('Error getting item by id:', error);
       if (error instanceof AuthenticationRequiredError) {
@@ -400,7 +400,7 @@ export class ForgeApiController {
 
       await this.forgeApiService
         .getDatabaseService()
-        .update(params, req['user'], req['isSystem']);
+        .update(params, req['userContext'], req['isSystem']);
       return { success: true };
     } catch (error) {
       console.error('Error updating item:', error);
@@ -429,7 +429,7 @@ export class ForgeApiController {
 
       await this.forgeApiService
         .getDatabaseService()
-        .delete(collection, itemId, req['user'], req['isSystem']);
+        .delete(collection, itemId, req['userContext'], req['isSystem']);
       return { success: true };
     } catch (error) {
       console.error('Error deleting item:', error);

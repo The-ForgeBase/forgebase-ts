@@ -2,6 +2,7 @@ import { AuthConfig, AuthToken, SessionManager, User } from '../types';
 import { Knex } from 'knex';
 import { timeStringToDate } from '@forgebase-ts/common';
 import { generateSessionId, generateSessionToken } from '../lib/osolo';
+import { AuthSessionsTable } from '../config';
 
 export class BasicSessionManager implements SessionManager {
   private config: AuthConfig;
@@ -16,16 +17,16 @@ export class BasicSessionManager implements SessionManager {
 
     const sessionToken = generateSessionId(token);
 
-    const exixting = await this.knex('sessions')
+    const exixting = await this.knex(AuthSessionsTable)
       .where({ user_id: user.id })
       .where('expires_at', '>', new Date())
       .first();
 
     if (exixting && !this.config.sessionSettings.multipleSessions) {
-      await this.knex('sessions').where({ user_id: user.id }).delete();
+      await this.knex(AuthSessionsTable).where({ user_id: user.id }).delete();
     }
 
-    await this.knex('sessions').insert({
+    await this.knex(AuthSessionsTable).insert({
       token: sessionToken,
       user_id: user.id,
       expires_at: timeStringToDate(this.config.sessionSettings.refreshTokenTTL),
@@ -42,7 +43,7 @@ export class BasicSessionManager implements SessionManager {
     token: string
   ): Promise<{ user: User; token?: string | AuthToken }> {
     const sessionToken = generateSessionId(token);
-    const session = await this.knex('sessions')
+    const session = await this.knex(AuthSessionsTable)
       .where({ token: sessionToken })
       .where('expires_at', '>', new Date())
       .first();
@@ -58,7 +59,7 @@ export class BasicSessionManager implements SessionManager {
 
   async destroySession(token: string): Promise<void> {
     const sessionToken = generateSessionId(token);
-    await this.knex('sessions').where({ token: sessionToken }).delete();
+    await this.knex(AuthSessionsTable).where({ token: sessionToken }).delete();
   }
 
   async refreshSession(refreshToken: string): Promise<AuthToken | string> {
@@ -67,7 +68,7 @@ export class BasicSessionManager implements SessionManager {
 
   async validateToken(token: string): Promise<User> {
     const sessionToken = generateSessionId(token);
-    const session = await this.knex('sessions')
+    const session = await this.knex(AuthSessionsTable)
       .where({ token: sessionToken })
       .where('expires_at', '>', new Date())
       .first();
