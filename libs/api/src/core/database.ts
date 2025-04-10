@@ -107,6 +107,7 @@ export class DatabaseService {
       permissions: this.permissionService,
       realtime: config?.realtime || false,
       enforceRls: config?.enforceRls || false,
+      excludedTables: config?.excludedTables || [],
     });
   }
 

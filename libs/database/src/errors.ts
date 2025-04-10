@@ -12,6 +12,13 @@ export class DatabaseError extends Error {
   }
 }
 
+export class ExcludedTableError extends DatabaseError {
+  constructor(tableName: string) {
+    super(`This Table "${tableName}" is on the excluded list`);
+    this.name = 'ExcludedTableError';
+  }
+}
+
 /**
  * Error thrown when authentication is required but not provided
  */

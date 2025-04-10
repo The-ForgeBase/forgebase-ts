@@ -3,7 +3,11 @@ import { PermissionService } from './permissionService';
 import { enforcePermissions } from './rlsManager';
 import { DBInspector, type DatabaseSchema } from './utils/inspector';
 import { KnexHooks } from './knex-hooks';
-import { AuthenticationRequiredError, PermissionDeniedError } from './errors';
+import {
+  AuthenticationRequiredError,
+  ExcludedTableError,
+  PermissionDeniedError,
+} from './errors';
 import type {
   AddForeignKeyParams,
   DataDeleteParams,
@@ -58,9 +62,14 @@ export class ForgeDatabase {
     },
   };
   private wsManager?: WebSocketManager;
+  private excludedTables: string[] = [];
 
   constructor(private config: ForgeDatabaseConfig = {}) {
     if (!config.db) throw new Error('Database instance is required');
+
+    if (config.excludedTables) {
+      this.excludedTables = config.excludedTables;
+    }
 
     this.permissionService =
       config.permissions || new PermissionService(config.db);
@@ -80,6 +89,23 @@ export class ForgeDatabase {
     if (config.defaultPermissions) {
       this.defaultPermissions = config.defaultPermissions;
     }
+  }
+
+  /**
+   * Add a table to the excluded tables list
+   * @param tables List of tables to exclude
+   */
+  public addExcludedTables(tables: string[]) {
+    this.excludedTables = [...this.excludedTables, ...tables];
+  }
+  /**
+   * Remove a table from the excluded tables list
+   * @param tables List of tables to include
+   */
+  public removeExcludedTables(tables: string[]) {
+    this.excludedTables = this.excludedTables.filter(
+      (table) => !tables.includes(table)
+    );
   }
 
   /**
@@ -177,6 +203,9 @@ export class ForgeDatabase {
         };
       },
       delete: async (tableName: string, trx?: Knex.Transaction) => {
+        if (this.excludedTables.includes(tableName)) {
+          throw new ExcludedTableError(tableName);
+        }
         // Use transaction if provided, otherwise use the knex instance
         const schemaBuilder = trx
           ? trx.schema
@@ -192,12 +221,23 @@ export class ForgeDatabase {
         };
       },
       modify: async (payload: ModifySchemaParams, trx?: Knex.Transaction) => {
+        if (this.excludedTables.includes(payload.tableName)) {
+          throw new ExcludedTableError(payload.tableName);
+        }
         return await modifySchema(this.hooks.getKnexInstance(), payload, trx);
       },
       addForeingKey: async (
         payload: AddForeignKeyParams,
         trx?: Knex.Transaction
       ) => {
+        if (this.excludedTables.includes(payload.tableName)) {
+          throw new ExcludedTableError(payload.tableName);
+        }
+
+        if (this.excludedTables.includes(payload.foreignTableName)) {
+          throw new ExcludedTableError(payload.foreignTableName);
+        }
+
         // If no transaction is provided, create one internally
         if (!trx) {
           return this.transaction(async (newTrx) => {
@@ -211,6 +251,9 @@ export class ForgeDatabase {
         payload: DropForeignKeyParams,
         trx?: Knex.Transaction
       ) => {
+        if (this.excludedTables.includes(payload.tableName)) {
+          throw new ExcludedTableError(payload.tableName);
+        }
         if (!trx) {
           return this.transaction(async (newTrx) => {
             return await this.endpoints.schema.dropForeignKey(payload, newTrx);
@@ -219,7 +262,10 @@ export class ForgeDatabase {
         return await dropForeignKey(payload, this.hooks.getKnexInstance(), trx);
       },
       truncateTable: async (tableName: string, trx?: Knex.Transaction) => {
-        // If no transaction is provided, create one internally
+        if (this.excludedTables.includes(tableName)) {
+          throw new ExcludedTableError(tableName);
+        }
+
         if (!trx) {
           return this.transaction(async (newTrx) => {
             return await this.endpoints.schema.truncateTable(tableName, newTrx);
@@ -245,6 +291,9 @@ export class ForgeDatabase {
         tableName: string,
         trx?: Knex.Transaction
       ) => {
+        if (this.excludedTables.includes(tableName)) {
+          throw new ExcludedTableError(tableName);
+        }
         // If no transaction is provided, create one internally
         if (!trx) {
           return this.transaction(async (newTrx) => {
@@ -263,6 +312,9 @@ export class ForgeDatabase {
         tableName: string,
         trx?: Knex.Transaction
       ) => {
+        if (this.excludedTables.includes(tableName)) {
+          throw new ExcludedTableError(tableName);
+        }
         // If no transaction is provided, create one internally
         if (!trx) {
           return this.transaction(async (newTrx) => {
@@ -298,6 +350,9 @@ export class ForgeDatabase {
         isSystem = false,
         trx?: Knex.Transaction
       ) => {
+        if (this.excludedTables.includes(tableName)) {
+          throw new ExcludedTableError(tableName);
+        }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
           return this.transaction(async (newTrx) => {
@@ -387,6 +442,9 @@ export class ForgeDatabase {
         isSystem = false,
         trx?: Knex.Transaction
       ) => {
+        if (this.excludedTables.includes(params.tableName)) {
+          throw new ExcludedTableError(params.tableName);
+        }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
           return this.transaction(async (newTrx) => {
@@ -510,6 +568,9 @@ export class ForgeDatabase {
         isSystem = false,
         trx?: Knex.Transaction
       ) => {
+        if (this.excludedTables.includes(params.tableName)) {
+          throw new ExcludedTableError(params.tableName);
+        }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
           return this.transaction(async (newTrx) => {
@@ -622,6 +683,9 @@ export class ForgeDatabase {
         isSystem = false,
         trx?: Knex.Transaction
       ) => {
+        if (this.excludedTables.includes(params.tableName)) {
+          throw new ExcludedTableError(params.tableName);
+        }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
           return this.transaction(async (newTrx) => {
@@ -729,6 +793,9 @@ export class ForgeDatabase {
      */
     permissions: {
       get: async (params: PermissionParams, trx?: Knex.Transaction) => {
+        if (this.excludedTables.includes(params.tableName)) {
+          throw new ExcludedTableError(params.tableName);
+        }
         // If no transaction is provided, create one internally
         if (!trx) {
           return this.transaction(async (newTrx) => {
@@ -741,6 +808,9 @@ export class ForgeDatabase {
       },
 
       set: async (params: PermissionParams, trx?: Knex.Transaction) => {
+        if (this.excludedTables.includes(params.tableName)) {
+          throw new ExcludedTableError(params.tableName);
+        }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
           return this.transaction(async (newTrx) => {

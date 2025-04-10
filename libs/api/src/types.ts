@@ -33,6 +33,7 @@ export interface BaaSConfig {
       knex?: knex.Knex;
       realtime: boolean;
       enforceRls: boolean;
+      excludedTables?: string[];
     };
   };
   api?: {

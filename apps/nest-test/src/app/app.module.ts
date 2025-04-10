@@ -3,9 +3,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ForgeApiModule } from '@forgebase-ts/api/core/nest';
 import { AuthModule } from './auth/auth.module';
-import { AuthConfigModule } from './auth/auth-config.module';
 import { AdminMiddleware } from '@forgebase-ts/auth/adapters/nest/middlewares/admin.middleware';
 import knex from 'knex';
+import { AuthTables } from '@forgebase-ts/auth';
 
 export const db = knex({
   client: 'sqlite3',
@@ -38,6 +38,7 @@ export const db = knex({
           enforceRls: true,
           config: {},
           knex: db,
+          excludedTables: [...AuthTables],
         },
         storage: {
           provider: 'local',

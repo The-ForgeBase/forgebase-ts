@@ -118,8 +118,7 @@ export interface ForgeDatabaseConfig {
   enforceRls?: boolean;
   realtime?: boolean;
   defaultPermissions?: TablePermissions;
-  validTables?: string[];
-  checkValidTable?: boolean;
+  excludedTables?: string[];
   websocketPort?: number;
 }
 
