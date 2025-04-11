@@ -1,5 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { InternalAdmin, InternalAdminManager } from '../../../admin';
+import {
+  AdminApiKey,
+  InternalAdmin,
+  InternalAdminManager,
+} from '../../../admin';
 
 @Injectable()
 export class AdminService {
@@ -136,5 +140,64 @@ export class AdminService {
    */
   async updateAuthConfig(config: any, adminId: string) {
     return this.adminManager.updateAuthConfig(config, adminId);
+  }
+
+  /**
+   * Create a new API key for an admin
+   */
+  async createApiKey(
+    adminId: string,
+    options: {
+      name: string;
+      scopes?: string[];
+      expires_at?: Date | null;
+    }
+  ): Promise<{ apiKey: AdminApiKey; fullKey: string }> {
+    return this.adminManager.createApiKey(adminId, options);
+  }
+
+  /**
+   * List all API keys for an admin
+   */
+  async listApiKeys(adminId: string): Promise<AdminApiKey[]> {
+    return this.adminManager.listApiKeys(adminId);
+  }
+
+  /**
+   * Get an API key by ID
+   */
+  async getApiKey(keyId: string, adminId: string): Promise<AdminApiKey> {
+    return this.adminManager.getApiKey(keyId, adminId);
+  }
+
+  /**
+   * Update an API key
+   */
+  async updateApiKey(
+    keyId: string,
+    adminId: string,
+    updates: {
+      name?: string;
+      scopes?: string[];
+      expires_at?: Date | null;
+    }
+  ): Promise<AdminApiKey> {
+    return this.adminManager.updateApiKey(keyId, adminId, updates);
+  }
+
+  /**
+   * Delete an API key
+   */
+  async deleteApiKey(keyId: string, adminId: string): Promise<boolean> {
+    return this.adminManager.deleteApiKey(keyId, adminId);
+  }
+
+  /**
+   * Validate an API key and get the associated admin
+   */
+  async validateApiKey(
+    apiKey: string
+  ): Promise<{ admin: InternalAdmin; scopes: string[] }> {
+    return this.adminManager.validateApiKey(apiKey);
   }
 }

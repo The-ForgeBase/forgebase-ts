@@ -5,6 +5,7 @@ import { AuthController } from './controllers/auth.controller';
 import { AuthGuard } from './guards/auth.guard';
 import { AuthService } from './services/auth.service';
 import { AdminController } from './controllers/admin.controller';
+import { AdminApiKeyController } from './controllers/admin-api-key.controller';
 import { AdminGuard } from './guards/admin.guard';
 import { AdminService } from './services/admin.service';
 import { InternalAdminManager } from '../../admin';
@@ -176,6 +177,7 @@ export class NestAuthModuleWithJWKS {
       controllers: options.controllers || [
         AuthController,
         AdminController,
+        AdminApiKeyController,
         JwksController,
       ],
       exports: [AuthService, AdminService, JwksService, AuthGuard, AdminGuard],

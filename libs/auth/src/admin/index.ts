@@ -4,6 +4,7 @@ import { InternalAdminManager } from './internal-admin-manager';
 import { KnexAdminService } from '../services/admin.knex.service';
 import { BasicAdminAuthProvider } from '../services/admin-auth.provider';
 import { KnexAdminSessionManager } from '../services/admin-session.service';
+import { AdminApiKeyService } from '../services/admin-api-key.service';
 
 /**
  * Factory function to create an InternalAdminManager
@@ -37,3 +38,4 @@ export function createInternalAdminManager(
 // Export admin components
 export * from './internal-admin-manager';
 export * from '../types/admin';
+export { AdminApiKeyService } from '../services/admin-api-key.service';

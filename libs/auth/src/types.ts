@@ -37,12 +37,18 @@ export const AuthConfigSchema = z.object({
       createInitialAdmin: z.boolean().default(true),
       initialAdminEmail: z.string().email().default('admin@example.com'),
       initialAdminPassword: z.string().min(8).default('changeme123'),
+      createInitialApiKey: z.boolean().default(false),
+      initialApiKeyName: z.string().default('Initial Admin API Key'),
+      initialApiKeyScopes: z.array(z.string()).default(['*']),
     })
     .default({
       enabled: false,
       createInitialAdmin: true,
       initialAdminEmail: 'admin@example.com',
       initialAdminPassword: 'changeme123',
+      createInitialApiKey: false,
+      initialApiKeyName: 'Initial Admin API Key',
+      initialApiKeyScopes: ['*'],
     }),
   rateLimiting: z
     .record(

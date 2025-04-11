@@ -15,6 +15,7 @@ export const AuthAPIKeysTable = 'forge_auth_api_keys';
 export const AuthAdminsTable = 'forge_auth_admins';
 export const AuthAdminSessionsTable = 'forge_auth_admin_sessions';
 export const AuthAdminAuditLogsTable = 'forge_auth_admin_audit_logs';
+export const AuthAdminApiKeysTable = 'forge_auth_admin_api_keys';
 export const AuthPasswordlessTokensTable = 'forge_auth_passwordless_tokens';
 
 export const AuthTables = [
@@ -33,4 +34,5 @@ export const AuthTables = [
   AuthAdminSessionsTable,
   AuthAdminAuditLogsTable,
   AuthPasswordlessTokensTable,
+  AuthAdminApiKeysTable,
 ];

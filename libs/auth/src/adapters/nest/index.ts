@@ -8,8 +8,11 @@ export * from './controllers/jwks.controller';
 // Export admin components
 export * from './services/admin.service';
 export * from './controllers/admin.controller';
+export * from './controllers/admin-api-key.controller';
 export * from './guards/admin.guard';
+export * from './middlewares/admin.middleware';
 export * from './decorators/public.decorator';
+export * from './decorators/require-scopes.decorator';
 export * from './nestjs';
 
 export type NestAuthConfig = {

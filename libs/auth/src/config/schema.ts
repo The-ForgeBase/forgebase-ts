@@ -3,6 +3,7 @@ import { AuthConfig } from '../types';
 import {
   AuthAccessTokensTable,
   AuthAdminAuditLogsTable,
+  AuthAdminApiKeysTable,
   AuthAdminSessionsTable,
   AuthAdminsTable,
   AuthAPIKeysTable,
@@ -329,6 +330,37 @@ export async function initializeAdminTables(knex: Knex): Promise<void> {
       table.index(['admin_id']);
       table.index(['action']);
       table.index(['created_at']);
+    });
+  }
+
+  // Admin API Keys Table
+  const hasAdminApiKeys = await knex.schema.hasTable(AuthAdminApiKeysTable);
+  if (!hasAdminApiKeys) {
+    await knex.schema.createTable(AuthAdminApiKeysTable, (table) => {
+      table.uuid('id').primary().defaultTo(knex.fn.uuid());
+      table.uuid('admin_id').notNullable();
+      table.string('key_prefix').notNullable();
+      table.string('key_hash').notNullable();
+      table.string('name').notNullable();
+      table.json('scopes').nullable();
+      table.timestamp('expires_at').nullable(); // null means non-expiring key
+      table.timestamp('last_used_at').nullable();
+      table.timestamps(true, true);
+
+      // Foreign key to admins table
+      table
+        .foreign('admin_id')
+        .references('id')
+        .inTable(AuthAdminsTable)
+        .onDelete('CASCADE');
+
+      // Composite index for faster lookups
+      table.unique(['key_prefix', 'key_hash']);
+
+      // Indexes for performance
+      table.index(['admin_id']);
+      table.index(['key_prefix']);
+      table.index(['expires_at']);
     });
   }
 }
