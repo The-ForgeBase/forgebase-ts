@@ -472,7 +472,7 @@ export class DynamicAuthManager<TUser extends User> {
       this.emailVerificationService &&
       'verifyPasswordResetToken' in this.emailVerificationService
     ) {
-      return (this.emailVerificationService as any).verifyPasswordResetToken(
+      return this.emailVerificationService.verifyPasswordResetToken(
         token,
         userId
       );
@@ -525,9 +525,11 @@ export class DynamicAuthManager<TUser extends User> {
       this.emailVerificationService &&
       'verifyPasswordResetToken' in this.emailVerificationService
     ) {
-      const isValid = await (
-        this.emailVerificationService as any
-      ).verifyPasswordResetToken(token, userId);
+      const isValid =
+        await this.emailVerificationService.verifyPasswordResetToken(
+          token,
+          userId
+        );
       if (!isValid) throw new InvalidCodeError();
     }
 
@@ -555,7 +557,7 @@ export class DynamicAuthManager<TUser extends User> {
       this.emailVerificationService &&
       'consumePasswordResetToken' in this.emailVerificationService
     ) {
-      await (this.emailVerificationService as any).consumePasswordResetToken(
+      await this.emailVerificationService.consumePasswordResetToken(
         token,
         userId
       );

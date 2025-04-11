@@ -353,6 +353,7 @@ export class AuthController<TUser extends User> {
     @Res() res: Response
   ) {
     try {
+      console.log('Verifying reset token:', token);
       const isValid = await this.authService.verifyPasswordResetToken(
         userId,
         token

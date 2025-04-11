@@ -622,7 +622,7 @@ export class ForgebaseWebAuth {
   ): Promise<ChangePasswordResponse> {
     try {
       // Check if user is authenticated
-      if (!this.isAuthenticated()) {
+      if (!this.isAuthenticated() && !this.config.ssr) {
         throw new AuthError(
           'User must be authenticated to change password',
           AuthErrorType.UNAUTHORIZED

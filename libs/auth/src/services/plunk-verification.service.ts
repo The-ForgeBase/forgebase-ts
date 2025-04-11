@@ -526,6 +526,8 @@ export class PlunkEmailVerificationService<TUser extends User>
       .where('expires_at', '>', new Date())
       .first();
 
+    console.log('Reset token:', resetToken);
+
     return !!resetToken;
   }
 

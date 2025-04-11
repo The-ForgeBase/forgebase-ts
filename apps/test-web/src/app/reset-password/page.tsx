@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
     };
 
     verifyToken();
-  }, [searchParams, verifyResetToken, error]);
+  }, []);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
