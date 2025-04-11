@@ -192,6 +192,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
       table.string('token').notNullable().unique();
+      table.string('access_token').nullable(); // Reference to the associated access token
       table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
       // Foreign key to users table
@@ -203,8 +204,22 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       // Indexes for performance
       table.index(['user_id']);
       table.index(['token']);
+      table.index(['access_token']); // Index for faster lookups by access token
       table.index(['expires_at']);
     });
+  } else {
+    // Check if the access_token column exists, and add it if it doesn't
+    const hasAccessTokenColumn = await knex.schema.hasColumn(
+      AuthRefreshTokensTable,
+      'access_token'
+    );
+    if (!hasAccessTokenColumn) {
+      console.log('Adding access_token column to refresh tokens table...');
+      await knex.schema.table(AuthRefreshTokensTable, (table) => {
+        table.string('access_token').nullable();
+        table.index(['access_token']);
+      });
+    }
   }
 
   // API Keys Table

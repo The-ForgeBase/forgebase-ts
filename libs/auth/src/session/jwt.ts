@@ -35,6 +35,7 @@ export class JwtSessionManager implements SessionManager {
     await this.knex(AuthRefreshTokensTable).insert({
       token: refreshToken,
       user_id: user.id,
+      access_token: accessToken, // Store reference to the access token
       expires_at: timeStringToDate(this.config.sessionSettings.refreshTokenTTL),
     });
 
@@ -55,7 +56,7 @@ export class JwtSessionManager implements SessionManager {
     const decoded = generateSessionId(refreshToken);
     const tokenRecord = await this.knex(AuthRefreshTokensTable)
       .where({ token: decoded })
-      .where('expires_at', '>', new Date())
+      .where('expires_at', '>', this.knex.fn.now())
       .first();
 
     if (!tokenRecord) throw new Error('Invalid refresh token');
@@ -66,7 +67,7 @@ export class JwtSessionManager implements SessionManager {
       .delete();
     // delete old access token
     await this.knex(AuthAccessTokensTable)
-      .where('expires_at', '<=', new Date())
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
 
     const user = await this.knex(AuthUsersTable)
@@ -81,7 +82,7 @@ export class JwtSessionManager implements SessionManager {
   ): Promise<{ user: User; token?: string | AuthToken }> {
     const accessToken = await this.knex(AuthAccessTokensTable)
       .where({ token })
-      .where('expires_at', '>', new Date())
+      .where('expires_at', '>', this.knex.fn.now())
       .first();
 
     // if expired, unsign and verify
@@ -92,7 +93,7 @@ export class JwtSessionManager implements SessionManager {
       // get the user refresh token
       const refreshToken = await this.knex(AuthRefreshTokensTable)
         .where({ user_id: decoded.sub })
-        .where('expires_at', '>', new Date())
+        .where('expires_at', '>', this.knex.fn.now())
         .first();
       if (!refreshToken) throw new Error('Invalid access token');
 
@@ -109,10 +110,10 @@ export class JwtSessionManager implements SessionManager {
         .delete();
       // delete old access token
       await this.knex(AuthAccessTokensTable)
-        .where('expires_at', '<=', new Date())
+        .where('expires_at', '<=', this.knex.fn.now())
         .delete();
       await this.knex(AuthRefreshTokensTable)
-        .where('expires_at', '<=', new Date())
+        .where('expires_at', '<=', this.knex.fn.now())
         .delete();
 
       const fToken = await this.createSession(user);
@@ -129,8 +130,21 @@ export class JwtSessionManager implements SessionManager {
   }
 
   async destroySession(token: string): Promise<void> {
+    // Find and delete any refresh tokens associated with this access token
+    await this.knex(AuthRefreshTokensTable)
+      .where({ access_token: token })
+      .delete();
+
+    // Delete the access token
     await this.knex(AuthAccessTokensTable).where({ token }).delete();
-    await this.knex(AuthRefreshTokensTable).where({ token }).delete();
+
+    // Also clean up any expired tokens
+    await this.knex(AuthAccessTokensTable)
+      .where('expires_at', '<=', this.knex.fn.now())
+      .delete();
+    await this.knex(AuthRefreshTokensTable)
+      .where('expires_at', '<=', this.knex.fn.now())
+      .delete();
   }
 
   async validateToken(token: string): Promise<User> {

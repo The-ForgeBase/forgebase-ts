@@ -19,7 +19,7 @@ export class BasicSessionManager implements SessionManager {
 
     const exixting = await this.knex(AuthSessionsTable)
       .where({ user_id: user.id })
-      .where('expires_at', '>', new Date())
+      .where('expires_at', '>', this.knex.fn.now())
       .first();
 
     if (exixting && !this.config.sessionSettings.multipleSessions) {
@@ -45,7 +45,7 @@ export class BasicSessionManager implements SessionManager {
     const sessionToken = generateSessionId(token);
     const session = await this.knex(AuthSessionsTable)
       .where({ token: sessionToken })
-      .where('expires_at', '>', new Date())
+      .where('expires_at', '>', this.knex.fn.now())
       .first();
 
     if (!session) throw new Error('Invalid session');
@@ -60,6 +60,11 @@ export class BasicSessionManager implements SessionManager {
   async destroySession(token: string): Promise<void> {
     const sessionToken = generateSessionId(token);
     await this.knex(AuthSessionsTable).where({ token: sessionToken }).delete();
+
+    // Also clean up any expired sessions
+    await this.knex(AuthSessionsTable)
+      .where('expires_at', '<=', this.knex.fn.now())
+      .delete();
   }
 
   async refreshSession(refreshToken: string): Promise<AuthToken | string> {
@@ -70,7 +75,7 @@ export class BasicSessionManager implements SessionManager {
     const sessionToken = generateSessionId(token);
     const session = await this.knex(AuthSessionsTable)
       .where({ token: sessionToken })
-      .where('expires_at', '>', new Date())
+      .where('expires_at', '>', this.knex.fn.now())
       .first();
 
     if (!session) throw new Error('Invalid session');

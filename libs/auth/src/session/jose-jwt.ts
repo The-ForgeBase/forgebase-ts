@@ -112,6 +112,7 @@ export class JoseJwtSessionManager implements SessionManager {
     await this.knex(AuthRefreshTokensTable).insert({
       token: refreshToken,
       user_id: user.id,
+      access_token: accessToken, // Store reference to the access token
       expires_at: timeStringToDate(this.config.sessionSettings.refreshTokenTTL),
     });
 
@@ -280,7 +281,15 @@ export class JoseJwtSessionManager implements SessionManager {
    */
   async destroySession(token: string): Promise<void> {
     console.log('Destroying session for token:', token);
+
+    // Find and delete any refresh tokens associated with this access token
+    await this.knex(AuthRefreshTokensTable)
+      .where({ access_token: token })
+      .delete();
+
+    // Delete the access token
     await this.knex(AuthAccessTokensTable).where({ token }).delete();
+
     // Also clean up any expired tokens
     await this.knex(AuthAccessTokensTable)
       .where('expires_at', '<=', this.knex.fn.now())
@@ -288,6 +297,7 @@ export class JoseJwtSessionManager implements SessionManager {
     await this.knex(AuthRefreshTokensTable)
       .where('expires_at', '<=', this.knex.fn.now())
       .delete();
+
     console.log('Session destroyed successfully.');
     return;
   }
