@@ -1,4 +1,4 @@
-import { protectRoute } from '../lib/auth';
+import { protectRoute } from '../lib/server';
 import DatabaseTestComp from './component';
 
 export default function DatabaseTestPage() {

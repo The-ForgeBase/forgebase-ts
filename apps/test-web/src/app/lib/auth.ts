@@ -1,9 +1,10 @@
-import {
-  getAppRouterAuthState,
-  isAuthenticated,
-  protectRoute,
-  getCurrentUser,
-} from '@forgebase-ts/web-auth/frameworks/nextjs/app-router';
+import { ForgebaseWebAuth, StorageType } from '@forgebase-ts/web-auth';
 
-// Export utility functions
-export { getAppRouterAuthState, isAuthenticated, protectRoute, getCurrentUser };
+export const auth = new ForgebaseWebAuth({
+  apiUrl: 'http://localhost:8000/api',
+  storageType: StorageType.COOKIE,
+  useCookies: true,
+  withCredentials: true,
+  secureCookies: false, // Set to true in production
+  ssr: true,
+});

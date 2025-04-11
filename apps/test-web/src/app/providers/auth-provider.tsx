@@ -1,17 +1,9 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { ForgebaseWebAuth, StorageType, User } from '@forgebase-ts/web-auth';
+import { User } from '@forgebase-ts/web-auth';
 import { AuthProvider as ForgebaseAuthProvider } from '@forgebase-ts/web-auth/frameworks/react';
-
-const auth = new ForgebaseWebAuth({
-  apiUrl: 'http://localhost:8000/api',
-  storageType: StorageType.COOKIE,
-  useCookies: true,
-  withCredentials: true,
-  secureCookies: false, // Set to true in production
-  ssr: true,
-});
+import { auth } from '../lib/auth';
 
 interface ClientAuthProviderProps {
   children: ReactNode;

@@ -24,7 +24,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   if (!hasAuthConfig) {
     await knex.schema.createTable(AuthConfigTable, (table) => {
       table.increments('id');
-      table.json('config').notNullable();
+      table.text('config').notNullable();
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
     });
@@ -105,7 +105,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   if (!hasPasswordlessTokens) {
     await knex.schema.createTable(AuthPasswordlessTokensTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
-      table.string('token').notNullable();
+      table.string('token').notNullable().unique();
       table.string('email').notNullable();
       table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
@@ -118,7 +118,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
     await knex.schema.createTable(AuthSessionsTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
-      table.string('token').unique();
+      table.string('token').notNullable().unique();
       table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
 
@@ -142,7 +142,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
     await knex.schema.createTable(AuthVerificationTokensTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
-      table.string('token').notNullable();
+      table.string('token').notNullable().unique();
       table.string('type').notNullable(); // 'email', 'phone', 'password_reset'
       table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
@@ -167,7 +167,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
     await knex.schema.createTable(AuthAccessTokensTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
-      table.string('token').notNullable();
+      table.string('token').notNullable().unique();
       table.string('kid').nullable(); // Key ID for JWT signing key
       table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
@@ -191,7 +191,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
     await knex.schema.createTable(AuthRefreshTokensTable, (table) => {
       table.uuid('id').primary().defaultTo(knex.fn.uuid());
       table.uuid('user_id').notNullable();
-      table.string('token').notNullable();
+      table.string('token').notNullable().unique();
       table.timestamp('expires_at').notNullable();
       table.timestamps(true, true);
       // Foreign key to users table
@@ -237,6 +237,8 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
       table.index(['expires_at']);
     });
   }
+
+  console.log('Auth schema initialized');
 
   // Only create admin tables if admin feature is enabled
   if (config?.adminFeature?.enabled) {

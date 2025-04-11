@@ -71,7 +71,6 @@ export class AuthConfigService implements OnModuleInit {
       // Initialize user service
       const userService = new KnexUserService<AppUser>(config, {
         knex: db,
-        tableName: 'users',
       });
 
       // Initialize auth providers
@@ -105,9 +104,9 @@ export class AuthConfigService implements OnModuleInit {
           initialAdminPassword: 'secure-password',
           createInitialAdmin: true,
         },
-        // authPolicy: {
-        //   emailVerificationRequired: true,
-        // },
+        authPolicy: {
+          emailVerificationRequired: false,
+        },
       });
 
       // Configure the options for JoseJwtSessionManager

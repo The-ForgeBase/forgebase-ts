@@ -225,16 +225,18 @@ export class AuthController<TUser extends User> {
     }
   }
 
-  @Post('logout')
-  @UseGuards(AuthGuard)
+  @Get('logout')
   async logout(@Req() req: Request, @Res() res: Response) {
+    console.log('Logout called');
     try {
       const token = this.extractToken(req);
+      if (!token) {
+        throw new UnauthorizedException('No token provided');
+      }
       await this.authService.logout(token);
-      //TODO: Clear the token cookie and Auth header
       res.clearCookie('token');
       res.clearCookie('refreshToken');
-      return { success: true };
+      return res.json({ success: true });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }

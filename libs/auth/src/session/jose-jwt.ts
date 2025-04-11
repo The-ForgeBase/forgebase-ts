@@ -150,11 +150,11 @@ export class JoseJwtSessionManager implements SessionManager {
 
     // Delete expired tokens
     await this.knex(AuthAccessTokensTable)
-      .where('expires_at', '<=', new Date())
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
 
     await this.knex(AuthRefreshTokensTable)
-      .where('expires_at', '<=', new Date())
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
 
     const user = await this.knex(AuthUsersTable)
@@ -207,11 +207,11 @@ export class JoseJwtSessionManager implements SessionManager {
 
         // Clean up expired tokens
         await this.knex(AuthAccessTokensTable)
-          .where('expires_at', '<=', new Date())
+          .where('expires_at', '<=', this.knex.fn.now())
           .delete();
 
         await this.knex(AuthRefreshTokensTable)
-          .where('expires_at', '<=', new Date())
+          .where('expires_at', '<=', this.knex.fn.now())
           .delete();
 
         // Create a new token pair
@@ -246,10 +246,10 @@ export class JoseJwtSessionManager implements SessionManager {
 
       // Clean up expired tokens
       await this.knex(AuthAccessTokensTable)
-        .where('expires_at', '<=', new Date())
+        .where('expires_at', '<=', this.knex.fn.now())
         .delete();
-      await this.knex('refresh_tokens')
-        .where('expires_at', '<=', new Date())
+      await this.knex(AuthRefreshTokensTable)
+        .where('expires_at', '<=', this.knex.fn.now())
         .delete();
 
       return { user };
@@ -279,14 +279,17 @@ export class JoseJwtSessionManager implements SessionManager {
    * @param {string} token - Token to destroy
    */
   async destroySession(token: string): Promise<void> {
+    console.log('Destroying session for token:', token);
     await this.knex(AuthAccessTokensTable).where({ token }).delete();
     // Also clean up any expired tokens
     await this.knex(AuthAccessTokensTable)
-      .where('expires_at', '<=', new Date())
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
     await this.knex(AuthRefreshTokensTable)
-      .where('expires_at', '<=', new Date())
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
+    console.log('Session destroyed successfully.');
+    return;
   }
 
   /**

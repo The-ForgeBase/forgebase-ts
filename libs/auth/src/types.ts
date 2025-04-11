@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 import { z } from 'zod';
 
 export const AuthConfigSchema = z.object({
-  id: z.any().optional(),
+  id: z.number().optional(),
   enabledProviders: z.array(z.string()).default(['local']),
   authPolicy: z.object({
     emailVerificationRequired: z.boolean().default(true),
@@ -206,7 +206,7 @@ export type AuthRequiredType =
 
 export interface SessionManager {
   createSession(user: User): Promise<AuthToken | string>;
-  destroySession(token: string): Promise<void>;
+  destroySession(token: string, id?: string): Promise<void>;
   verifySession(
     token: string
   ): Promise<{ user: User; token?: string | AuthToken }>;

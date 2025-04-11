@@ -19,19 +19,11 @@ export function getAppRouterAuthState(): AppRouterAuthState {
   const cookieStore = cookies();
   const accessToken = cookieStore.get(STORAGE_KEYS.ACCESS_TOKEN)?.value;
   const refreshToken = cookieStore.get(STORAGE_KEYS.REFRESH_TOKEN)?.value;
-  let user: User | null = null;
 
-  try {
-    const userJson = cookieStore.get(STORAGE_KEYS.USER)?.value;
-    if (userJson) {
-      user = JSON.parse(userJson);
-    }
-  } catch (error) {
-    console.error('Failed to parse user from cookie:', error);
-  }
-
+  // User is no longer stored in cookies, it should be fetched from the server
+  // using the accessToken when needed
   return {
-    user,
+    user: null,
     accessToken,
     refreshToken,
   };
@@ -47,10 +39,14 @@ export function isAuthenticated(): boolean {
 
 /**
  * Get the current user in a server component
+ * @deprecated This function always returns null as user data is no longer stored in cookies.
+ * Use a server action or API route to fetch the user data from the server instead.
  */
 export function getCurrentUser(): User | null {
-  const { user } = getAppRouterAuthState();
-  return user;
+  console.warn(
+    'getCurrentUser() is deprecated. User data is no longer stored in cookies. Use a server action or API route to fetch the user data from the server instead.'
+  );
+  return null;
 }
 
 /**
@@ -75,11 +71,14 @@ export interface AppRouterAuthProviderProps {
 /**
  * Get auth provider props for client components
  * Use this in a Server Component to pass auth state to client components
+ *
+ * Note: This function no longer returns the user object as it's not stored in cookies.
+ * The user should be fetched from the server in a client component or using a server action.
  */
 export function getAppRouterAuthProps(): AppRouterAuthProviderProps {
-  const { user, accessToken, refreshToken } = getAppRouterAuthState();
+  const { accessToken, refreshToken } = getAppRouterAuthState();
   return {
-    user,
+    user: null, // User is no longer stored in cookies
     accessToken,
     refreshToken,
   };
@@ -108,4 +107,38 @@ export function createAuthenticatedFetch() {
       headers,
     });
   };
+}
+
+/**
+ * Fetch the current user from the server
+ * Use this in Server Components or Server Actions to get the current user
+ * @param apiUrl The base URL of your API
+ * @returns The current user or null if not authenticated
+ */
+export async function fetchUserFromServer(
+  apiUrl: string
+): Promise<User | null> {
+  const { accessToken } = getAppRouterAuthState();
+
+  if (!accessToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.user || null;
+  } catch (error) {
+    console.error('Failed to fetch user from server:', error);
+    return null;
+  }
 }

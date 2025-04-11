@@ -29,6 +29,8 @@ export class ForgebaseWebAuth {
   private config: ForgebaseWebAuthConfig;
   private refreshPromise: Promise<AuthResponse | null> | null = null;
 
+  apiUrl = '';
+
   /**
    * Create a new ForgebaseWebAuth instance
    * @param config Configuration options
@@ -42,6 +44,8 @@ export class ForgebaseWebAuth {
       ssr: isSSR(),
       ...config,
     };
+
+    this.apiUrl = config.apiUrl;
 
     // Set up storage
     this.storage =
@@ -349,7 +353,7 @@ export class ForgebaseWebAuth {
     try {
       // Call the logout endpoint if available
       if (this.accessToken || this.config.useCookies) {
-        await this._api.post('/auth/logout');
+        await this._api.get('/auth/logout');
       }
     } catch (error) {
       console.error('Logout request failed:', error);
@@ -374,6 +378,7 @@ export class ForgebaseWebAuth {
    */
   async getUser(): Promise<User | null> {
     if (!this.isAuthenticated()) {
+      console.log('Not authenticated');
       return null;
     }
 
@@ -391,9 +396,9 @@ export class ForgebaseWebAuth {
    */
   isAuthenticated(): boolean {
     // In SSR mode with cookies, we can't determine authentication status
-    // if (this.config.ssr && this.config.useCookies) {
-    //   return false;
-    // }
+    if (this.config.ssr && this.config.useCookies) {
+      return false;
+    }
 
     // Check if we have a token and it's not expired
     if (this.accessToken && !isTokenExpired(this.accessToken)) {

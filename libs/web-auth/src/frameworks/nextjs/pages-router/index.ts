@@ -4,6 +4,39 @@ import { ForgebaseWebAuthConfig, User } from '../../../types';
 import { STORAGE_KEYS } from '../../../storage';
 
 /**
+ * Fetch the current user from the server
+ * @param apiUrl The base URL of your API
+ * @param accessToken The access token
+ * @returns The current user or null if not authenticated
+ */
+export async function fetchUserFromServer(
+  apiUrl: string,
+  accessToken?: string
+): Promise<User | null> {
+  if (!accessToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.user || null;
+  } catch (error) {
+    console.error('Failed to fetch user from server:', error);
+    return null;
+  }
+}
+
+/**
  * Auth state from server-side for Pages Router
  */
 export interface PagesRouterAuthState {
@@ -35,6 +68,12 @@ export interface WithAuthOptions {
    * Whether to require authentication
    */
   requireAuth?: boolean;
+
+  /**
+   * Whether to fetch the user from the server
+   * If true, the user will be fetched from the server using the access token
+   */
+  fetchUser?: boolean;
 }
 
 /**
@@ -59,19 +98,11 @@ export function withAuth<
     // Get auth state from cookies
     const accessToken = cookies[STORAGE_KEYS.ACCESS_TOKEN];
     const refreshToken = cookies[STORAGE_KEYS.REFRESH_TOKEN];
-    const userJson = cookies[STORAGE_KEYS.USER];
 
-    let user: User | null = null;
-    try {
-      if (userJson) {
-        user = JSON.parse(userJson);
-      }
-    } catch (error) {
-      console.error('Failed to parse user from cookie:', error);
-    }
-
+    // User is no longer stored in cookies, it should be fetched from the server
+    // using the accessToken when needed
     const authState: PagesRouterAuthState = {
-      user,
+      user: null,
       accessToken,
       refreshToken,
     };
@@ -110,6 +141,19 @@ export function withAuth<
       ...options.authConfig,
       ssr: true,
     });
+
+    // Fetch user from server if requested and authenticated
+    if (options.fetchUser && isAuthenticated) {
+      try {
+        const user = await fetchUserFromServer(
+          options.authConfig.apiUrl,
+          accessToken
+        );
+        authState.user = user;
+      } catch (error) {
+        console.error('Failed to fetch user in withAuth:', error);
+      }
+    }
 
     // Call the wrapped getServerSideProps function if provided
     if (getServerSidePropsFunc) {

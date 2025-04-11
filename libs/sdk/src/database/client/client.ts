@@ -232,6 +232,7 @@ export class DatabaseSDK {
     } else {
       this.axiosInstance = axios.create({
         baseURL: this.baseUrl,
+        withCredentials: true,
         ...axiosConfig,
       });
 

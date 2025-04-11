@@ -13,15 +13,15 @@ export const db = knex({
     filename: './db.sqlite',
   },
   useNullAsDefault: true,
-  // pool: {
-  //   min: 0,
-  //   max: 10,
-  //   acquireTimeoutMillis: 60000, // 60 seconds
-  //   createTimeoutMillis: 30000,
-  //   idleTimeoutMillis: 30000,
-  //   reapIntervalMillis: 1000,
-  //   createRetryIntervalMillis: 100,
-  // },
+  pool: {
+    min: 0,
+    max: 10,
+    acquireTimeoutMillis: 60000, // 60 seconds
+    createTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+    reapIntervalMillis: 1000,
+    createRetryIntervalMillis: 100,
+  },
 });
 
 @Module({
@@ -38,7 +38,7 @@ export const db = knex({
           enforceRls: true,
           config: {},
           knex: db,
-          excludedTables: [...AuthTables],
+          // excludedTables: [...AuthTables],
         },
         storage: {
           provider: 'local',

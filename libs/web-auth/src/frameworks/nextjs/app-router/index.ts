@@ -6,6 +6,7 @@ export {
   protectRoute,
   getAppRouterAuthProps,
   createAuthenticatedFetch,
+  fetchUserFromServer,
   type AppRouterAuthState,
   type AppRouterAuthProviderProps,
 } from './server';

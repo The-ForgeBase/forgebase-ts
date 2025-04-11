@@ -140,7 +140,7 @@ export class AuthInterceptor implements NestInterceptor {
         console.debug('Token validation failed:', error.message);
       }
     }
-
+    // console.debug('Request:', request);
     // Always continue with the request, even if authentication fails
     // This makes it an interceptor rather than a guard
     return next.handle();

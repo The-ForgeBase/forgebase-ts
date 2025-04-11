@@ -1,13 +1,16 @@
-import { protectRoute, getCurrentUser } from '../lib/auth';
+import { auth } from '../lib/auth';
 import Link from 'next/link';
 import LogoutButton from '../components/LogoutButton';
+import { fetchUserFromServer, protectRoute } from '../lib/server';
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   // Protect this route - will redirect to /login if not authenticated
   protectRoute();
 
   // Get the current user
-  const user = getCurrentUser();
+  const user = await fetchUserFromServer(auth.apiUrl);
+
+  // console.log(user);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">

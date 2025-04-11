@@ -38,7 +38,7 @@ export class ForgeApiController {
       console.error('Error getting schema:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -52,7 +52,7 @@ export class ForgeApiController {
       console.error('Error getting tables:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -68,7 +68,7 @@ export class ForgeApiController {
       console.error('Error getting table permission:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -84,7 +84,7 @@ export class ForgeApiController {
       console.error('Error getting table schema:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -100,7 +100,7 @@ export class ForgeApiController {
       console.error('Error deleting table:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -117,7 +117,7 @@ export class ForgeApiController {
       console.error('Error creating schema:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -134,7 +134,7 @@ export class ForgeApiController {
       console.error('Error adding column:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -151,7 +151,7 @@ export class ForgeApiController {
       console.error('Error deleting column:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -168,7 +168,7 @@ export class ForgeApiController {
       console.error('Error updating column:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -185,7 +185,7 @@ export class ForgeApiController {
       console.error('Error adding foreign key:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -202,7 +202,7 @@ export class ForgeApiController {
       console.error('Error dropping foreign key:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -219,7 +219,7 @@ export class ForgeApiController {
       console.error('Error truncating table:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -235,7 +235,7 @@ export class ForgeApiController {
       console.error('Error getting permissions:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -265,7 +265,7 @@ export class ForgeApiController {
       console.error('Error setting permissions:', error);
       throw new HttpException(
         error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.BAD_REQUEST
       );
     }
   }
@@ -307,13 +307,13 @@ export class ForgeApiController {
     } catch (error) {
       console.error('Error creating item:', error);
       if (error instanceof AuthenticationRequiredError) {
-        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else if (error instanceof PermissionDeniedError) {
         throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else {
         throw new HttpException(
           error.message || 'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR
+          HttpStatus.BAD_REQUEST
         );
       }
     }
@@ -333,13 +333,13 @@ export class ForgeApiController {
     } catch (error) {
       console.error('Error querying items:', error);
       if (error instanceof AuthenticationRequiredError) {
-        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else if (error instanceof PermissionDeniedError) {
         throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else {
         throw new HttpException(
           error.message || 'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR
+          HttpStatus.BAD_REQUEST
         );
       }
     }
@@ -363,13 +363,13 @@ export class ForgeApiController {
     } catch (error) {
       console.error('Error getting item by id:', error);
       if (error instanceof AuthenticationRequiredError) {
-        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else if (error instanceof PermissionDeniedError) {
         throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else {
         throw new HttpException(
           error.message || 'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR
+          HttpStatus.BAD_REQUEST
         );
       }
     }
@@ -405,13 +405,13 @@ export class ForgeApiController {
     } catch (error) {
       console.error('Error updating item:', error);
       if (error instanceof AuthenticationRequiredError) {
-        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else if (error instanceof PermissionDeniedError) {
         throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else {
         throw new HttpException(
           error.message || 'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR
+          HttpStatus.BAD_REQUEST
         );
       }
     }
@@ -434,13 +434,13 @@ export class ForgeApiController {
     } catch (error) {
       console.error('Error deleting item:', error);
       if (error instanceof AuthenticationRequiredError) {
-        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else if (error instanceof PermissionDeniedError) {
         throw new HttpException(error.message, HttpStatus.FORBIDDEN);
       } else {
         throw new HttpException(
           error.message || 'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR
+          HttpStatus.BAD_REQUEST
         );
       }
     }
