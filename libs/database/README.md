@@ -47,6 +47,7 @@ This library simplifies database operations by providing an abstraction layer th
   - User context filtering
   - Audit logging
   - Permission inheritance
+  - Automatic permission initialization
 
 - **Real-time Features**:
 
@@ -94,6 +95,7 @@ Our mission is to simplify backend development by providing a highly flexible, l
   - [ForgeDatabase](#forgedatabase)
   - [SchemaInspector](#schemainspector)
   - [Transactions](#transactions)
+  - [Permission Initialization](#automatic-permission-initialization)
 - [Building](#building)
 - [Running Tests](#running-tests)
 - [Security Best Practices](#security-best-practices)
@@ -647,6 +649,63 @@ For the most flexible permission rules, you can register custom JavaScript funct
 | Reusability        | Limited          | High                  |
 | Debugging          | SQL errors only  | Full error handling   |
 | Testability        | Difficult        | Easy to unit test     |
+
+### Automatic Permission Initialization
+
+ForgeDatabase can automatically initialize permissions for all tables in your database. This feature is useful when you want to ensure that all tables have at least basic permissions set.
+
+#### Configuration
+
+You can enable automatic permission initialization when creating the ForgeDatabase instance:
+
+```typescript
+const db = createForgeDatabase({
+  db: knexInstance,
+  // Enable automatic permission initialization
+  initializePermissions: true,
+  // Optional: Specify where to save the initialization report
+  permissionReportPath: './permission-report.md',
+  // Optional: Callback function when initialization completes
+  onPermissionInitComplete: (report) => {
+    console.log(`Initialized permissions for ${report.tablesInitialized} tables`);
+  },
+});
+```
+
+#### Manual Initialization
+
+You can also manually trigger permission initialization at any time:
+
+```typescript
+// Initialize permissions with default options from config
+db.initializePermissions();
+
+// Or specify custom options
+db.initializePermissions('./custom-report-path.md', (report) => {
+  console.log('Permission initialization completed!');
+  console.log(`Tables initialized: ${report.initializedTables.join(', ')}`);
+});
+```
+
+#### How It Works
+
+1. The initialization process runs in the background (non-blocking)
+2. It retrieves all tables from the database
+3. It filters out tables in the excludedTables list
+4. For each table without permissions, it sets the default permissions
+5. It generates a detailed report of the initialization process
+
+#### Report Format
+
+The report is generated as a markdown file with the following information:
+
+- Start and end time of the initialization
+- Total number of tables processed
+- Number of tables that already had permissions
+- Number of tables that had permissions initialized
+- Number of tables excluded from initialization
+- Lists of tables in each category
+- Any errors that occurred during initialization
 
 To use custom functions:
 

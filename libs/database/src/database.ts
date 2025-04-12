@@ -19,6 +19,7 @@ import {
   type ForgeDatabaseEndpoints,
   type ModifySchemaParams,
   type PermissionParams,
+  type PermissionInitializationReport,
   type SchemaCreateParams,
   type TablePermissions,
 } from './types';
@@ -32,6 +33,7 @@ import {
 } from './schema';
 import { QueryHandler } from './sdk/server';
 import { WebSocketManager } from './websocket/WebSocketManager';
+import { initializePermissions } from './utils/permission-initializer';
 
 export class ForgeDatabase {
   private queryHandler: QueryHandler;
@@ -90,6 +92,22 @@ export class ForgeDatabase {
     if (config.defaultPermissions) {
       this.defaultPermissions = config.defaultPermissions;
     }
+
+    // Initialize permissions for all tables if enabled
+    if (config.initializePermissions) {
+      this.initializeTablePermissions();
+    }
+  }
+
+  /**
+   * Initialize permissions for all tables in the database
+   * This is a non-blocking operation that runs in the background
+   */
+  private initializeTablePermissions(): void {
+    const { permissionReportPath, onPermissionInitComplete } = this.config;
+
+    // Use the public method to avoid code duplication
+    this.initializePermissions(permissionReportPath, onPermissionInitComplete);
   }
 
   /**
@@ -107,6 +125,33 @@ export class ForgeDatabase {
     this.excludedTables = this.excludedTables.filter(
       (table) => !tables.includes(table)
     );
+  }
+
+  /**
+   * Manually trigger permission initialization for all tables
+   * @param reportPath Optional path to save the report file
+   * @param onComplete Optional callback function to call when initialization is complete
+   */
+  public initializePermissions(
+    reportPath?: string,
+    onComplete?: (report: PermissionInitializationReport) => void
+  ): void {
+    // Use provided parameters or fall back to config values
+    const finalReportPath = reportPath || this.config.permissionReportPath;
+    const finalCallback = onComplete || this.config.onPermissionInitComplete;
+
+    // Start the initialization process
+    initializePermissions(
+      this.hooks.getKnexInstance(),
+      this.permissionService,
+      this.dbInspector,
+      this.excludedTables,
+      this.defaultPermissions,
+      finalReportPath,
+      finalCallback
+    );
+
+    console.log('Permission initialization started in the background');
   }
 
   /**

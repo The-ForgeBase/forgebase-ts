@@ -122,6 +122,12 @@ export interface ForgeDatabaseConfig {
   defaultPermissions?: TablePermissions;
   excludedTables?: string[];
   websocketPort?: number;
+  /** Whether to automatically initialize permissions for all tables (default: false) */
+  initializePermissions?: boolean;
+  /** Path where the permission initialization report will be saved */
+  permissionReportPath?: string;
+  /** Callback function to be called when permission initialization is complete */
+  onPermissionInitComplete?: (report: PermissionInitializationReport) => void;
 }
 
 // Handler types
@@ -189,6 +195,32 @@ export interface DataDeleteParams {
 export interface PermissionParams {
   tableName: string;
   permissions?: TablePermissions;
+}
+
+/**
+ * Report generated after permission initialization
+ */
+export interface PermissionInitializationReport {
+  /** Timestamp when the initialization started */
+  startTime: Date;
+  /** Timestamp when the initialization completed */
+  endTime: Date;
+  /** Total number of tables processed */
+  totalTables: number;
+  /** Number of tables that already had permissions */
+  tablesWithPermissions: number;
+  /** Number of tables that had permissions initialized */
+  tablesInitialized: number;
+  /** Number of tables excluded from initialization */
+  tablesExcluded: number;
+  /** List of tables that had permissions initialized */
+  initializedTables: string[];
+  /** List of tables that already had permissions */
+  existingPermissionTables: string[];
+  /** List of tables that were excluded */
+  excludedTables: string[];
+  /** Any errors that occurred during initialization */
+  errors: Array<{ table: string; error: string }>;
 }
 
 export interface ForgeDatabaseEndpoints {

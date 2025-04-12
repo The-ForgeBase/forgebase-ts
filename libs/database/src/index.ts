@@ -1,6 +1,7 @@
 export type * from './types';
 export * from './utils/column-utils';
 export * from './utils/inspector';
+export * from './utils/permission-initializer';
 export * from './knex-hooks';
 export * from './permissionService';
 export * from './rlsManager';
