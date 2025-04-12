@@ -191,4 +191,50 @@ export class AdminApiKeyController {
       );
     }
   }
+
+  @Post('/initial')
+  @RequireScopes('admin:api-keys:create')
+  async createInitialApiKey(
+    @Req() req: Request,
+    @Body()
+    body: {
+      name?: string;
+      scopes?: string[];
+    }
+  ) {
+    try {
+      const adminId = req['admin'].id;
+
+      // Check if the user is a super admin
+      if (!req['admin'].is_super_admin) {
+        throw new HttpException(
+          'Only super admins can create initial API keys',
+          HttpStatus.FORBIDDEN
+        );
+      }
+
+      const result = await this.adminService.createApiKey(adminId, {
+        name: body.name || 'Initial Admin API Key',
+        scopes: body.scopes || ['*'],
+        expires_at: null, // Non-expiring key
+      });
+
+      return {
+        apiKey: {
+          id: result.apiKey.id,
+          name: result.apiKey.name,
+          key_prefix: result.apiKey.key_prefix,
+          scopes: result.apiKey.scopes,
+          expires_at: result.apiKey.expires_at,
+          created_at: result.apiKey.created_at,
+        },
+        fullKey: result.fullKey,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to create initial API key',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 }

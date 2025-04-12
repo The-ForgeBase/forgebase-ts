@@ -129,4 +129,84 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
       .where(this.columns.id, userId)
       .delete();
   }
+
+  async removeRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ) {
+    const [user] = await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .first();
+
+    const existingList: string[] =
+      type === 'labels'
+        ? user.labels.split(',')
+        : type === 'permissions'
+        ? user.permissions.split(',')
+        : user.teams.split(',');
+    const newList = existingList.filter((el) => !list.includes(el));
+
+    await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .update({
+        [type]: newList.join(','),
+      });
+
+    return newList;
+  }
+
+  async addRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ) {
+    const [user] = await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .first();
+
+    const existingList: string[] =
+      type === 'labels'
+        ? user.labels.split(',')
+        : type === 'permissions'
+        ? user.permissions.split(',')
+        : user.teams.split(',');
+    const newList = [...existingList, ...list];
+
+    await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .update({
+        [type]: newList.join(','),
+      });
+
+    return newList;
+  }
+
+  async setRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ) {
+    await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .update({
+        [type]: list.join(','),
+      });
+
+    return list;
+  }
+
+  async setRole(userId: string, role: string): Promise<void> {
+    await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .update({
+        role,
+      });
+  }
 }

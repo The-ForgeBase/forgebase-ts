@@ -708,16 +708,36 @@ export class DynamicAuthManager<TUser extends User> {
     return true;
   }
 
-  async updateConfig(update: Partial<AuthConfig>, adminUser: TUser) {
-    if (!this.hasPermission(adminUser.id, 'configure_auth')) {
-      throw new UserUnAuthorizedError(adminUser.id, 'configure_auth');
-    }
+  async updateConfig(update: Partial<AuthConfig>) {
     return this.configStore.updateConfig(update);
   }
 
-  private async hasPermission(userId: string | number, permission: string) {
-    //TODO: Implement your permission check logic
-    return true;
+  async setRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]> {
+    return this.userService.setRTP(userId, list, type);
+  }
+
+  async removeRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]> {
+    return this.userService.removeRTP(userId, list, type);
+  }
+
+  async addRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]> {
+    return this.userService.addRTP(userId, list, type);
+  }
+
+  async setRole(userId: string, role: string): Promise<void> {
+    return this.userService.setRole(userId, role);
   }
 }
 

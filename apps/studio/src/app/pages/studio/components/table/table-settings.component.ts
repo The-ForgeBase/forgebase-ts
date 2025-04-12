@@ -367,7 +367,7 @@ export class TableSettingsComponent implements OnInit {
             name.startsWith('_') ||
             name.startsWith('pg_') ||
             [
-              'table_permissions',
+              'fg_table_permissions',
               'internal_admin_audit_logs',
               'internal_admin_sessions',
               'internal_admins',

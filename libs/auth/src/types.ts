@@ -86,6 +86,22 @@ export interface UserService<TUser extends User> {
   findUserByEmail(email: string): Promise<TUser | null>;
   findUserByPhone(phone: string): Promise<TUser | null>;
   getConfig(): AuthConfig;
+  setRole(userId: string, role: string): Promise<void>;
+  removeRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]>;
+  addRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]>;
+  setRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]>;
 }
 
 export interface EmailVerificationService<TUser extends User> {

@@ -10,10 +10,13 @@ import {
   UnauthorizedException,
   Param,
   Inject,
+  Put,
+  Delete,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { User } from '../../../types';
 import { AuthGuard } from '../guards/auth.guard';
+import { AdminGuard } from '../guards/admin.guard';
 import { AuthService } from '../services/auth.service';
 import { NestAuthConfig } from '..';
 
@@ -497,6 +500,170 @@ export class AuthController<TUser extends User> {
       return res.json(result);
     } catch (error) {
       res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Put('add-labels')
+  @UseGuards(AdminGuard)
+  async addLabels(
+    @Body() data: { userId: string; labels: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const labels = await this.authService.addLabels(data.userId, data.labels);
+
+      return res.json(labels);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Post('set-labels')
+  @UseGuards(AdminGuard)
+  async setLabels(
+    @Body() data: { userId: string; labels: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const labels = await this.authService.setLabels(data.userId, data.labels);
+
+      return res.json(labels);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Delete('remove-labels')
+  @UseGuards(AdminGuard)
+  async removeLabels(
+    @Body() data: { userId: string; labels: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const labels = await this.authService.removeLabels(
+        data.userId,
+        data.labels
+      );
+
+      return res.json(labels);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Put('add-permissions')
+  @UseGuards(AdminGuard)
+  async addPermissions(
+    @Body() data: { userId: string; permissions: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const permissions = await this.authService.addPermissions(
+        data.userId,
+        data.permissions
+      );
+
+      return res.json(permissions);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Post('set-permissions')
+  @UseGuards(AdminGuard)
+  async setPermissions(
+    @Body() data: { userId: string; permissions: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const permissions = await this.authService.setPermissions(
+        data.userId,
+        data.permissions
+      );
+
+      return res.json(permissions);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Delete('remove-permissions')
+  @UseGuards(AdminGuard)
+  async removePermissions(
+    @Body() data: { userId: string; permissions: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const permissions = await this.authService.removePermissions(
+        data.userId,
+        data.permissions
+      );
+
+      return res.json(permissions);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Post('set-teams')
+  @UseGuards(AdminGuard)
+  async setTeams(
+    @Body() data: { userId: string; teams: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const teams = await this.authService.setTeams(data.userId, data.teams);
+
+      return res.json(teams);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Put('add-teams')
+  @UseGuards(AdminGuard)
+  async addTeams(
+    @Body() data: { userId: string; teams: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const teams = await this.authService.addTeams(data.userId, data.teams);
+
+      return res.json(teams);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Delete('remove-teams')
+  @UseGuards(AdminGuard)
+  async removeTeams(
+    @Body() data: { userId: string; teams: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const teams = await this.authService.removeTeams(data.userId, data.teams);
+
+      return res.json(teams);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Put('update-role')
+  @UseGuards(AdminGuard)
+  async updateRole(
+    @Body() data: { userId: string; role: string },
+    @Res() res: Response
+  ) {
+    try {
+      await this.authService.setRole(data.userId, data.role);
+
+      return res.json({
+        role: data.role,
+      });
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
     }
   }
 }

@@ -5,6 +5,8 @@ import type { PermissionService } from './permissionService';
 import type { DatabaseSchema, TableInfo } from './utils/inspector';
 import { QueryParams } from './sdk/server';
 
+export const FG_PERMISSION_TABLE = 'fg_table_permissions';
+
 // Column definition for schema operations
 export type ColumnType =
   | 'increments'

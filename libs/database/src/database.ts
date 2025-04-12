@@ -8,18 +8,19 @@ import {
   ExcludedTableError,
   PermissionDeniedError,
 } from './errors';
-import type {
-  AddForeignKeyParams,
-  DataDeleteParams,
-  DataMutationParams,
-  DataQueryParams,
-  DropForeignKeyParams,
-  ForgeDatabaseConfig,
-  ForgeDatabaseEndpoints,
-  ModifySchemaParams,
-  PermissionParams,
-  SchemaCreateParams,
-  TablePermissions,
+import {
+  FG_PERMISSION_TABLE,
+  type AddForeignKeyParams,
+  type DataDeleteParams,
+  type DataMutationParams,
+  type DataQueryParams,
+  type DropForeignKeyParams,
+  type ForgeDatabaseConfig,
+  type ForgeDatabaseEndpoints,
+  type ModifySchemaParams,
+  type PermissionParams,
+  type SchemaCreateParams,
+  type TablePermissions,
 } from './types';
 import type { UserContext } from './types';
 import { createColumn } from './utils/column-utils';
@@ -62,13 +63,13 @@ export class ForgeDatabase {
     },
   };
   private wsManager?: WebSocketManager;
-  private excludedTables: string[] = [];
+  private excludedTables: string[] = [FG_PERMISSION_TABLE];
 
   constructor(private config: ForgeDatabaseConfig = {}) {
     if (!config.db) throw new Error('Database instance is required');
 
     if (config.excludedTables) {
-      this.excludedTables = config.excludedTables;
+      this.excludedTables = [...this.excludedTables, ...config.excludedTables];
     }
 
     this.permissionService =
@@ -151,7 +152,7 @@ export class ForgeDatabase {
      */
     schema: {
       get: async (trx?: Knex.Transaction): Promise<DatabaseSchema> => {
-        return await this.dbInspector.getDatabaseSchema();
+        return await this.dbInspector.getDatabaseSchema(this.excludedTables);
       },
       create: async (payload: SchemaCreateParams, trx?: Knex.Transaction) => {
         // If no transaction is provided, create one internally
@@ -278,6 +279,9 @@ export class ForgeDatabase {
         );
       },
       getTableSchema: async (tableName: string, trx?: Knex.Transaction) => {
+        if (this.excludedTables.includes(tableName)) {
+          throw new ExcludedTableError(tableName);
+        }
         const tableInfo = await this.dbInspector.getTableInfo(tableName);
         return {
           name: tableName,
@@ -285,7 +289,9 @@ export class ForgeDatabase {
         };
       },
       getTables: async (trx?: Knex.Transaction) => {
-        return await this.dbInspector.getTables();
+        let tables = await this.dbInspector.getTables();
+        tables = tables.filter((t) => !this.excludedTables.includes(t));
+        return tables;
       },
       getTablePermissions: async (
         tableName: string,

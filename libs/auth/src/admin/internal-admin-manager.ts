@@ -82,11 +82,12 @@ export class InternalAdminManager {
     password: string
   ): Promise<void> {
     // Check if any admin exists
-    const { admins, total } = await this.adminService.listAdmins(1, 1);
+    const { total } = await this.adminService.listAdmins(1, 1);
+    const config = await this.configStore.getConfig();
 
     if (total === 0) {
       // Create initial admin with super admin privileges
-      await this.adminService.createAdmin(
+      const admin = await this.adminService.createAdmin(
         {
           email,
           name: 'Initial Admin',
@@ -98,6 +99,31 @@ export class InternalAdminManager {
       );
 
       this.hasInitialAdmin = true;
+
+      // Create initial API key if configured
+      if (config.adminFeature?.createInitialApiKey) {
+        try {
+          const result = await this.createApiKey(admin.id, {
+            name:
+              config.adminFeature.initialApiKeyName || 'Initial Admin API Key',
+            scopes: config.adminFeature.initialApiKeyScopes || ['*'],
+            expires_at: null, // Non-expiring key
+          });
+
+          console.log('Created initial admin API key:', {
+            id: result.apiKey.id,
+            name: result.apiKey.name,
+            key_prefix: result.apiKey.key_prefix,
+            scopes: result.apiKey.scopes,
+          });
+          console.log(
+            'IMPORTANT: Save this API key, it will only be shown once:',
+            result.fullKey
+          );
+        } catch (error) {
+          console.error('Failed to create initial admin API key:', error);
+        }
+      }
     } else {
       this.hasInitialAdmin = true;
     }
@@ -630,7 +656,7 @@ export class InternalAdminManager {
     this.checkEnabled();
 
     // Verify the API key exists and belongs to the admin
-    const apiKey = await this.getApiKey(keyId, adminId);
+    await this.getApiKey(keyId, adminId);
 
     // Update the API key
     const updatedKey = await this.apiKeyService.updateApiKey(keyId, updates);

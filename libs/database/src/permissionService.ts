@@ -1,5 +1,5 @@
 import type { Knex } from 'knex';
-import type { TablePermissions } from './types';
+import { FG_PERMISSION_TABLE, type TablePermissions } from './types';
 import { LRUCache } from 'lru-cache';
 
 class PermissionService {
@@ -15,9 +15,9 @@ class PermissionService {
   }
 
   private async initializeDatabase() {
-    const hasTable = await this.knex.schema.hasTable('table_permissions');
+    const hasTable = await this.knex.schema.hasTable(FG_PERMISSION_TABLE);
     if (!hasTable) {
-      await this.knex.schema.createTable('table_permissions', (table) => {
+      await this.knex.schema.createTable(FG_PERMISSION_TABLE, (table) => {
         table.string('table_name').primary().unique().notNullable();
         table.json('permissions').notNullable();
         table.timestamps(true, true);
@@ -38,7 +38,7 @@ class PermissionService {
     // If not in cache, fetch from database
     // Use transaction if provided, otherwise use the knex instance
     const queryBuilder = trx ? trx : this.knex;
-    const result = await queryBuilder('table_permissions')
+    const result = await queryBuilder(FG_PERMISSION_TABLE)
       .where({ table_name: tableName })
       .first();
 
@@ -56,7 +56,7 @@ class PermissionService {
   ): Promise<TablePermissions> {
     // Use transaction if provided, otherwise use the knex instance
     const queryBuilder = trx ? trx : this.knex;
-    await queryBuilder('table_permissions')
+    await queryBuilder(FG_PERMISSION_TABLE)
       .insert({
         table_name: tableName,
         permissions: JSON.stringify(permissions),
@@ -76,7 +76,7 @@ class PermissionService {
   ): Promise<void> {
     // Use transaction if provided, otherwise use the knex instance
     const queryBuilder = trx ? trx : this.knex;
-    await queryBuilder('table_permissions')
+    await queryBuilder(FG_PERMISSION_TABLE)
       .where({ table_name: tableName })
       .delete();
 

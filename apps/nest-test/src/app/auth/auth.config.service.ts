@@ -103,6 +103,9 @@ export class AuthConfigService implements OnModuleInit {
           initialAdminEmail: 'admin@yourdomain.com',
           initialAdminPassword: 'secure-password',
           createInitialAdmin: true,
+          createInitialApiKey: true,
+          initialApiKeyName: 'Initial Admin API Key',
+          initialApiKeyScopes: ['*'],
         },
         authPolicy: {
           emailVerificationRequired: false,
