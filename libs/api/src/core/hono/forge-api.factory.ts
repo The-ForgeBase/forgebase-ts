@@ -4,6 +4,7 @@ import { DatabaseService } from '../database';
 import { StorageService } from '../storage';
 import { ForgeApiService } from './forge-api.service';
 import { ForgeApiHandler } from './forge-api.handler';
+import { SSEManager } from '@forgebase-ts/database';
 
 export interface ForgeApiOptions<Env = any> {
   config?: Partial<BaaSConfig>;
@@ -12,9 +13,13 @@ export interface ForgeApiOptions<Env = any> {
   app?: Hono<Env>;
 }
 
-export function createForgeApi<Env = any>(
+export function createHonoForgeApi<Env = any>(
   options: ForgeApiOptions<Env> = {}
-): Hono<Env> {
+): {
+  app: Hono<Env>;
+  dbService: DatabaseService;
+  storageService: StorageService;
+} {
   // Create services
   const dbService =
     options.db || new DatabaseService(options.config?.services?.db);
@@ -34,9 +39,20 @@ export function createForgeApi<Env = any>(
   // Use provided app or create a new one
   const app = options.app || new Hono<Env>();
 
+  const realtimeAdapter = dbService.getForgeDatabase().realtimeAdapter;
+
   // Mount the ForgeApiHandler routes
   const prefix = forgeApiService.getConfig().prefix || '';
   app.route(prefix, forgeApiHandler.getApp());
 
-  return app;
+  // Mount the SSE handler if the realtime adapter is SSE
+  if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
+    app.get(`${prefix}/sse`, async (c) => {
+      const request = c.req.raw;
+      const response = await realtimeAdapter.handleRequest(request);
+      return response;
+    });
+  }
+
+  return { app, dbService, storageService };
 }

@@ -17,7 +17,7 @@ import { createHonoForgeApi } from '@forgebase-ts/api';
 import { serve } from '@hono/node-server';
 
 // Create a Hono app with ForgeBase API
-const app = createHonoForgeApi({
+const { app, dbService, storageService } = createHonoForgeApi({
   config: {
     prefix: '/api',
     services: {
@@ -67,7 +67,11 @@ app.use('*', cors());
 app.get('/', (c) => c.text('Hello ForgeBase!'));
 
 // Integrate ForgeBase API with your app
-const apiApp = createHonoForgeApi({
+const {
+  app: apiApp,
+  dbService,
+  storageService,
+} = createHonoForgeApi({
   config: {
     prefix: '/api',
     services: {
@@ -88,9 +92,13 @@ const apiApp = createHonoForgeApi({
   app, // Pass your custom app instance
 });
 
+// You can now use dbService and storageService directly
+console.log('Database provider:', dbService.getForgeDatabase().provider);
+console.log('Storage provider:', storageService.getProvider());
+
 // Start the server
 serve({
-  fetch: apiApp.fetch,
+  fetch: app.fetch, // Use the original app instance
   port: 3000,
 });
 ```
@@ -125,13 +133,16 @@ const storageService = new StorageService({
 });
 
 // Create a Hono app with ForgeBase API
-const app = createHonoForgeApi({
+const { app, dbService: returnedDbService } = createHonoForgeApi({
   config: {
     prefix: '/api',
   },
   db: dbService,
   storage: storageService,
 });
+
+// Verify that the returned dbService is the same instance we passed in
+console.log('Same database service:', dbService === returnedDbService); // true
 
 // Start the server
 serve({
@@ -188,7 +199,11 @@ app.use('/api/*', async (c, next) => {
 });
 
 // Integrate ForgeBase API with your app
-const apiApp = createHonoForgeApi({
+const {
+  app: apiApp,
+  dbService,
+  storageService,
+} = createHonoForgeApi({
   config: {
     prefix: '/api',
     services: {
@@ -211,7 +226,7 @@ const apiApp = createHonoForgeApi({
 
 // Start the server
 serve({
-  fetch: apiApp.fetch,
+  fetch: app.fetch, // Use the original app instance
   port: 3000,
 });
 ```
@@ -231,7 +246,43 @@ Creates a Hono app with ForgeBase API integration.
 
 #### Returns
 
-A Hono app with ForgeBase API routes.
+An object containing:
+
+- `app`: The Hono app with ForgeBase API routes.
+- `dbService`: The DatabaseService instance used by the app.
+- `storageService`: The StorageService instance used by the app.
+
+## SSE Support
+
+The Hono integration automatically adds support for Server-Sent Events (SSE) if the database's realtime adapter is an SSEManager. This allows you to use SSE for realtime updates instead of WebSockets.
+
+```typescript
+// The SSE endpoint is automatically added at {prefix}/sse
+app.get(`${prefix}/sse`, async (c) => {
+  const request = c.req.raw;
+  const response = await realtimeAdapter.handleRequest(request);
+  return response;
+});
+```
+
+To connect to the SSE endpoint from the client:
+
+```typescript
+// Connect to the SSE endpoint
+const eventSource = new EventSource('/api/sse');
+
+// Listen for messages
+eventSource.addEventListener('message', (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Received data:', data);
+});
+
+// Listen for specific table updates
+eventSource.addEventListener('posts', (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Posts updated:', data);
+});
+```
 
 ## Routes
 

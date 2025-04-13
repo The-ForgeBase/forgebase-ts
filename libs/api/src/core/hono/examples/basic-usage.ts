@@ -2,7 +2,7 @@ import { createHonoForgeApi } from '@forgebase-ts/api';
 import { serve } from '@hono/node-server';
 
 // Create a Hono app with ForgeBase API
-const app = createHonoForgeApi({
+const { app, dbService, storageService } = createHonoForgeApi({
   config: {
     prefix: '/api',
     services: {
