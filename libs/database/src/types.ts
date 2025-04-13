@@ -112,6 +112,11 @@ export type TablePermissions = {
   };
 };
 
+/**
+ * Type of realtime adapter to use for database table broadcasts
+ */
+export type RealtimeAdapterType = 'websocket' | 'sse';
+
 export interface ForgeDatabaseConfig {
   db?: Knex;
   hooks?: KnexHooks;
@@ -119,6 +124,8 @@ export interface ForgeDatabaseConfig {
   prefix?: string;
   enforceRls?: boolean;
   realtime?: boolean;
+  /** Type of realtime adapter to use (default: 'websocket') */
+  realtimeAdapter?: RealtimeAdapterType;
   defaultPermissions?: TablePermissions;
   excludedTables?: string[];
   websocketPort?: number;

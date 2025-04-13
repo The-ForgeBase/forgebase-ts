@@ -33,6 +33,8 @@ import {
 } from './schema';
 import { QueryHandler } from './sdk/server';
 import { WebSocketManager } from './websocket/WebSocketManager';
+import { SSEManager } from './websocket/SSEManager';
+import { RealtimeAdapter } from './websocket/RealtimeAdapter';
 import { initializePermissions } from './utils/permission-initializer';
 
 export class ForgeDatabase {
@@ -64,7 +66,7 @@ export class ForgeDatabase {
       ],
     },
   };
-  private wsManager?: WebSocketManager;
+  private realtimeAdapter?: RealtimeAdapter;
   private excludedTables: string[] = [FG_PERMISSION_TABLE];
 
   constructor(private config: ForgeDatabaseConfig = {}) {
@@ -78,14 +80,21 @@ export class ForgeDatabase {
       config.permissions || new PermissionService(config.db);
     this.dbInspector = new DBInspector(config.db);
 
-    // Initialize WebSocket manager if realtime is enabled
+    // Initialize realtime adapter if realtime is enabled
     if (config.realtime) {
-      this.wsManager = new WebSocketManager(
-        config.websocketPort || 9001,
-        config.permissions || new PermissionService(config.db)
-      );
+      const adapterType = config.realtimeAdapter || 'sse';
+      const port = config.websocketPort || 9001;
+
+      if (adapterType === 'websocket') {
+        this.realtimeAdapter = new WebSocketManager(
+          port,
+          this.permissionService
+        );
+      } else if (adapterType === 'sse') {
+        this.realtimeAdapter = new SSEManager(port, this.permissionService);
+      }
     }
-    this.hooks = config.hooks || new KnexHooks(config.db, this.wsManager);
+    this.hooks = config.hooks || new KnexHooks(config.db, this.realtimeAdapter);
     this.queryHandler = new QueryHandler(this.hooks.getKnexInstance());
 
     // Set default permissions for all tables

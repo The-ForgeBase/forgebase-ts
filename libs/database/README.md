@@ -132,6 +132,7 @@ const db = createForgeDatabase({
   }),
   enforceRls: true,
   realtime: true,
+  realtimeAdapter: 'websocket', // or 'sse' for Server-Sent Events
 });
 ```
 
@@ -281,6 +282,40 @@ const unsubscribe = await db.subscribe('posts', {
 // Later: cleanup subscription
 unsubscribe();
 ```
+
+#### Realtime Adapters
+
+ForgeBase Database supports two types of realtime adapters for table broadcasts:
+
+1. **WebSocket Adapter (default)**: Uses uWebSockets.js for high-performance WebSocket communication.
+
+2. **SSE Adapter**: Uses Server-Sent Events (SSE) for one-way communication from server to client. This is useful in environments where WebSockets might be blocked or when you need simpler one-way communication.
+
+To configure the adapter type:
+
+```typescript
+const db = createForgeDatabase({
+  // ... other options
+  realtime: true,
+  realtimeAdapter: 'sse', // 'websocket' (default) or 'sse'
+  websocketPort: 9001, // Optional, defaults to 9001
+});
+```
+
+Benefits of SSE adapter:
+
+- Works through proxies and load balancers that might block WebSockets
+- Simpler implementation for one-way communication
+- Better compatibility with certain environments
+- Lower overhead for read-only scenarios
+- Uses pub/sub pattern for efficient message distribution
+
+The SSE adapter uses the pub/sub pattern from the crossws library, which provides several advantages:
+
+- Efficient message distribution to multiple subscribers
+- Automatic channel management
+- Simplified subscription handling
+- Reduced memory footprint
 
 ## Configuration
 

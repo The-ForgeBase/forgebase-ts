@@ -2,7 +2,7 @@
 // hookableDb.ts
 import EventEmitter from 'events';
 import type { Knex } from 'knex';
-import { WebSocketManager } from './websocket/WebSocketManager';
+import { RealtimeAdapter } from './websocket/RealtimeAdapter';
 
 type MutationType = 'create' | 'update' | 'delete';
 
@@ -41,9 +41,9 @@ type KnexHooksEvents = {
 class KnexHooks {
   private knex: Knex;
   private events: EventEmitter;
-  private wsManager?: WebSocketManager;
+  private realtimeAdapter?: RealtimeAdapter;
 
-  constructor(knexInstance: Knex, wsManager?: WebSocketManager) {
+  constructor(knexInstance: Knex, realtimeAdapter?: RealtimeAdapter) {
     if (!knexInstance) {
       throw new Error(
         'A Knex.js instance is required to initialize HookableDB.'
@@ -51,7 +51,9 @@ class KnexHooks {
     }
     this.knex = knexInstance;
     this.events = new EventEmitter();
-    this.wsManager = wsManager;
+    if (realtimeAdapter) {
+      this.realtimeAdapter = realtimeAdapter;
+    }
   }
 
   getKnexInstance(): Knex {
@@ -143,9 +145,9 @@ class KnexHooks {
     context?: HookContext
   ): Promise<void> {
     // Emit real-time events on mutations
-    if (this.wsManager) {
+    if (this.realtimeAdapter) {
       //TODO: Check if  real-time is allowed for the table
-      this.wsManager.broadcast(tableName, mutationType, {
+      this.realtimeAdapter.broadcast(tableName, mutationType, {
         type: mutationType,
         data: result,
       });

@@ -179,6 +179,9 @@ importers:
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
+      crossws:
+        specifier: ^0.3.4
+        version: 0.3.4
       crypto:
         specifier: ^1.0.1
         version: 1.0.1
