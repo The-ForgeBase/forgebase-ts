@@ -66,7 +66,7 @@ export class ForgeDatabase {
       ],
     },
   };
-  private realtimeAdapter?: RealtimeAdapter;
+  public realtimeAdapter?: RealtimeAdapter;
   private excludedTables: string[] = [FG_PERMISSION_TABLE];
 
   constructor(private config: ForgeDatabaseConfig = {}) {

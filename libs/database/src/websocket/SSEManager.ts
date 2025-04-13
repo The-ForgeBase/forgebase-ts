@@ -3,6 +3,26 @@ import { evaluatePermission } from '../rlsManager';
 import { PermissionService } from '../permissionService';
 import { RealtimeAdapter } from './RealtimeAdapter';
 import sseAdapter from 'crossws/adapters/sse';
+import { defineHooks } from 'crossws';
+
+interface SubscribeMessage {
+  type: 'subscribe';
+  tableName: string;
+  userContext?: UserContext;
+}
+
+interface UnsubscribeMessage {
+  type: 'unsubscribe';
+  tableName: string;
+}
+
+interface GenericMessage {
+  type: string;
+  tableName?: string;
+  [key: string]: unknown;
+}
+
+type ClientMessage = SubscribeMessage | UnsubscribeMessage | GenericMessage;
 
 export class SSEManager implements RealtimeAdapter {
   private sseAdapter: ReturnType<typeof sseAdapter>;
@@ -58,7 +78,10 @@ export class SSEManager implements RealtimeAdapter {
         },
         message: async (peer, message) => {
           try {
-            const msg = (await message.json()) as any;
+            const msg =
+              typeof message === 'string'
+                ? JSON.parse(message)
+                : ((await message.json()) as ClientMessage);
 
             if (msg.type === 'subscribe' && msg.tableName) {
               // Get user context from peer data
@@ -147,7 +170,7 @@ export class SSEManager implements RealtimeAdapter {
 
     console.log(`SSE adapter initialized for port ${this.port}`);
     console.log(
-      'Note: You need to set up an HTTP server to handle SSE requests'
+      'Use getSSEAdapter() and handleRequest() methods to integrate with your HTTP server'
     );
   }
 
@@ -211,5 +234,33 @@ export class SSEManager implements RealtimeAdapter {
    */
   public getPort(): number {
     return this.port;
+  }
+
+  /**
+   * Get the SSE adapter instance
+   * This can be used to integrate with an HTTP server
+   * @returns The SSE adapter instance
+   */
+  public getSSEAdapter() {
+    return this.sseAdapter;
+  }
+
+  /**
+   * Handle an incoming HTTP request
+   * This method can be used to integrate with any HTTP server framework
+   * @param request The HTTP request object (must be compatible with the Fetch API Request)
+   * @returns A Response object
+   */
+  public async handleRequest(request: Request): Promise<Response> {
+    // Check if this is an SSE request
+    if (
+      request.headers.get('accept') === 'text/event-stream' ||
+      request.headers.has('x-crossws-id')
+    ) {
+      return this.sseAdapter.fetch(request);
+    }
+
+    // Return 404 for non-SSE requests
+    return new Response('Not found', { status: 404 });
   }
 }
