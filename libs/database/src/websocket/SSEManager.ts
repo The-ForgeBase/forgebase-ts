@@ -3,7 +3,6 @@ import { evaluatePermission } from '../rlsManager';
 import { PermissionService } from '../permissionService';
 import { RealtimeAdapter } from './RealtimeAdapter';
 import sseAdapter from 'crossws/adapters/sse';
-import { defineHooks } from 'crossws';
 
 interface SubscribeMessage {
   type: 'subscribe';

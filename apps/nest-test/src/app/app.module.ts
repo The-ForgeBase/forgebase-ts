@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { AdminMiddleware } from '@forgebase-ts/auth/adapters/nest/middlewares/admin.middleware';
 import knex from 'knex';
 import { AuthTables } from '@forgebase-ts/auth';
+import { SSEModule } from './sse/sse.module';
 
 export const db = knex({
   client: 'sqlite3',
@@ -34,11 +35,11 @@ export const db = knex({
       services: {
         db: {
           provider: 'sqlite',
-          realtime: false,
+          realtime: true,
           enforceRls: true,
           config: {},
           knex: db,
-          // excludedTables: [...AuthTables],
+          excludedTables: [...AuthTables],
         },
         storage: {
           provider: 'local',
@@ -47,6 +48,7 @@ export const db = knex({
       },
     }),
     AuthModule,
+    SSEModule,
   ],
   controllers: [AppController],
   providers: [AppService],
