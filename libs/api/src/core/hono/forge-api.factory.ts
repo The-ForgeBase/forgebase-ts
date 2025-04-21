@@ -14,7 +14,12 @@ export interface ForgeApiOptions<Env = any> {
 }
 
 export function createHonoForgeApi<Env = any>(
-  options: ForgeApiOptions<Env> = {}
+  options: ForgeApiOptions<Env> = {},
+  config: {
+    enableSchemaEndpoints?: boolean;
+    enableDataEndpoints?: boolean;
+    enablePermissionEndpoints?: boolean;
+  }
 ): {
   app: Hono<Env>;
   dbService: DatabaseService;
@@ -34,7 +39,7 @@ export function createHonoForgeApi<Env = any>(
   );
 
   // Create ForgeApiHandler
-  const forgeApiHandler = new ForgeApiHandler(forgeApiService);
+  const forgeApiHandler = new ForgeApiHandler(forgeApiService, config);
 
   // Use provided app or create a new one
   const app = options.app || new Hono<Env>();

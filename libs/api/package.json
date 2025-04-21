@@ -38,6 +38,12 @@
       "default": "./dist/core/nest/index.js",
       "require": "./dist/core/nest/index.js"
     },
+    "./core/hono": {
+      "types": "./dist/core/hono/index.d.ts",
+      "import": "./dist/core/hono/index.js",
+      "default": "./dist/core/hono/index.js",
+      "require": "./dist/core/hono/index.js"
+    },
     "./core": {
       "types": "./dist/core/index.d.ts",
       "import": "./dist/core/index.js",
@@ -61,6 +67,9 @@
       ],
       "core/nest": [
         "./dist/core/nest/index.d.ts"
+      ],
+      "core/hono": [
+        "./dist/core/hono/index.d.ts"
       ],
       "core": [
         "./dist/core/index.d.ts"
