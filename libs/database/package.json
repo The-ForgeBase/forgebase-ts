@@ -2,7 +2,6 @@
   "name": "@forgebase-ts/database",
   "version": "0.0.1",
   "private": false,
-  "type": "commonjs",
   "main": "./src/index.js",
   "module": "./dist/index.js",
   "types": "./src/index.d.ts",

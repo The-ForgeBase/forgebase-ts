@@ -3,7 +3,6 @@ import { DataMutationParams, DataQueryParams } from '@forgebase-ts/database';
 import { BaaSConfig, Context, Handler, ServerAdapter } from '../types';
 import { DatabaseService } from './database';
 import { StorageService } from './storage';
-import { resolve } from 'path';
 import { createRouter, addRoute, findRoute } from 'rou3';
 
 export class ForgeApi {

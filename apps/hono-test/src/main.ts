@@ -1,8 +1,9 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { getRouterName, showRoutes } from 'hono/dev';
 import { createHonoForgeApi } from '@forgebase-ts/api/core/hono';
 import knex from 'knex';
-import { AuthTables } from '@forgebase-ts/auth';
+// import { AuthTables } from '@forgebase-ts/auth';
 
 const app = new Hono();
 
@@ -32,9 +33,9 @@ const { dbService, storageService } = createHonoForgeApi(
           provider: 'sqlite',
           config: {
             db,
-            excludedTables: [...AuthTables],
+            excludedTables: [],
             enforceRls: true,
-            realtime: true,
+            realtime: false,
             initializePermissions: true,
             onPermissionInitComplete(report) {
               console.log(report);
@@ -54,6 +55,10 @@ const { dbService, storageService } = createHonoForgeApi(
 
 app.get('/', (c) => {
   return c.text('Hello Hono!');
+});
+
+showRoutes(app, {
+  verbose: true,
 });
 
 const port = 3000;

@@ -19,7 +19,7 @@ export class DatabaseService {
   private config: BaaSConfig['services']['db'];
   private forgeDatabase: ForgeDatabase;
 
-  constructor(config: BaaSConfig['services']['db']) {
+  constructor(config?: BaaSConfig['services']['db']) {
     this.config = config;
     this.forgeDatabase = new ForgeDatabase({
       db: this.config.config.db,

@@ -7,14 +7,14 @@ import { ForgeApiHandler } from './forge-api.handler';
 import { SSEManager } from '@forgebase-ts/database';
 
 export interface ForgeApiOptions<Env = any> {
-  config?: Partial<BaaSConfig>;
+  config: Partial<BaaSConfig>;
   db?: DatabaseService;
   storage?: StorageService;
   app?: Hono<Env>;
 }
 
 export function createHonoForgeApi<Env = any>(
-  options: ForgeApiOptions<Env> = {},
+  options: ForgeApiOptions<Env>,
   config: {
     enableSchemaEndpoints?: boolean;
     enableDataEndpoints?: boolean;
@@ -27,13 +27,13 @@ export function createHonoForgeApi<Env = any>(
 } {
   // Create services
   const dbService =
-    options.db || new DatabaseService(options.config?.services?.db);
+    options.db || new DatabaseService(options.config.services.db);
   const storageService =
-    options.storage || new StorageService(options.config?.services?.storage);
+    options.storage || new StorageService(options.config.services.storage);
 
   // Create ForgeApiService
   const forgeApiService = new ForgeApiService(
-    options.config || {},
+    options.config,
     storageService,
     dbService
   );

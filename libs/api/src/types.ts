@@ -1,4 +1,3 @@
-import knex from 'knex';
 import type { DatabaseService } from './core/database';
 import type { StorageService } from './core/storage';
 
