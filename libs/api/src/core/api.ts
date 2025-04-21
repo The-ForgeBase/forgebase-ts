@@ -27,10 +27,8 @@ export class ForgeApi {
         },
         db: {
           provider: 'sqlite',
-          realtime: true,
-          enforceRls: true,
           config: {
-            filename: resolve(__dirname, '../database.sqlite'),
+            enforceRls: true,
           },
         },
       },

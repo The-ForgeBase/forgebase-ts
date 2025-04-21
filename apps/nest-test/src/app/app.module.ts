@@ -35,11 +35,12 @@ export const db = knex({
       services: {
         db: {
           provider: 'sqlite',
-          realtime: true,
-          enforceRls: true,
-          config: {},
-          knex: db,
-          excludedTables: [...AuthTables],
+          config: {
+            realtime: true,
+            enforceRls: true,
+            excludedTables: [...AuthTables],
+            db,
+          },
         },
         storage: {
           provider: 'local',

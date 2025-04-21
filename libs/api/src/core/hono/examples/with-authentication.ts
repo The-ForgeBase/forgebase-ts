@@ -38,30 +38,32 @@ customApp.use('/api/*', async (c, next) => {
 });
 
 // Create a Hono app with ForgeBase API
-const { app, dbService, storageService } = createHonoForgeApi({
-  config: {
-    prefix: '/api',
-    auth: {
-      enabled: true,
-      exclude: ['/auth/login', '/auth/register'],
-    },
-    services: {
-      db: {
-        provider: 'sqlite',
-        realtime: true,
-        enforceRls: true,
-        config: {
-          filename: './db.sqlite',
+const { app, dbService, storageService } = createHonoForgeApi(
+  {
+    config: {
+      prefix: '/api',
+      auth: {
+        enabled: true,
+        exclude: ['/auth/login', '/auth/register'],
+      },
+      services: {
+        db: {
+          provider: 'sqlite',
+          config: {
+            realtime: true,
+            enforceRls: true,
+          },
+        },
+        storage: {
+          provider: 'local',
+          config: {},
         },
       },
-      storage: {
-        provider: 'local',
-        config: {},
-      },
     },
+    app: customApp, // Pass the custom app with JWT middleware
   },
-  app: customApp, // Pass the custom app with JWT middleware
-});
+  {}
+);
 
 // Add authentication routes to the custom app
 customApp.post('/auth/login', async (c) => {

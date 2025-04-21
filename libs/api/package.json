@@ -26,12 +26,6 @@
       "default": "./dist/frameworks/nest/index.js",
       "require": "./dist/frameworks/nest/index.js"
     },
-    "./adapters": {
-      "types": "./dist/adapters/index.d.ts",
-      "import": "./dist/adapters/index.js",
-      "default": "./dist/adapters/index.js",
-      "require": "./dist/adapters/index.js"
-    },
     "./core/nest": {
       "types": "./dist/core/nest/index.d.ts",
       "import": "./dist/core/nest/index.js",
@@ -61,9 +55,6 @@
       ],
       "frameworks/nest": [
         "./dist/frameworks/nest/index.d.ts"
-      ],
-      "adapters": [
-        "./dist/adapters/index.d.ts"
       ],
       "core/nest": [
         "./dist/core/nest/index.d.ts"

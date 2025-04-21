@@ -77,7 +77,7 @@ export class ForgeDatabase {
     }
 
     this.permissionService =
-      config.permissions || new PermissionService(config.db);
+      config.permissionsService || new PermissionService(config.db);
     this.dbInspector = new DBInspector(config.db);
 
     // Initialize realtime adapter if realtime is enabled
@@ -177,6 +177,14 @@ export class ForgeDatabase {
    */
   public getKnexInstance(): Knex {
     return this.hooks.getKnexInstance();
+  }
+
+  public getHooksDb(): KnexHooks {
+    return this.hooks;
+  }
+
+  public getPermissionService(): PermissionService {
+    return this.permissionService;
   }
 
   /**

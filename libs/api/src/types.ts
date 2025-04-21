@@ -2,7 +2,7 @@ import knex from 'knex';
 import type { DatabaseService } from './core/database';
 import type { StorageService } from './core/storage';
 
-import { UserContext } from '@forgebase-ts/database';
+import { ForgeDatabaseConfig, UserContext } from '@forgebase-ts/database';
 import { SupportedFramework } from './frameworks/index';
 import {
   LocalStorageConfig,
@@ -29,11 +29,7 @@ export interface BaaSConfig {
     };
     db: {
       provider: 'sqlite' | 'postgres' | 'libsql';
-      config: Record<string, any>;
-      knex?: knex.Knex;
-      realtime: boolean;
-      enforceRls: boolean;
-      excludedTables?: string[];
+      config: ForgeDatabaseConfig;
     };
   };
   api?: {

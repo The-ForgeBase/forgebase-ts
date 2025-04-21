@@ -120,7 +120,7 @@ export type RealtimeAdapterType = 'websocket' | 'sse';
 export interface ForgeDatabaseConfig {
   db?: Knex;
   hooks?: KnexHooks;
-  permissions?: PermissionService;
+  permissionsService?: PermissionService;
   prefix?: string;
   enforceRls?: boolean;
   realtime?: boolean;

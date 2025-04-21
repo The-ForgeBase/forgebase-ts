@@ -2,25 +2,27 @@ import { createHonoForgeApi } from '../forge-api.factory';
 import { serve } from '@hono/node-server';
 
 // Create a Hono app with ForgeBase API
-const { app, dbService, storageService } = createHonoForgeApi({
-  config: {
-    prefix: '/api',
-    services: {
-      db: {
-        provider: 'sqlite',
-        realtime: true,
-        enforceRls: true,
-        config: {
-          filename: './db.sqlite',
+const { app, dbService, storageService } = createHonoForgeApi(
+  {
+    config: {
+      prefix: '/api',
+      services: {
+        db: {
+          provider: 'sqlite',
+          config: {
+            realtime: true,
+            enforceRls: true,
+          },
         },
-      },
-      storage: {
-        provider: 'local',
-        config: {},
+        storage: {
+          provider: 'local',
+          config: {},
+        },
       },
     },
   },
-});
+  {}
+);
 
 // Add your own routes
 app.get('/', (c) => c.text('Hello ForgeBase!'));
