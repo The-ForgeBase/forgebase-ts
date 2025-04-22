@@ -2,7 +2,8 @@ import { TablePermissions, UserContext } from '../types';
 import { evaluatePermission } from '../rlsManager';
 import { PermissionService } from '../permissionService';
 import { RealtimeAdapter } from './RealtimeAdapter';
-import sseAdapter from 'crossws/adapters/sse';
+// Using dynamic import for ESM module
+// This avoids the CommonJS/ESM compatibility issue
 
 interface SubscribeMessage {
   type: 'subscribe';
@@ -23,24 +24,34 @@ interface GenericMessage {
 
 type ClientMessage = SubscribeMessage | UnsubscribeMessage | GenericMessage;
 
+// Define the type for the SSE adapter
+type SSEAdapterType = any; // We'll use 'any' for now since we don't have direct access to the type
+
 export class SSEManager implements RealtimeAdapter {
-  private sseAdapter: ReturnType<typeof sseAdapter>;
+  private sseAdapter!: SSEAdapterType; // Using definite assignment assertion
 
   constructor(
     private port: number,
     private permissionService: PermissionService
   ) {
-    this.initialize();
+    // Call initialize but don't await it here
+    // This allows the constructor to return synchronously
+    this.initialize().catch((error) => {
+      console.error('Failed to initialize SSE adapter:', error);
+    });
   }
 
   /**
    * Initialize the SSE server
    */
-  public initialize(): void {
-    this.setupSSEServer();
+  public async initialize(): Promise<void> {
+    await this.setupSSEServer();
   }
 
-  private setupSSEServer() {
+  private async setupSSEServer() {
+    // Dynamically import the SSE adapter
+    const { default: sseAdapter } = await import('crossws/adapters/sse');
+
     this.sseAdapter = sseAdapter({
       bidir: true, // Enable bidirectional messaging support
       hooks: {
@@ -203,6 +214,14 @@ export class SSEManager implements RealtimeAdapter {
     event: string,
     data: Record<string, unknown> | Record<string, unknown>[]
   ): Promise<void> {
+    // Check if the SSE adapter is initialized
+    if (!this.sseAdapter) {
+      console.warn(
+        'SSE adapter not initialized yet. Waiting for initialization...'
+      );
+      await this.initialize();
+    }
+
     // Get permissions for the table
     const permissions = await this.permissionService.getPermissionsForTable(
       tableName
@@ -240,7 +259,14 @@ export class SSEManager implements RealtimeAdapter {
    * This can be used to integrate with an HTTP server
    * @returns The SSE adapter instance
    */
-  public getSSEAdapter() {
+  public async getSSEAdapter() {
+    // Check if the SSE adapter is initialized
+    if (!this.sseAdapter) {
+      console.warn(
+        'SSE adapter not initialized yet. Waiting for initialization...'
+      );
+      await this.initialize();
+    }
     return this.sseAdapter;
   }
 
@@ -251,6 +277,14 @@ export class SSEManager implements RealtimeAdapter {
    * @returns A Response object
    */
   public async handleRequest(request: Request): Promise<Response> {
+    // Check if the SSE adapter is initialized
+    if (!this.sseAdapter) {
+      console.warn(
+        'SSE adapter not initialized yet. Waiting for initialization...'
+      );
+      await this.initialize();
+    }
+
     // Check if this is an SSE request
     if (
       request.headers.get('accept') === 'text/event-stream' ||
