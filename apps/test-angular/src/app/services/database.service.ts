@@ -10,7 +10,7 @@ export class DatabaseService {
 
   constructor() {
     // TODO: Replace with actual configuration (e.g., from environment variables)
-    const baseUrl = 'http://localhost:3000/api/db'; // Placeholder URL
+    const baseUrl = 'http://localhost:8000/api/db'; // Placeholder URL
 
     // Instantiate the SDK
     // If authentication is needed, you might need to pass an axios instance

@@ -11,7 +11,7 @@ import { WebSocketSSE } from 'crossws/websocket/sse';
 })
 export class DatabaseComponent implements OnInit {
   dbSdk = inject(DatabaseService).sdk;
-  sseClient = new WebSocketSSE('http://localhost:3000/api/sse', {
+  sseClient = new WebSocketSSE('http://localhost:8000/api/sse', {
     bidir: true,
     stream: false, // This setting avoids ReadableStream issues on the server
   });

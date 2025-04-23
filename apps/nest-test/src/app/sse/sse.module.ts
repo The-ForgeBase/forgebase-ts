@@ -6,7 +6,7 @@ import { TableSetupService } from './table-setup.service';
 
 @Module({
   controllers: [SSEController, SSETestController],
-  providers: [SSEService, TableSetupService],
+  providers: [SSEService],
   exports: [SSEService],
 })
 export class SSEModule {}

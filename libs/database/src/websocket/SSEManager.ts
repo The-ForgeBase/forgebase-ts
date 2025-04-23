@@ -100,13 +100,15 @@ export class SSEManager implements RealtimeAdapter {
           try {
             // Handle both string and ReadableStream message types
             let messageData: string;
-            // console.log('message', typeof message);
-            // console.log('message event', message.event);
-            // console.log('message peer', message.peer);
-            // console.log('message data', message.data);
-            // console.log('message blob', message.blob);
-            // console.log('message array', message.uint8Array().toString());
-            // console.log('message array buffer', message.arrayBuffer());
+            console.log('message', typeof message);
+            console.log('message event', message.event);
+            console.log('message peer', message.peer);
+            console.log('message data', message.data);
+            console.log('message text', message.text());
+            // console.log('message json', message.json());
+            console.log('message blob', message.blob);
+            console.log('message array', message.uint8Array().toString());
+            console.log('message array buffer', message.arrayBuffer());
             if (message instanceof ReadableStream) {
               const reader = message.getReader();
               const { value } = await reader.read();
