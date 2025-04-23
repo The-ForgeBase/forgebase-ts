@@ -10,14 +10,14 @@ import {
 import { HTTPException } from 'hono/http-exception';
 
 // Define the environment variables for our Hono app
-export type Variables = {
+export type FgAPiVariables = {
   userContext?: UserContext;
   isAdmin: boolean;
   isSystem: boolean;
 };
 
 export class ForgeApiHandler {
-  private app: Hono<{ Variables: Variables }>;
+  private app: Hono<{ Variables: FgAPiVariables }>;
   private enableSchemaEndpoints = true;
   private enableDataEndpoints = true;
   private enablePermissionEndpoints = true;
@@ -33,7 +33,7 @@ export class ForgeApiHandler {
     this.enableSchemaEndpoints = config?.enableSchemaEndpoints || true;
     this.enableDataEndpoints = config?.enableDataEndpoints || true;
     this.enablePermissionEndpoints = config?.enablePermissionEndpoints || true;
-    this.app = new Hono<{ Variables: Variables }>();
+    this.app = new Hono<{ Variables: FgAPiVariables }>();
     this.setupRoutes();
   }
 
@@ -556,7 +556,7 @@ export class ForgeApiHandler {
     }
   }
 
-  getApp(): Hono<{ Variables: Variables }> {
+  getApp(): Hono<{ Variables: FgAPiVariables }> {
     return this.app;
   }
 }

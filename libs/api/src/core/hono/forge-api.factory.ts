@@ -54,6 +54,17 @@ export function createHonoForgeApi<Env = any>(
   if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
     app.get(`${prefix}/sse`, async (c) => {
       const request = c.req.raw;
+      // The handleRequest from the sseAdapter handles the underlying request/response
+      // User context is typically handled during the 'upgrade' hook within the SSEManager
+      // by reading headers, not passed directly here.
+      const response = await realtimeAdapter.handleRequest(request);
+      return response;
+    });
+    app.post(`${prefix}/sse`, async (c) => {
+      const request = c.req.raw;
+      // The handleRequest from the sseAdapter handles the underlying request/response
+      // User context is typically handled during the 'upgrade' hook within the SSEManager
+      // by reading headers, not passed directly here.
       const response = await realtimeAdapter.handleRequest(request);
       return response;
     });

@@ -1,11 +1,27 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { getRouterName, showRoutes } from 'hono/dev';
-import { createHonoForgeApi } from '@forgebase-ts/api/core/hono';
+import {
+  createHonoForgeApi,
+  FgAPiVariables,
+} from '@forgebase-ts/api/core/hono';
 import knex from 'knex';
 import { AuthTables } from '@forgebase-ts/auth/config';
+import { UserContext } from '@forgebase-ts/database';
 
-const app = new Hono();
+// Define a type for our custom environment, extending FgAPiVariables
+type MyEnv = {
+  Variables: FgAPiVariables & {
+    // Use intersection type (&) to merge with FgAPiVariables
+    jwtPayload: Record<string, unknown>;
+    jwtUser?: {
+      userId: string | number;
+      role: string;
+    };
+  };
+};
+
+const app = new Hono<MyEnv>();
 
 const db = knex({
   client: 'sqlite3',
@@ -22,6 +38,22 @@ const db = knex({
     reapIntervalMillis: 1000,
     createRetryIntervalMillis: 100,
   },
+});
+
+app.use('/api/*', async (c, next) => {
+  // Store user context in a variable to pass to the database service
+  const userContext: UserContext = {
+    userId: '1',
+    role: 'user',
+    labels: [],
+    teams: [],
+    permissions: [],
+  };
+
+  // We'll use this in the database service later
+  c.set('userContext', userContext);
+
+  await next();
 });
 
 const { dbService, storageService } = createHonoForgeApi(
@@ -59,6 +91,7 @@ app.get('/', (c) => {
 
 showRoutes(app, {
   verbose: true,
+  colorize: true,
 });
 
 const port = 3000;

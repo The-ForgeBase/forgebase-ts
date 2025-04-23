@@ -11,25 +11,26 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
+      "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./client": {
       "types": "./dist/database/client/index.d.ts",
       "import": "./dist/database/client/index.js",
-      "default": "./dist/database/client/index.js",
-      "require": "./dist/database/client/index.js"
+      "require": "./dist/database/client/index.js",
+      "default": "./dist/database/client/index.js"
     },
     "./server": {
       "types": "./dist/database/server/index.d.ts",
       "import": "./dist/database/server/index.js",
-      "default": "./dist/database/server/index.js",
-      "require": "./dist/database/server/index.js"
+      "require": "./dist/database/server/index.js",
+      "default": "./dist/database/server/index.js"
     },
     "./jwt": {
       "types": "./dist/jwt/index.d.ts",
       "import": "./dist/jwt/index.js",
-      "default": "./dist/jwt/index.js",
-      "require": "./dist/jwt/index.js"
+      "require": "./dist/jwt/index.js",
+      "default": "./dist/jwt/index.js"
     }
   },
   "typesVersions": {

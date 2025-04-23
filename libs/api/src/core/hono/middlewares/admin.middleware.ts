@@ -1,11 +1,11 @@
 import { Context, MiddlewareHandler } from 'hono';
 import { ForgeApiService } from '../forge-api.service';
-import { Variables } from '../forge-api.handler';
+import { FgAPiVariables } from '../forge-api.handler';
 
 export function adminMiddleware(
   forgeApiService: ForgeApiService
-): MiddlewareHandler<{ Variables: Variables }> {
-  return async (c: Context<{ Variables: Variables }>, next) => {
+): MiddlewareHandler<{ Variables: FgAPiVariables }> {
+  return async (c: Context<{ Variables: FgAPiVariables }>, next) => {
     const config = forgeApiService.getConfig();
     const adminReqName = config.api?.adminReqName || 'admin';
 

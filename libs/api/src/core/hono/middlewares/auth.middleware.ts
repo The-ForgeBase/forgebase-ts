@@ -2,13 +2,13 @@ import { Context, MiddlewareHandler } from 'hono';
 import { ForgeApiService } from '../forge-api.service';
 import { HTTPException } from 'hono/http-exception';
 import { UserContext } from '@forgebase-ts/database';
-import { Variables } from '../forge-api.handler';
+import { FgAPiVariables } from '../forge-api.handler';
 
 export function authMiddleware(
   forgeApiService: ForgeApiService,
   excludePaths: string[] = []
-): MiddlewareHandler<{ Variables: Variables }> {
-  return async (c: Context<{ Variables: Variables }>, next) => {
+): MiddlewareHandler<{ Variables: FgAPiVariables }> {
+  return async (c: Context<{ Variables: FgAPiVariables }>, next) => {
     const path = c.req.path;
 
     // Skip auth for excluded paths

@@ -59,13 +59,23 @@ export class SSEManager implements RealtimeAdapter {
           // Extract user context from request headers
           let userContext: UserContext | undefined;
           try {
-            const userContextHeader = request.headers.get('user-context');
+            const userContextHeader = request.headers.get('userContext');
+            // console.log('sse request context', request.context);
+            // console.log('sse request header', request.headers);
             if (userContextHeader) {
+              console.log('userContextHeader', userContextHeader);
               userContext = JSON.parse(userContextHeader);
             }
 
             if (!userContext) {
-              return new Response('Authentication required', { status: 401 });
+              // return new Response('Authentication required', { status: 401 });
+              userContext = {
+                userId: '1',
+                role: 'user',
+                labels: [],
+                teams: [],
+                permissions: [],
+              };
             }
           } catch (error) {
             console.error('Error parsing user context:', error);
@@ -88,10 +98,24 @@ export class SSEManager implements RealtimeAdapter {
         },
         message: async (peer, message) => {
           try {
-            const msg =
-              typeof message === 'string'
-                ? JSON.parse(message)
-                : ((await message.json()) as ClientMessage);
+            // Handle both string and ReadableStream message types
+            let messageData: string;
+            // console.log('message', typeof message);
+            // console.log('message event', message.event);
+            // console.log('message peer', message.peer);
+            // console.log('message data', message.data);
+            // console.log('message blob', message.blob);
+            // console.log('message array', message.uint8Array().toString());
+            // console.log('message array buffer', message.arrayBuffer());
+            if (message instanceof ReadableStream) {
+              const reader = message.getReader();
+              const { value } = await reader.read();
+              messageData = new TextDecoder().decode(value);
+            } else {
+              messageData = message.toString();
+            }
+            console.log('Received message:', messageData);
+            const msg = JSON.parse(messageData) as ClientMessage;
 
             if (msg.type === 'subscribe' && msg.tableName) {
               // Get user context from peer data
@@ -177,11 +201,6 @@ export class SSEManager implements RealtimeAdapter {
         },
       },
     });
-
-    console.log(`SSE adapter initialized for port ${this.port}`);
-    console.log(
-      'Use getSSEAdapter() and handleRequest() methods to integrate with your HTTP server'
-    );
   }
 
   private async canSubscribe(
