@@ -101,6 +101,14 @@ class KnexHooks {
     const queryBuilder = trx ? trx<T>(tableName) : this.knex<T>(tableName);
     const result = await mutationFn(queryBuilder);
 
+    // console.log('afterMutation', {
+    //   tableName,
+    //   mutationType,
+    //   result,
+    //   data,
+    //   context,
+    // });
+
     this.events.emit('afterMutation', {
       tableName,
       mutationType,
@@ -149,7 +157,7 @@ class KnexHooks {
       //TODO: Check if  real-time is allowed for the table
       this.realtimeAdapter.broadcast(tableName, mutationType, {
         type: mutationType,
-        data: result,
+        data: mutationType === 'delete' ? data : result,
       });
     }
   }

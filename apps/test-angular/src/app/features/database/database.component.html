@@ -1,8 +1,20 @@
 <p>database works!</p>
 
 <div class="container">
+  <div class="mb-3">
+    <!-- Simulation buttons for create, update, and delete -->
+    <button class="btn btn-success me-2" (click)="simulateCreate()">
+      Simulate Create
+    </button>
+    <button class="btn btn-warning me-2" (click)="simulateUpdate()">
+      Simulate Update
+    </button>
+    <button class="btn btn-danger" (click)="simulateDelete()">
+      Simulate Delete
+    </button>
+  </div>
   @for (post of posts.value(); track $index) {
-  <div class="card">
+  <div class="card mb-2">
     <div class="card-body">
       <h5 class="card-title">{{ post['title'] }}</h5>
       <p class="card-text">{{ post['content'] }}</p>

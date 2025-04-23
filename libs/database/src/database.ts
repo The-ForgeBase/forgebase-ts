@@ -772,7 +772,10 @@ export class ForgeDatabase {
           return this.hooks.mutate(
             tableName,
             'delete',
-            async (query) => query.where({ id }).delete(),
+            async (query) =>
+              query
+                .where({ id })
+                .del(['id'], { includeTriggerModifications: true }),
             { id },
             undefined,
             trx
