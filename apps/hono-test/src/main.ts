@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
-import { getRouterName, showRoutes } from 'hono/dev';
+import { showRoutes } from 'hono/dev';
 import {
   createHonoForgeApi,
   FgAPiVariables,

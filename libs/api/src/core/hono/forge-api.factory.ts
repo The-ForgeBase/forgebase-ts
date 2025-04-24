@@ -1,27 +1,31 @@
-import { Hono } from 'hono';
+import { Env, Hono } from 'hono';
 import { BaaSConfig } from '../../types';
 import { DatabaseService } from '../database';
 import { StorageService } from '../storage';
 import { ForgeApiService } from './forge-api.service';
-import { ForgeApiHandler } from './forge-api.handler';
+import { FgAPiVariables, ForgeApiHandler } from './forge-api.handler';
 import { SSEManager } from '@forgebase-ts/database';
 
-export interface ForgeApiOptions<Env = any> {
+type MyEnv = {
+  Variables: FgAPiVariables & any;
+};
+
+export interface ForgeApiOptions {
   config: Partial<BaaSConfig>;
   db?: DatabaseService;
   storage?: StorageService;
-  app?: Hono<Env>;
+  app?: Hono<MyEnv>;
 }
 
-export function createHonoForgeApi<Env = any>(
-  options: ForgeApiOptions<Env>,
+export function createHonoForgeApi(
+  options: ForgeApiOptions,
   config: {
     enableSchemaEndpoints?: boolean;
     enableDataEndpoints?: boolean;
     enablePermissionEndpoints?: boolean;
   }
 ): {
-  app: Hono<Env>;
+  app: Hono<MyEnv>;
   dbService: DatabaseService;
   storageService: StorageService;
 } {
@@ -42,7 +46,7 @@ export function createHonoForgeApi<Env = any>(
   const forgeApiHandler = new ForgeApiHandler(forgeApiService, config);
 
   // Use provided app or create a new one
-  const app = options.app || new Hono<Env>();
+  const app = options.app || new Hono<MyEnv>();
 
   const realtimeAdapter = dbService.getForgeDatabase().realtimeAdapter;
 
@@ -53,7 +57,14 @@ export function createHonoForgeApi<Env = any>(
   // Mount the SSE handler if the realtime adapter is SSE
   if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
     app.get(`${prefix}/sse`, async (c) => {
-      const request = c.req.raw;
+      const userContext = c.get('userContext');
+      // add userContext to request headers
+      const headers = new Headers(c.req.header());
+      headers.set('userContext', JSON.stringify(userContext));
+      const request = new Request(c.req.url, {
+        headers: headers,
+        ...c.req.raw,
+      });
       // The handleRequest from the sseAdapter handles the underlying request/response
       // User context is typically handled during the 'upgrade' hook within the SSEManager
       // by reading headers, not passed directly here.
@@ -61,7 +72,14 @@ export function createHonoForgeApi<Env = any>(
       return response;
     });
     app.post(`${prefix}/sse`, async (c) => {
-      const request = c.req.raw;
+      const userContext = c.get('userContext');
+      // add userContext to request headers
+      const headers = new Headers(c.req.header());
+      headers.set('userContext', JSON.stringify(userContext));
+      const request = new Request(c.req.url, {
+        headers: headers,
+        ...c.req.raw,
+      });
       // The handleRequest from the sseAdapter handles the underlying request/response
       // User context is typically handled during the 'upgrade' hook within the SSEManager
       // by reading headers, not passed directly here.
