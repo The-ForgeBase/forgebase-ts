@@ -175,6 +175,7 @@ export interface TokenStore {
 }
 
 export interface ConfigStore {
+  initialize(): Promise<void>;
   getConfig(): Promise<AuthConfig>;
   updateConfig(update: Partial<AuthConfig>): Promise<AuthConfig>;
 }
@@ -227,6 +228,7 @@ export type AuthRequiredType =
   | 'sms-required or email-required';
 
 export interface SessionManager {
+  initialize?(): Promise<void>;
   createSession(user: User): Promise<AuthToken | string>;
   destroySession(token: string, id?: string): Promise<void>;
   verifySession(

@@ -1,11 +1,8 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { showRoutes } from 'hono/dev';
-import {
-  createHonoForgeApi,
-  FgAPiVariables,
-} from '@forgebase-ts/api/core/hono';
-import { createWebHandler, websseHandler } from '@forgebase-ts/api/core/web';
+import { FgAPiVariables } from '@forgebase-ts/api/core/hono';
+import { createIttyHandler, websseHandler } from '@forgebase-ts/api/core/web';
 import knex from 'knex';
 import { AuthTables } from '@forgebase-ts/auth/config';
 import { SSEManager, UserContext } from '@forgebase-ts/database';
@@ -57,7 +54,7 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
-const webHandler = createWebHandler({
+const webHandler = createIttyHandler({
   config: {
     enableSchemaEndpoints: true,
     enableDataEndpoints: true,
@@ -120,34 +117,32 @@ app.get('/', (c) => {
   return c.text('Hello Hono!');
 });
 
+app.get('/api/sse', async (c) => {
+  const userContext = c.get('userContext');
+  const realtimeAdapter = webHandler
+    .getDatabaseService()
+    .getForgeDatabase().realtimeAdapter;
+  if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
+    return websseHandler(c.req.raw, userContext, realtimeAdapter);
+  }
+
+  return c.text('SSE not enabled', 500);
+});
+
+app.post('/api/sse', async (c) => {
+  const userContext = c.get('userContext');
+  const realtimeAdapter = webHandler
+    .getDatabaseService()
+    .getForgeDatabase().realtimeAdapter;
+  if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
+    return websseHandler(c.req.raw, userContext, realtimeAdapter);
+  }
+
+  return c.text('SSE not enabled', 500);
+});
+
 app.all('/api/*', async (ctx) => {
-  const userContext = ctx.get('userContext');
-  const isSystem = ctx.get('isSystem');
-  return (await webHandler).handleRequest(ctx.req.raw, userContext, isSystem);
-});
-
-app.get('/sse', async (c) => {
-  const userContext = c.get('userContext');
-  const realtimeAdapter = (await webHandler)
-    .getDatabaseService()
-    .getForgeDatabase().realtimeAdapter;
-  if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
-    return websseHandler(c.req.raw, userContext, realtimeAdapter);
-  }
-
-  return c.text('SSE not enabled', 500);
-});
-
-app.post('/sse', async (c) => {
-  const userContext = c.get('userContext');
-  const realtimeAdapter = (await webHandler)
-    .getDatabaseService()
-    .getForgeDatabase().realtimeAdapter;
-  if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
-    return websseHandler(c.req.raw, userContext, realtimeAdapter);
-  }
-
-  return c.text('SSE not enabled', 500);
+  return webHandler.handleRequest(ctx.req.raw as any);
 });
 
 showRoutes(app, {
