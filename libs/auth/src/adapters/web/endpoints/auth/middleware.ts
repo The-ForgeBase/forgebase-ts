@@ -69,6 +69,8 @@ export const attachNewToken = async (
   if (req.newToken) {
     setAuthCookies(res, req.newToken, config);
   }
+
+  return res;
 };
 
 export const authGuard = async <TUser extends BaseUser = any>(

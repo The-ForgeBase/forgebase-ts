@@ -5,6 +5,8 @@ import {
   CorsOptions,
   error,
   IRequest,
+  RequestHandler,
+  ResponseHandler,
   RouteEntry,
 } from 'itty-router';
 // import { StorageService } from '../storage';
@@ -53,11 +55,19 @@ class IttyWebHandler {
         authManager: DynamicAuthManager<any>;
         config: WebAuthConfig;
       };
+      beforeMiddlewares?: RequestHandler[];
+      finallyMiddlewares?: ResponseHandler[];
     },
     fgConfig: Partial<BaaSConfig> = {}
   ) {
     const { preflight, corsify } = cors(config.corsOptions);
     let authMiddleware = config.authMiddleware || ((req) => req);
+
+    if (!config.authMiddleware && !config.useFgAuth?.enabled) {
+      console.warn(
+        'No auth middleware provided, you must provide a auth middleware if you want to use the database RLS feature.'
+      );
+    }
 
     if (config.useFgAuth?.enabled) {
       authMiddleware = async (req: IttyWebRequest) =>
@@ -89,10 +99,19 @@ class IttyWebHandler {
     this.enablePermissionEndpoints = config.enablePermissionEndpoints ?? true;
     this.router = AutoRouter<IttyWebRequest>({
       base: fgConfig.prefix || this.config.prefix,
-      before: [preflight, authMiddleware, this.schemaGuard.bind(this)],
+      before: [
+        preflight,
+        authMiddleware,
+        this.schemaGuard.bind(this),
+        ...config.beforeMiddlewares,
+      ],
       finally: config.useFgAuth?.enabled
-        ? [corsify, attachNewToken.bind(this, config.useFgAuth?.config)]
-        : [corsify],
+        ? [
+            corsify,
+            attachNewToken.bind(this, config.useFgAuth?.config),
+            ...config.finallyMiddlewares,
+          ]
+        : [corsify, ...config.finallyMiddlewares],
     });
     this.config = this.mergeConfigs(this.config, fgConfig);
     // Initialize services based on configuration
