@@ -3,6 +3,7 @@ import {
   AutoRouterType,
   cors,
   CorsOptions,
+  error,
   IRequest,
   RouteEntry,
 } from 'itty-router';
@@ -101,8 +102,6 @@ class IttyWebHandler {
     this.setupRoutes();
 
     this.registeredRoutes = this.router.routes;
-
-    console.log(this.registeredRoutes.map((r) => r[3]));
   }
 
   private mergeConfigs(
@@ -129,53 +128,34 @@ class IttyWebHandler {
     };
   }
 
-  private handleError(error: any): Response {
-    if (error instanceof ExcludedTableError) {
-      return new Response(
-        JSON.stringify({
-          error: 'Forbidden',
-          message: 'table does not exist',
-        }),
-        {
-          status: 403,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+  private handleError(e: any): Response {
+    if (e instanceof ExcludedTableError) {
+      return error(403, {
+        error: 'Forbidden',
+        message: 'table does not exist',
+      });
     }
     if (
-      error instanceof AuthenticationRequiredError ||
-      error instanceof PermissionDeniedError
+      e instanceof AuthenticationRequiredError ||
+      e instanceof PermissionDeniedError
     ) {
-      return new Response(
-        JSON.stringify({
-          error: 'Unauthorized',
-          message: error.message,
-        }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return error(403, {
+        error: 'Forbidden',
+        message: e.message,
+      });
     }
 
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return error(400, e.message);
   }
 
-  private schemaGuard(req: IttyWebRequest) {
+  private schemaGuard(req: IttyWebRequest): Response | undefined {
     const route = new URL(req.url).pathname;
-    console.log('route', route);
     if (
       (route.startsWith(`${this.config.prefix}/db/schema`) ||
         route.startsWith(`${this.config.prefix}/permissions`)) &&
       !req.isSystem
     ) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return error(403, 'Forbidden');
     }
   }
 
