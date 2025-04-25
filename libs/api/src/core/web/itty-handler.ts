@@ -46,7 +46,7 @@ class IttyWebHandler {
       enableDataEndpoints?: boolean;
       enablePermissionEndpoints?: boolean;
       corsOptions?: CorsOptions;
-      authMiddleware?: (req: IttyWebRequest) => Promise<any>;
+      authMiddleware?: (req: IttyWebRequest) => Promise<Response | undefined>;
       useFgAuth?: {
         enabled: boolean;
         authManager: DynamicAuthManager<any>;
@@ -548,7 +548,7 @@ export function createIttyHandler(options: {
     enableDataEndpoints?: boolean;
     enablePermissionEndpoints?: boolean;
     corsOptions?: CorsOptions;
-    authMiddleware?: (req: IttyWebRequest) => Promise<any>;
+    authMiddleware?: (req: IttyWebRequest) => Promise<Response | undefined>;
     useFgAuth?: {
       enabled: boolean;
       authManager: DynamicAuthManager<any>;
