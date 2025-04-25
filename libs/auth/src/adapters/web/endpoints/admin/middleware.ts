@@ -52,10 +52,11 @@ export const adminGuard = async (
   adminManager: InternalAdminManager
 ) => {
   try {
+    const route = new URL(req.url).pathname;
     const { token, type } = extractAdminToken(req, {
       cookieName: 'admin_token',
     });
-    if (!req.route.includes('/admin/login') || (!req.isPublic && !token)) {
+    if (!route.includes('/admin/login') || (!req.isPublic && !token)) {
       return new Response(
         JSON.stringify({
           status: false,

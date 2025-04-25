@@ -34,7 +34,6 @@ export class AuthApi<TUser extends BaseUser> {
     this.router = AutoRouter<AuthRequest>({
       base: options.config.basePath || '/auth',
     });
-    this.router.all('*', () => error(404));
     this.setupRoutes();
 
     this.registeredRoutes = this.router.routes;

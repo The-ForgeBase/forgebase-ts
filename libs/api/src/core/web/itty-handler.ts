@@ -68,7 +68,6 @@ class IttyWebHandler {
       base: fgConfig.prefix || this.config.prefix,
       before: [this.schemaGuard.bind(this)],
     });
-    this.router.all('*', () => error(404));
     this.config = this.mergeConfigs(this.config, fgConfig);
     // Initialize services based on configuration
     // this.storage = new StorageService(this.config.services?.storage);
@@ -141,9 +140,11 @@ class IttyWebHandler {
   }
 
   private schemaGuard(req: IttyWebRequest) {
+    const route = new URL(req.url).pathname;
+    console.log('route', route);
     if (
-      (req.route.startsWith(`${this.config.prefix}/db/schema`) ||
-        req.route.startsWith(`${this.config.prefix}/permissions`)) &&
+      (route.startsWith(`${this.config.prefix}/db/schema`) ||
+        route.startsWith(`${this.config.prefix}/permissions`)) &&
       !req.isSystem
     ) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {

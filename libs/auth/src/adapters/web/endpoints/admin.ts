@@ -23,7 +23,6 @@ export class AdminApi<TUser extends BaseUser> {
     this.router = AutoRouter<AdminRequest>({
       base: options.config.basePath || '/auth/admin',
     });
-    this.router.all('*', () => error(404));
     this.setupRoutes();
 
     this.registeredRoutes = this.router.routes;

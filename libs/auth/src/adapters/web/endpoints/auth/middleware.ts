@@ -54,12 +54,13 @@ export const authGuard = async <TUser extends BaseUser = any>(
     }
     const config = authManager.getConfig();
     const mfaStatus = authManager.getMfaStatus();
+    const route = new URL(req.url).pathname;
 
     if (
       config.mfaSettings.required &&
       mfaStatus &&
       !user.mfa_enabled &&
-      !req.route.includes('mfa')
+      !route.includes('mfa')
     ) {
       return new Response(
         JSON.stringify({
