@@ -11,38 +11,44 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "default": "./dist/index.js",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./frameworks": {
       "types": "./dist/frameworks/index.d.ts",
       "import": "./dist/frameworks/index.js",
-      "default": "./dist/frameworks/index.js",
-      "require": "./dist/frameworks/index.js"
+      "require": "./dist/frameworks/index.js",
+      "default": "./dist/frameworks/index.js"
     },
     "./frameworks/nest": {
       "types": "./dist/frameworks/nest/index.d.ts",
       "import": "./dist/frameworks/nest/index.js",
-      "default": "./dist/frameworks/nest/index.js",
-      "require": "./dist/frameworks/nest/index.js"
+      "require": "./dist/frameworks/nest/index.js",
+      "default": "./dist/frameworks/nest/index.js"
     },
     "./core/nest": {
       "types": "./dist/core/nest/index.d.ts",
       "import": "./dist/core/nest/index.js",
-      "default": "./dist/core/nest/index.js",
-      "require": "./dist/core/nest/index.js"
+      "require": "./dist/core/nest/index.js",
+      "default": "./dist/core/nest/index.js"
     },
     "./core/hono": {
       "types": "./dist/core/hono/index.d.ts",
       "import": "./dist/core/hono/index.js",
-      "default": "./dist/core/hono/index.js",
-      "require": "./dist/core/hono/index.js"
+      "require": "./dist/core/hono/index.js",
+      "default": "./dist/core/hono/index.js"
+    },
+    "./core/web": {
+      "types": "./dist/core/web/index.d.ts",
+      "import": "./dist/core/web/index.js",
+      "require": "./dist/core/web/index.js",
+      "default": "./dist/core/web/index.js"
     },
     "./core": {
       "types": "./dist/core/index.d.ts",
       "import": "./dist/core/index.js",
-      "default": "./dist/core/index.js",
-      "require": "./dist/core/index.js"
+      "require": "./dist/core/index.js",
+      "default": "./dist/core/index.js"
     }
   },
   "typesVersions": {
@@ -62,6 +68,9 @@
       "core/hono": [
         "./dist/core/hono/index.d.ts"
       ],
+      "core/web": [
+        "./dist/core/web/index.d.ts"
+      ],
       "core": [
         "./dist/core/index.d.ts"
       ]
@@ -77,15 +86,14 @@
   "dependencies": {
     "tslib": "^2.3.0",
     "express": "^4.21.2",
-    "fastify": "^5.2.1",
     "hono": "^4.6.19",
     "@forgebase-ts/database": "0.0.1",
     "@nestjs/common": "^10.0.2",
     "rou3": "^0.5.1",
     "knex": "^3.1.0",
-    "@libsql/knex-libsql": "^0.1.0",
     "@nestjs/core": "^10.0.2",
     "@forgebase-ts/storage": "0.0.1",
-    "better-auth": "^1.1.14"
+    "better-auth": "^1.1.14",
+    "@hono/node-server": "^1.13.7"
   }
 }

@@ -21,4 +21,6 @@ export interface RealtimeAdapter {
    * Get the port the adapter is listening on
    */
   getPort(): number;
+
+  handleRequest?(request: Request): Promise<Response>;
 }

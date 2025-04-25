@@ -5,9 +5,10 @@ import {
   createHonoForgeApi,
   FgAPiVariables,
 } from '@forgebase-ts/api/core/hono';
+import { createWebHandler, websseHandler } from '@forgebase-ts/api/core/web';
 import knex from 'knex';
 import { AuthTables } from '@forgebase-ts/auth/config';
-import { UserContext } from '@forgebase-ts/database';
+import { SSEManager, UserContext } from '@forgebase-ts/database';
 
 // Define a type for our custom environment, extending FgAPiVariables
 type MyEnv = {
@@ -56,37 +57,97 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
-const { dbService, storageService } = createHonoForgeApi(
-  {
-    config: {
-      prefix: '/api',
-      services: {
-        db: {
-          provider: 'sqlite',
-          config: {
-            db,
-            excludedTables: [...AuthTables],
-            enforceRls: true,
-            realtime: true,
-            initializePermissions: true,
-            onPermissionInitComplete(report) {
-              console.log(report);
-            },
+const webHandler = createWebHandler({
+  config: {
+    enableSchemaEndpoints: true,
+    enableDataEndpoints: true,
+    enablePermissionEndpoints: true,
+  },
+  fgConfig: {
+    prefix: '/api',
+    services: {
+      db: {
+        provider: 'sqlite',
+        config: {
+          db,
+          excludedTables: [...AuthTables],
+          enforceRls: true,
+          realtime: true,
+          initializePermissions: true,
+          onPermissionInitComplete(report) {
+            console.log(report);
           },
         },
-        storage: {
-          provider: 'local',
-          config: {},
-        },
+      },
+      storage: {
+        provider: 'local',
+        config: {},
       },
     },
-    app,
   },
-  {}
-);
+});
+
+// const { dbService, storageService } = createHonoForgeApi(
+//   {
+//     config: {
+//       prefix: '/api',
+//       services: {
+//         db: {
+//           provider: 'sqlite',
+//           config: {
+//             db,
+//             excludedTables: [...AuthTables],
+//             enforceRls: true,
+//             realtime: true,
+//             initializePermissions: true,
+//             onPermissionInitComplete(report) {
+//               console.log(report);
+//             },
+//           },
+//         },
+//         storage: {
+//           provider: 'local',
+//           config: {},
+//         },
+//       },
+//     },
+//     app,
+//   },
+//   {}
+// );
 
 app.get('/', (c) => {
   return c.text('Hello Hono!');
+});
+
+app.all('/api/*', async (ctx) => {
+  const userContext = ctx.get('userContext');
+  const isSystem = ctx.get('isSystem');
+  return (await webHandler).handleRequest(ctx.req.raw, userContext, isSystem);
+});
+
+app.get('/sse', async (c) => {
+  const userContext = c.get('userContext');
+  const realtimeAdapter = (await webHandler)
+    .getDatabaseService()
+    .getForgeDatabase().realtimeAdapter;
+  if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
+    return websseHandler(c.req.raw, userContext, realtimeAdapter);
+  }
+
+  return c.text('SSE not enabled', 500);
+});
+
+app.post('/sse', async (c) => {
+  const userContext = c.get('userContext');
+  const realtimeAdapter = (await webHandler)
+    .getDatabaseService()
+    .getForgeDatabase().realtimeAdapter;
+  if (realtimeAdapter && realtimeAdapter instanceof SSEManager) {
+    return websseHandler(c.req.raw, userContext, realtimeAdapter);
+  }
+
+  return c.text('SSE not enabled', 500);
 });
 
 showRoutes(app, {

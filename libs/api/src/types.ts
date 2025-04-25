@@ -59,7 +59,22 @@ export interface Context {
   };
 }
 
+export interface WebContext {
+  req: Request;
+  userContext?: UserContext;
+  isSystem?: boolean; // Add isSystem flag to request context
+  params: Record<string, any>;
+  query: Record<string, any>;
+  res?: {
+    body: any;
+    status: number;
+    headers: Record<string, any>;
+  };
+}
+
 export type Handler = (ctx: Context) => Promise<void>;
+
+export type WebHandler = (ctx: WebContext) => Promise<void>;
 
 export type Route = {
   path: string;
