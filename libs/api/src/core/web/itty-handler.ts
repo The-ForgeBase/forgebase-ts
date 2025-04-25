@@ -553,6 +553,8 @@ export function createIttyHandler(options: {
       authManager: DynamicAuthManager<any>;
       config: WebAuthConfig;
     };
+    beforeMiddlewares?: RequestHandler[];
+    finallyMiddlewares?: ResponseHandler[];
   };
   fgConfig: Partial<BaaSConfig>;
 }): IttyWebHandler {
