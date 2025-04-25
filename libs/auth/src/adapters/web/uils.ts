@@ -1,6 +1,7 @@
 import { AuthToken } from '../../types';
 import { AdminRequest } from './endpoints/admin/types';
 import { AuthRequest } from './endpoints/auth/types';
+import { WebAuthConfig } from '.';
 
 export function extractTokenFromRequest(req: Request): string | null {
   if (req.headers.get('Authorization').startsWith('Bearer ')) {
@@ -62,7 +63,7 @@ export function redirect(url: string) {
 export function setAuthCookies(
   res: Response,
   token: string | AuthToken,
-  config: any
+  config: WebAuthConfig
 ) {
   if (typeof token === 'object' && token !== null) {
     setCookie(res, config.cookieName, token.accessToken, {

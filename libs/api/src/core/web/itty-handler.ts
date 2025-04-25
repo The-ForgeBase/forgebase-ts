@@ -1,7 +1,8 @@
 import {
   AutoRouter,
   AutoRouterType,
-  error,
+  cors,
+  CorsOptions,
   IRequest,
   RouteEntry,
 } from 'itty-router';
@@ -16,12 +17,18 @@ import {
   UserContext,
 } from '@forgebase-ts/database';
 import { BaaSConfig } from '../../types';
+import {
+  attachNewToken,
+  userContextMiddleware,
+  WebAuthConfig,
+} from '@forgebase-ts/auth/adapters/web';
+import { DynamicAuthManager } from '@forgebase-ts/auth/authManager';
 
 export type IttyWebRequest = {
   userContext?: UserContext;
   isSystem?: boolean; // Add isSystem flag to request context
-  [key: string]: any;
-} & IRequest;
+} & IRequest &
+  Record<string, any>;
 
 class IttyWebHandler {
   private router: AutoRouterType<IttyWebRequest>;
@@ -38,9 +45,24 @@ class IttyWebHandler {
       enableSchemaEndpoints?: boolean;
       enableDataEndpoints?: boolean;
       enablePermissionEndpoints?: boolean;
+      corsOptions?: CorsOptions;
+      authMiddleware?: (req: IttyWebRequest) => Promise<any>;
+      useFgAuth?: {
+        enabled: boolean;
+        authManager: DynamicAuthManager<any>;
+        config: WebAuthConfig;
+      };
     },
     fgConfig: Partial<BaaSConfig> = {}
   ) {
+    const { preflight, corsify } = cors(config.corsOptions);
+    let authMiddleware = config.authMiddleware || ((req) => req);
+
+    if (config.useFgAuth?.enabled) {
+      authMiddleware = async (req: IttyWebRequest) =>
+        userContextMiddleware(req as any, config.useFgAuth.authManager);
+    }
+
     this.config = {
       prefix: '/api',
       auth: {
@@ -66,7 +88,10 @@ class IttyWebHandler {
     this.enablePermissionEndpoints = config.enablePermissionEndpoints ?? true;
     this.router = AutoRouter<IttyWebRequest>({
       base: fgConfig.prefix || this.config.prefix,
-      before: [this.schemaGuard.bind(this)],
+      before: [preflight, authMiddleware, this.schemaGuard.bind(this)],
+      finally: config.useFgAuth?.enabled
+        ? [corsify, attachNewToken.bind(this, config.useFgAuth?.config)]
+        : [corsify],
     });
     this.config = this.mergeConfigs(this.config, fgConfig);
     // Initialize services based on configuration
@@ -522,6 +547,13 @@ export function createIttyHandler(options: {
     enableSchemaEndpoints?: boolean;
     enableDataEndpoints?: boolean;
     enablePermissionEndpoints?: boolean;
+    corsOptions?: CorsOptions;
+    authMiddleware?: (req: IttyWebRequest) => Promise<any>;
+    useFgAuth?: {
+      enabled: boolean;
+      authManager: DynamicAuthManager<any>;
+      config: WebAuthConfig;
+    };
   };
   fgConfig: Partial<BaaSConfig>;
 }): IttyWebHandler {

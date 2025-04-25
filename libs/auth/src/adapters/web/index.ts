@@ -275,3 +275,5 @@ export const webAuthApi = <TUser extends BaseUser>(options: {
 
   return api;
 };
+
+export * from './endpoints';

@@ -1,5 +1,5 @@
 import { BaseUser } from '../../../types';
-import { AutoRouter, error, AutoRouterType, RouteEntry } from 'itty-router';
+import { AutoRouter, AutoRouterType, RouteEntry } from 'itty-router';
 import { InternalAdminManager } from '../../../admin/internal-admin-manager';
 import { AdminRequest } from './admin/types';
 import { WebAuthConfig } from '..';
@@ -53,3 +53,6 @@ export class AdminApi<TUser extends BaseUser> {
     return this.router.fetch(req);
   }
 }
+
+export * from './admin/types';
+export * from './admin/middleware';

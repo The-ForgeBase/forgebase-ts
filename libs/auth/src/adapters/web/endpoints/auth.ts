@@ -305,3 +305,6 @@ export class AuthApi<TUser extends BaseUser> {
     return this.router.fetch(req);
   }
 }
+
+export * from './auth/types';
+export * from './auth/middleware';
