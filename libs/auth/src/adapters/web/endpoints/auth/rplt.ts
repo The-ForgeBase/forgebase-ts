@@ -1,4 +1,4 @@
-import { RouterType } from 'itty-router';
+import { RouterType, error } from 'itty-router';
 import { BaseUser } from '../../../../types';
 import { DynamicAuthManager } from '../../../../authManager';
 import { InternalAdminManager } from '../../../../admin';
@@ -28,11 +28,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -55,11 +52,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -82,11 +76,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -113,11 +104,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -144,11 +132,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -175,11 +160,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -202,11 +184,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -229,11 +208,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -256,11 +232,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );
@@ -282,11 +255,8 @@ export function rpltEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );

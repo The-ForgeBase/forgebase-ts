@@ -1,5 +1,4 @@
-import { RouterType } from 'itty-router';
-import { WebAuthConfig } from '../..';
+import { RouterType, error } from 'itty-router';
 import { BaseUser } from '../../../../types';
 import { DynamicAuthManager } from '../../../../authManager';
 import { authGuard } from './middleware';
@@ -27,11 +26,8 @@ export function passwordEndpoints<TUser extends BaseUser>(
           headers: { 'Content-Type': 'application/json' },
         }
       );
-    } catch (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    } catch (e) {
+      return error(400, e.message);
     }
   });
 
@@ -54,11 +50,8 @@ export function passwordEndpoints<TUser extends BaseUser>(
           headers: { 'Content-Type': 'application/json' },
         }
       );
-    } catch (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    } catch (e) {
+      return error(400, e.message);
     }
   });
 
@@ -85,11 +78,8 @@ export function passwordEndpoints<TUser extends BaseUser>(
             headers: { 'Content-Type': 'application/json' },
           }
         );
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     }
   );

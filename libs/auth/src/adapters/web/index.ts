@@ -29,6 +29,7 @@ import {
   PlunkVerificationConfig,
 } from '../../services';
 import { AuthApi } from './endpoints/auth';
+import { CorsOptions, RequestHandler, ResponseHandler } from 'itty-router';
 
 export type WebAuthConfig = {
   basePath?: string;
@@ -266,12 +267,14 @@ export const webAuthApi = <TUser extends BaseUser>(options: {
   authManager: DynamicAuthManager<TUser>;
   adminManager: InternalAdminManager;
   config: WebAuthConfig;
+  beforeMiddlewares?: RequestHandler[];
+  finallyMiddlewares?: ResponseHandler[];
+  cors?: {
+    enabled: boolean;
+    corsOptions?: CorsOptions;
+  };
 }): AuthApi<TUser> => {
-  const api = new AuthApi({
-    authManager: options.authManager,
-    adminManager: options.adminManager,
-    config: options.config,
-  });
+  const api = new AuthApi(options);
 
   return api;
 };

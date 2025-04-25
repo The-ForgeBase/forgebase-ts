@@ -9,6 +9,7 @@ import {
   ResponseHandler,
   CorsOptions,
   cors,
+  json,
 } from 'itty-router';
 import { WebAuthConfig } from '..';
 import {
@@ -20,7 +21,11 @@ import {
 } from '../uils';
 import { verifyEndpoints } from './auth/verify';
 import { passwordEndpoints } from './auth/password';
-import { authGuard, attachNewToken } from './auth/middleware';
+import {
+  authGuard,
+  attachNewToken,
+  userContextMiddleware,
+} from './auth/middleware';
 import { AuthRequest } from './auth/types';
 import { InternalAdminManager } from '../../../admin/internal-admin-manager';
 import { rpltEndpoints } from './auth/rplt';
@@ -53,6 +58,7 @@ export class AuthApi<TUser extends BaseUser> {
       before: [
         options.cors?.enabled ? preflight : undefined,
         ...options.beforeMiddlewares,
+        userContextMiddleware.bind(this, this.authManager),
       ],
       finally: [
         options.cors?.enabled ? corsify : undefined,
@@ -92,10 +98,7 @@ export class AuthApi<TUser extends BaseUser> {
 
         return res;
       } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return error(400, e.message);
       }
     });
 
@@ -109,25 +112,21 @@ export class AuthApi<TUser extends BaseUser> {
         }
 
         if (!result.user && provider === 'passwordless') {
-          return new Response(
-            JSON.stringify({
+          return json(
+            {
               success: true,
               message:
                 'Passwordless login initiated, check your email or sms or whatsapp for verification code',
               exp: '15m',
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            }
+            },
+            { status: 200 }
           );
         }
 
-        const res = new Response(
-          JSON.stringify({ user: result.user, token: result.token }),
+        const res = json(
+          { user: result.user, token: result.token },
           {
             status: 201,
-            headers: { 'Content-Type': 'application/json' },
           }
         );
 
@@ -137,10 +136,7 @@ export class AuthApi<TUser extends BaseUser> {
 
         return res;
       } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return error(400, e.message);
       }
     });
 
@@ -180,10 +176,7 @@ export class AuthApi<TUser extends BaseUser> {
 
         return res;
       } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return error(400, e.message);
       }
     });
 
@@ -230,11 +223,8 @@ export class AuthApi<TUser extends BaseUser> {
         setAuthCookies(res, token, this.config);
 
         return res;
-      } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      } catch (e) {
+        return error(400, e.message);
       }
     });
 
@@ -264,10 +254,7 @@ export class AuthApi<TUser extends BaseUser> {
         }
         return res;
       } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return error(400, e.message);
       }
     });
 
@@ -275,18 +262,17 @@ export class AuthApi<TUser extends BaseUser> {
       '/refresh-token',
       async (req) => authGuard(req, this.authManager),
       async (req) => {
-        const refreshToken = extractRefreshTokenFromRequest(req);
-        if (!refreshToken) {
-          return new Response(
-            JSON.stringify({ error: 'Refresh token not found' }),
-            {
-              status: 403,
-              headers: { 'Content-Type': 'application/json' },
-            }
-          );
-        }
-
         try {
+          const refreshToken = extractRefreshTokenFromRequest(req);
+          if (!refreshToken) {
+            return new Response(
+              JSON.stringify({ error: 'Refresh token not found' }),
+              {
+                status: 403,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            );
+          }
           const token = await this.authManager.refreshToken(refreshToken);
           const res = new Response(JSON.stringify({ token }), {
             status: 200,
@@ -295,10 +281,7 @@ export class AuthApi<TUser extends BaseUser> {
           setAuthCookies(res, token, this.config);
           return res;
         } catch (e) {
-          return new Response(JSON.stringify({ error: e.message }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return error(400, e.message);
         }
       }
     );

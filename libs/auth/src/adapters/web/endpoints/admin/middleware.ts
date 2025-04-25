@@ -1,3 +1,4 @@
+import { error } from 'itty-router';
 import {
   AdminFeatureDisabledError,
   InternalAdminManager,
@@ -57,15 +58,7 @@ export const adminGuard = async (
       cookieName: 'admin_token',
     });
     if (!route.includes('/admin/login') || (!req.isPublic && !token)) {
-      return new Response(
-        JSON.stringify({
-          status: false,
-          message: 'No admin authentication provided',
-        }),
-        {
-          status: 401,
-        }
-      );
+      return error(401, 'Unauthorized');
     }
 
     const requiredScopes = req.scopes;
@@ -85,15 +78,7 @@ export const adminGuard = async (
         );
 
         if (!hasAllScopes) {
-          return new Response(
-            JSON.stringify({
-              error: 'API key does not have the required scopes',
-            }),
-            {
-              status: 401,
-              headers: { 'Content-Type': 'application/json' },
-            }
-          );
+          return error(401, 'API key does not have the required scopes');
         }
       }
 
@@ -101,20 +86,11 @@ export const adminGuard = async (
       req.isApiKeyAuth = true;
       req.adminApiKeyScopes = scopes;
     }
-  } catch (error) {
-    if (error instanceof AdminFeatureDisabledError) {
-      return new Response(
-        JSON.stringify({ error: 'Admin feature is disabled' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+  } catch (e) {
+    if (e instanceof AdminFeatureDisabledError) {
+      return error(400, 'Admin feature is disabled');
     }
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return error(400, e.message);
   }
 };
 
