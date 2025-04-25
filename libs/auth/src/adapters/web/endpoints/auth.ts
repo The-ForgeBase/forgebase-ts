@@ -1,6 +1,15 @@
 import { BaseUser } from '../../../types';
 import { DynamicAuthManager } from '../../../authManager';
-import { AutoRouter, error, AutoRouterType, RouteEntry } from 'itty-router';
+import {
+  AutoRouter,
+  error,
+  AutoRouterType,
+  RouteEntry,
+  RequestHandler,
+  ResponseHandler,
+  CorsOptions,
+  cors,
+} from 'itty-router';
 import { WebAuthConfig } from '..';
 import {
   extractRefreshTokenFromRequest,
@@ -11,7 +20,7 @@ import {
 } from '../uils';
 import { verifyEndpoints } from './auth/verify';
 import { passwordEndpoints } from './auth/password';
-import { authGuard } from './auth/middleware';
+import { authGuard, attachNewToken } from './auth/middleware';
 import { AuthRequest } from './auth/types';
 import { InternalAdminManager } from '../../../admin/internal-admin-manager';
 import { rpltEndpoints } from './auth/rplt';
@@ -27,12 +36,29 @@ export class AuthApi<TUser extends BaseUser> {
     authManager: DynamicAuthManager<TUser>;
     adminManager: InternalAdminManager;
     config: WebAuthConfig;
+    beforeMiddlewares?: RequestHandler[];
+    finallyMiddlewares?: ResponseHandler[];
+    cors?: {
+      enabled: boolean;
+      corsOptions?: CorsOptions;
+    };
   }) {
+    const { preflight, corsify } = cors(options.cors.corsOptions);
+
     this.authManager = options.authManager;
     this.adminManager = options.adminManager;
     this.config = options.config;
     this.router = AutoRouter<AuthRequest>({
       base: options.config.basePath || '/auth',
+      before: [
+        options.cors?.enabled ? preflight : undefined,
+        ...options.beforeMiddlewares,
+      ],
+      finally: [
+        options.cors?.enabled ? corsify : undefined,
+        ...options.finallyMiddlewares,
+        attachNewToken.bind(this, this.config),
+      ],
     });
     this.setupRoutes();
 
