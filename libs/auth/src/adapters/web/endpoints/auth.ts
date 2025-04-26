@@ -326,7 +326,6 @@ export class AuthApi {
 
   async getSession(req: AuthRequest): Promise<SessionData | null> {
     try {
-      // Use the shared utility function to process tokens
       return await processAuthTokens(
         req,
         this.authManager,
@@ -340,7 +339,6 @@ export class AuthApi {
   }
 
   setSession(req: AuthRequest, session: SessionData) {
-    // Use the shared utility function to apply session data to the request
     applySessionToRequest(req, session);
     return req;
   }

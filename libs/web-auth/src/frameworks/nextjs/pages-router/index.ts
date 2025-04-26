@@ -9,7 +9,7 @@ import { STORAGE_KEYS } from '../../../storage';
  * @param accessToken The access token
  * @returns The current user or null if not authenticated
  */
-export async function fetchUserFromServer(
+export async function fetchPageRouterUserFromServer(
   apiUrl: string,
   accessToken?: string
 ): Promise<User | null> {
@@ -145,7 +145,7 @@ export function withAuth<
     // Fetch user from server if requested and authenticated
     if (options.fetchUser && isAuthenticated) {
       try {
-        const user = await fetchUserFromServer(
+        const user = await fetchPageRouterUserFromServer(
           options.authConfig.apiUrl,
           accessToken
         );

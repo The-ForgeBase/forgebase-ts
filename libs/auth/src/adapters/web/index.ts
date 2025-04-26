@@ -276,5 +276,42 @@ export const webAuthApi = (options: {
   return api;
 };
 
+export const initializeAuthClient = (options: AuthClientConfig) => {
+  // Start the initialization process
+  const authClientPromise = createWebAuthClient(options).catch((err) => {
+    console.error('Error initializing auth client:', err);
+    throw err;
+  });
+
+  // This will be set when initialization completes
+  let authClient: Awaited<ReturnType<typeof createWebAuthClient>> | null = null;
+
+  // Cache the client when the promise resolves
+  authClientPromise.then((client) => {
+    authClient = client;
+    return client;
+  });
+
+  return {
+    // Get the client when needed - returns the cached instance or waits for initialization
+    getClient: async () => {
+      if (authClient) return authClient;
+      return await authClientPromise;
+    },
+
+    // Check if the client is ready
+    isReady: () => authClient !== null,
+
+    // Get specific parts of the client (will wait for initialization if needed)
+    getAuthManager: async () => (await authClientPromise).authManager,
+    getAdminManager: async () => (await authClientPromise).adminManager,
+    getSessionManager: async () => (await authClientPromise).sessionManager,
+    getUserService: async () => (await authClientPromise).userService,
+    getConfigStore: async () => (await authClientPromise).configStore,
+    getProviders: async () => (await authClientPromise).providers,
+    getConfig: async () => (await authClientPromise).config,
+  };
+};
+
 export * from './endpoints';
 export * from './utils/auth-utils';

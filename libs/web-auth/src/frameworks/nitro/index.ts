@@ -7,7 +7,7 @@ import { STORAGE_KEYS } from '../../storage';
  * Auth state from server-side for Nitro
  */
 export interface NitroAuthState {
-  user: User | null;
+  // user: User | null;
   accessToken?: string;
   refreshToken?: string;
 }
@@ -49,19 +49,19 @@ export function getNitroAuthState(event: H3Event): NitroAuthState {
   const cookies = parseCookies(event);
   const accessToken = cookies[STORAGE_KEYS.ACCESS_TOKEN];
   const refreshToken = cookies[STORAGE_KEYS.REFRESH_TOKEN];
-  let user: User | null = null;
+  // let user: User | null = null;
 
-  try {
-    const userJson = cookies[STORAGE_KEYS.USER];
-    if (userJson) {
-      user = JSON.parse(userJson);
-    }
-  } catch (error) {
-    console.error('Failed to parse user from cookie:', error);
-  }
+  // try {
+  //   const userJson = cookies[STORAGE_KEYS.USER];
+  //   if (userJson) {
+  //     user = JSON.parse(userJson);
+  //   }
+  // } catch (error) {
+  //   console.error('Failed to parse user from cookie:', error);
+  // }
 
   return {
-    user,
+    // user,
     accessToken,
     refreshToken,
   };
@@ -78,9 +78,10 @@ export function isNitroAuthenticated(event: H3Event): boolean {
 /**
  * Get the current user in Nitro
  */
+//TODO: fetch user from server
 export function getNitroUser(event: H3Event): User | null {
-  const { user } = getNitroAuthState(event);
-  return user;
+  // const { user } = getNitroAuthState(event);
+  return null;
 }
 
 /**

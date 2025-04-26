@@ -9,10 +9,10 @@ import {
 } from '@forgebase-ts/api/core/web';
 import knex from 'knex';
 import { AuthTables } from '@forgebase-ts/auth/config';
-import { SSEManager, UserContext } from '@forgebase-ts/database';
+import { SSEManager } from '@forgebase-ts/database';
 import {
   AuthApi,
-  createWebAuthClient,
+  initializeAuthClient,
   webAuthApi,
 } from '@forgebase-ts/auth/adapters/web';
 import { User } from '@forgebase-ts/auth/types';
@@ -43,11 +43,7 @@ const db = knex({
   },
 });
 
-let auth: AuthApi;
-
-let webHandler: IttyWebHandler;
-
-createWebAuthClient({
+const authClientManager = initializeAuthClient({
   admin: {
     enabled: true,
   },
@@ -98,65 +94,90 @@ createWebAuthClient({
     enabled: true,
   },
   useJWKS: true,
-})
-  .then((client) => {
-    auth = webAuthApi({
-      authManager: client.authManager,
-      adminManager: client.adminManager,
-      config: client.config,
-      cors: {
-        enabled: true,
-        corsOptions: {
-          origin: '*',
-          credentials: true,
-        },
+});
+
+let authApiManager: AuthApi | null = null;
+let webHandlerManager: IttyWebHandler | null = null;
+
+async function authClient() {
+  if (authApiManager) {
+    return authApiManager;
+  }
+
+  const client = await authClientManager.getClient();
+
+  const auth = webAuthApi({
+    authManager: client.authManager,
+    adminManager: client.adminManager,
+    config: client.config,
+    cors: {
+      enabled: true,
+      corsOptions: {
+        origin: '*',
+        credentials: true,
       },
-    });
-    webHandler = createIttyHandler({
-      config: {
-        enableSchemaEndpoints: true,
-        enableDataEndpoints: true,
-        enablePermissionEndpoints: true,
-        corsOptions: {
-          origin: '*',
-          credentials: true,
-        },
-        useFgAuth: {
-          enabled: true,
-          authManager: client.authManager,
-          adminManager: client.adminManager,
-          config: client.config, // Replace with your auth config
-        },
-      },
-      fgConfig: {
-        prefix: '/api',
-        services: {
-          db: {
-            provider: 'sqlite',
-            config: {
-              db,
-              excludedTables: [...AuthTables],
-              enforceRls: true,
-              realtime: true,
-              initializePermissions: true,
-              onPermissionInitComplete(report) {
-                console.log(report);
-              },
-            },
-          },
-          storage: {
-            provider: 'local',
-            config: {},
-          },
-        },
-      },
-    });
-  })
-  .catch((err) => {
-    console.error('Error initializing auth client:', err);
+    },
   });
 
+  authApiManager = auth;
+
+  return auth;
+}
+
+async function webHandlerClient() {
+  if (webHandlerManager) {
+    return webHandlerManager;
+  }
+  const client = await authClientManager.getClient();
+
+  const webHandler = createIttyHandler({
+    config: {
+      enableSchemaEndpoints: true,
+      enableDataEndpoints: true,
+      enablePermissionEndpoints: true,
+      corsOptions: {
+        origin: '*',
+        credentials: true,
+      },
+      useFgAuth: {
+        enabled: true,
+        authManager: client.authManager,
+        adminManager: client.adminManager,
+        config: client.config,
+      },
+    },
+    fgConfig: {
+      prefix: '/api',
+      services: {
+        db: {
+          provider: 'sqlite',
+          config: {
+            db,
+            excludedTables: [...AuthTables],
+            enforceRls: true,
+            realtime: true,
+            initializePermissions: true,
+            onPermissionInitComplete(report) {
+              console.log(report);
+            },
+          },
+        },
+        storage: {
+          provider: 'local',
+          config: {},
+        },
+      },
+    },
+  });
+
+  webHandlerManager = webHandler;
+
+  return webHandler;
+}
+
 app.use('/api/*', async (c, next) => {
+  const auth = await authClient();
+
   const session = await auth.getSession(c.req.raw as any);
 
   const { user, userContext, isAdmin, isSystem } = session;
@@ -172,6 +193,7 @@ app.use('/api/*', async (c, next) => {
 });
 
 app.all('/auth/*', async (ctx) => {
+  const auth = await authClient();
   if (!auth) {
     return ctx.text('Auth client not initialized', 500);
   }
@@ -184,6 +206,7 @@ app.get('/', (c) => {
 });
 
 app.get('/api/sse', async (c) => {
+  const webHandler = await webHandlerClient();
   const userContext = c.get('userContext');
   const realtimeAdapter = webHandler
     .getDatabaseService()
@@ -196,6 +219,7 @@ app.get('/api/sse', async (c) => {
 });
 
 app.post('/api/sse', async (c) => {
+  const webHandler = await webHandlerClient();
   const userContext = c.get('userContext');
   const realtimeAdapter = webHandler
     .getDatabaseService()
@@ -208,6 +232,7 @@ app.post('/api/sse', async (c) => {
 });
 
 app.all('/api/*', async (ctx) => {
+  const webHandler = await webHandlerClient();
   return webHandler.handleRequest(ctx.req.raw as any);
 });
 
@@ -218,6 +243,9 @@ showRoutes(app, {
 
 const port = 3000;
 console.log(`Server is running on http://localhost:${port}`);
+
+webHandlerClient();
+authClient();
 
 serve({
   fetch: app.fetch,

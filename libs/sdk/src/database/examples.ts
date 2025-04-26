@@ -31,7 +31,7 @@ interface Product {
 }
 
 // Initialize SDK
-const db = new DatabaseSDK('http://localhost:3000');
+const db = new DatabaseSDK({ baseUrl: 'http://localhost:3000' });
 
 // Helper function to run examples
 async function runExample(name: string, fn: () => Promise<any>) {
