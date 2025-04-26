@@ -26,14 +26,16 @@ import {
   WebAuthConfig,
 } from '@forgebase-ts/auth/adapters/web';
 import { DynamicAuthManager } from '@forgebase-ts/auth/authManager';
+import { InternalAdminManager } from '@forgebase-ts/auth/admin';
 
 export type IttyWebRequest = {
   userContext?: UserContext;
+  isAdmin?: boolean;
   isSystem?: boolean; // Add isSystem flag to request context
 } & IRequest &
   Record<string, any>;
 
-class IttyWebHandler {
+export class IttyWebHandler {
   private router: AutoRouterType<IttyWebRequest>;
   private enableSchemaEndpoints = true;
   private enableDataEndpoints = true;
@@ -61,7 +63,8 @@ class IttyWebHandler {
       authMiddleware?: (req: IttyWebRequest) => Promise<Response | undefined>;
       useFgAuth?: {
         enabled: boolean;
-        authManager: DynamicAuthManager<any>;
+        authManager: DynamicAuthManager;
+        adminManager: InternalAdminManager;
         config: WebAuthConfig;
       };
       beforeMiddlewares?: RequestHandler[];
@@ -83,7 +86,12 @@ class IttyWebHandler {
 
     if (config.useFgAuth?.enabled) {
       authMiddleware = async (req: IttyWebRequest) =>
-        userContextMiddleware(req as any, config.useFgAuth.authManager);
+        userContextMiddleware(
+          req as any,
+          config.useFgAuth.authManager,
+          config.useFgAuth.config,
+          config.useFgAuth.adminManager
+        );
     }
 
     this.config = {
@@ -557,6 +565,19 @@ class IttyWebHandler {
   async handleRequest(req: IttyWebRequest): Promise<Response> {
     return this.router.fetch(req);
   }
+
+  setSession(
+    req: IttyWebRequest,
+    session: {
+      userContext: UserContext;
+      isSystem?: boolean;
+    }
+  ) {
+    req.userContext = session.userContext;
+    req.isSystem = session.isSystem;
+
+    return req;
+  }
 }
 
 export function createIttyHandler(options: {
@@ -568,7 +589,8 @@ export function createIttyHandler(options: {
     authMiddleware?: (req: IttyWebRequest) => Promise<Response | undefined>;
     useFgAuth?: {
       enabled: boolean;
-      authManager: DynamicAuthManager<any>;
+      authManager: DynamicAuthManager;
+      adminManager: InternalAdminManager;
       config: WebAuthConfig;
     };
     beforeMiddlewares?: RequestHandler[];

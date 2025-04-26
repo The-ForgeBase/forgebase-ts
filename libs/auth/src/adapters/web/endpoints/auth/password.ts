@@ -4,9 +4,9 @@ import { DynamicAuthManager } from '../../../../authManager';
 import { authGuard } from './middleware';
 import { AuthRequest } from './types';
 
-export function passwordEndpoints<TUser extends BaseUser>(
+export function passwordEndpoints(
   router: RouterType<AuthRequest>,
-  authManager: DynamicAuthManager<TUser>
+  authManager: DynamicAuthManager
 ) {
   router.post('/forgot-password', async ({ json }) => {
     try {

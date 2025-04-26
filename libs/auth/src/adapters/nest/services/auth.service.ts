@@ -9,11 +9,11 @@ import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { JoseJwtSessionManager } from '../../../session/jose-jwt';
 
 @Injectable()
-export class AuthService<TUser extends User> {
+export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager<TUser>,
+    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager,
     @Inject('JOSE_JWT_MANAGER')
     @Optional()
     private joseJwtManager: JoseJwtSessionManager
@@ -30,10 +30,10 @@ export class AuthService<TUser extends User> {
 
   async register(
     provider: string,
-    credentials: Partial<TUser>,
+    credentials: Partial<User>,
     password: string
   ): Promise<{
-    user?: TUser;
+    user?: User;
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
@@ -44,7 +44,7 @@ export class AuthService<TUser extends User> {
     provider: string,
     credentials: Record<string, string>
   ): Promise<{
-    user?: TUser;
+    user?: User;
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
@@ -52,7 +52,7 @@ export class AuthService<TUser extends User> {
   }
 
   async passwordlessLogin(code: string): Promise<{
-    user: TUser;
+    user: User;
     token: AuthToken | string | AuthRequiredType;
   }> {
     const user = await this.authManager.validateToken(code, 'passwordless');
@@ -62,7 +62,7 @@ export class AuthService<TUser extends User> {
     }
 
     return user as {
-      user: TUser;
+      user: User;
       token: AuthToken | string | AuthRequiredType;
     };
   }
@@ -72,7 +72,7 @@ export class AuthService<TUser extends User> {
     code: string,
     state: string
   ): Promise<{
-    user?: TUser;
+    user?: User;
     token: AuthToken | string | AuthRequiredType;
   }> {
     return this.authManager.oauthCallback(provider, { code, state });
@@ -184,11 +184,11 @@ export class AuthService<TUser extends User> {
   async validateToken(
     token: string,
     provider: string
-  ): Promise<{ user: TUser; token?: string | AuthToken }> {
+  ): Promise<{ user: User; token?: string | AuthToken }> {
     return this.authManager.validateToken(token, provider);
   }
 
-  async validateSessionToken(token: string): Promise<TUser> {
+  async validateSessionToken(token: string): Promise<User> {
     return this.authManager.validateSessionToken(token);
   }
 

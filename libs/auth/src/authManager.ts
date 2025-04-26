@@ -34,23 +34,23 @@ import crypto from 'crypto';
 import { PluginRegistry } from './plugins/registry';
 import { AuthPlugin } from './plugins/types';
 
-export class DynamicAuthManager<TUser extends User> {
+export class DynamicAuthManager {
   private config: AuthConfig;
   private mfa?: MfaService;
   private rateLimiter?: RateLimiter;
-  private pluginRegistry: PluginRegistry<TUser>;
+  private pluginRegistry: PluginRegistry;
 
   constructor(
     private configStore: ConfigStore,
-    private providers: Record<string, AuthProvider<TUser>>,
+    private providers: Record<string, AuthProvider>,
     private sessionManager: SessionManager,
-    private userService: KnexUserService<TUser>,
+    private userService: KnexUserService,
     private refreshInterval = 5000,
     private enableConfigIntervalCheck = false,
-    private internalConfig: AuthInternalConfig<TUser>,
-    private emailVerificationService?: EmailVerificationService<TUser>,
-    private smsVerificationService?: SmsVerificationService<TUser>,
-    plugins: AuthPlugin<TUser>[] = []
+    private internalConfig: AuthInternalConfig,
+    private emailVerificationService?: EmailVerificationService,
+    private smsVerificationService?: SmsVerificationService,
+    plugins: AuthPlugin[] = []
   ) {
     this.watchConfig();
 
@@ -77,8 +77,8 @@ export class DynamicAuthManager<TUser extends User> {
     }
   }
 
-  private async initializePlugins(plugins: AuthPlugin<TUser>[]) {
-    this.pluginRegistry = new PluginRegistry<TUser>();
+  private async initializePlugins(plugins: AuthPlugin[]) {
+    this.pluginRegistry = new PluginRegistry();
     for (const plugin of plugins) {
       await this.pluginRegistry.register(plugin);
       await plugin.initialize(this);
@@ -102,7 +102,7 @@ export class DynamicAuthManager<TUser extends User> {
     }
   }
 
-  async registerPlugin(plugin: AuthPlugin<TUser>): Promise<void> {
+  async registerPlugin(plugin: AuthPlugin): Promise<void> {
     await this.pluginRegistry.register(plugin);
     await plugin.initialize(this);
 
@@ -111,16 +111,16 @@ export class DynamicAuthManager<TUser extends User> {
     this.providers = { ...this.providers, ...pluginProviders };
   }
 
-  getPlugins(): AuthPlugin<TUser>[] {
+  getPlugins(): AuthPlugin[] {
     return this.pluginRegistry.getAllPlugins();
   }
 
   async register(
     provider: string,
-    credentials: Partial<TUser>,
+    credentials: Partial<User>,
     password: string
   ): Promise<{
-    user?: TUser;
+    user?: User;
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
     verificationToken?: string;
@@ -222,7 +222,7 @@ export class DynamicAuthManager<TUser extends User> {
     provider: string,
     { code, state }: { code: string; state: string }
   ): Promise<{
-    user?: TUser;
+    user?: User;
     token: AuthToken | string | AuthRequiredType;
   }> {
     if (!this.config.enabledProviders.includes(provider)) {
@@ -268,7 +268,7 @@ export class DynamicAuthManager<TUser extends User> {
     provider: string,
     credentials: Record<string, string>
   ): Promise<{
-    user?: TUser;
+    user?: User;
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
@@ -349,18 +349,18 @@ export class DynamicAuthManager<TUser extends User> {
     return this.sessionManager.refreshSession(refreshToken);
   }
 
-  async createToken(user: TUser): Promise<AuthToken | string> {
+  async createToken(user: User): Promise<AuthToken | string> {
     return this.sessionManager.createSession(user);
   }
 
-  async validateSessionToken(token: string): Promise<TUser> {
-    return this.sessionManager.validateToken(token) as Promise<TUser>;
+  async validateSessionToken(token: string): Promise<User> {
+    return this.sessionManager.validateToken(token) as Promise<User>;
   }
 
   async validateToken(
     token: string,
     provider: string
-  ): Promise<{ user: TUser; token?: string | AuthToken }> {
+  ): Promise<{ user: User; token?: string | AuthToken }> {
     if (provider === 'passwordless') {
       const authProvider = this.providers[provider];
 
@@ -380,7 +380,7 @@ export class DynamicAuthManager<TUser extends User> {
     const result = await this.sessionManager.verifySession(token);
     // Sanitize user data before returning
     return {
-      user: sanitizeUser(result.user) as TUser,
+      user: sanitizeUser(result.user) as User,
       token: result.token,
     };
   }
@@ -392,7 +392,7 @@ export class DynamicAuthManager<TUser extends User> {
   async verifyEmail(
     userId: string,
     verificationCode: string
-  ): Promise<{ user: TUser; token: AuthToken | string }> {
+  ): Promise<{ user: User; token: AuthToken | string }> {
     // Sanitize inputs
     userId = userId.trim();
     verificationCode = verificationCode.trim();

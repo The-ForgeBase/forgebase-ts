@@ -38,10 +38,7 @@ export async function setupPlunkVerificationService(knex: Knex) {
   };
 
   // Create the service
-  const verificationService = new PlunkEmailVerificationService<AppUser>(
-    knex,
-    config
-  );
+  const verificationService = new PlunkEmailVerificationService(knex, config);
 
   // Example user
   const user: AppUser = {
@@ -150,5 +147,5 @@ export async function setupWithCustomTemplates(knex: Knex) {
     },
   };
 
-  return new PlunkEmailVerificationService<AppUser>(knex, config);
+  return new PlunkEmailVerificationService(knex, config);
 }

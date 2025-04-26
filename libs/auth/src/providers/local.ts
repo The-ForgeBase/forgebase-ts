@@ -8,11 +8,9 @@ import {
 } from '../types';
 import { KnexUserService } from '../userService';
 
-export class LocalAuthProvider<TUser extends User>
-  implements AuthProvider<TUser>
-{
+export class LocalAuthProvider implements AuthProvider {
   constructor(
-    private userService: KnexUserService<TUser>,
+    private userService: KnexUserService,
     private config: AuthConfig // private hashCompare?: (plain: string, hash: string) => Promise<boolean>
   ) {}
 
@@ -29,7 +27,7 @@ export class LocalAuthProvider<TUser extends User>
     return user;
   }
 
-  async register(user: Partial<TUser>, password: string): Promise<TUser> {
+  async register(user: Partial<User>, password: string): Promise<User> {
     if (password.length < this.config.passwordPolicy.minLength) {
       throw new Error('Password too short');
     }

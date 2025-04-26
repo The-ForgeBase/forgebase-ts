@@ -8,12 +8,14 @@ import {
   UserContext,
 } from '@forgebase-ts/database';
 import { HTTPException } from 'hono/http-exception';
+import { SessionData } from '@forgebase-ts/auth/adapters/web';
 
 // Define the environment variables for our Hono app
 export type FgAPiVariables = {
-  userContext?: UserContext;
+  userContext: UserContext | null;
   isAdmin: boolean;
   isSystem: boolean;
+  session: SessionData | null;
 };
 
 export class ForgeApiHandler {

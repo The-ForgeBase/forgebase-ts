@@ -1,26 +1,26 @@
 import { AuthPlugin } from './types';
-import { AuthProvider, User } from '../types';
+import { AuthProvider } from '../types';
 
-export class PluginRegistry<TUser extends User = User> {
-  private plugins: Map<string, AuthPlugin<TUser>> = new Map();
+export class PluginRegistry {
+  private plugins: Map<string, AuthPlugin> = new Map();
 
-  async register(plugin: AuthPlugin<TUser>): Promise<void> {
+  async register(plugin: AuthPlugin): Promise<void> {
     if (this.plugins.has(plugin.name)) {
       throw new Error(`Plugin with name ${plugin.name} is already registered`);
     }
     this.plugins.set(plugin.name, plugin);
   }
 
-  getPlugin(name: string): AuthPlugin<TUser> | undefined {
+  getPlugin(name: string): AuthPlugin | undefined {
     return this.plugins.get(name);
   }
 
-  getAllPlugins(): AuthPlugin<TUser>[] {
+  getAllPlugins(): AuthPlugin[] {
     return Array.from(this.plugins.values());
   }
 
-  getAllProviders(): Record<string, AuthProvider<TUser>> {
-    const providers: Record<string, AuthProvider<TUser>> = {};
+  getAllProviders(): Record<string, AuthProvider> {
+    const providers: Record<string, AuthProvider> = {};
 
     for (const plugin of this.plugins.values()) {
       const pluginProviders = plugin.getProviders();

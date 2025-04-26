@@ -7,11 +7,11 @@ import { VoiceAuthService } from './voice-auth-service';
 /**
  * Plugin for voice recognition authentication
  */
-export class VoiceAuthPlugin<TUser extends User> implements AuthPlugin<TUser> {
+export class VoiceAuthPlugin implements AuthPlugin {
   name = 'voice-auth';
   version = '1.0.0';
   private voiceAuthService: VoiceAuthService;
-  private provider: VoiceAuthProvider<TUser>;
+  private provider: VoiceAuthProvider;
 
   constructor(options: {
     // Voice authentication configuration
@@ -21,21 +21,21 @@ export class VoiceAuthPlugin<TUser extends User> implements AuthPlugin<TUser> {
       saveVoiceprint: (userId: string, voiceprint: Buffer) => Promise<void>;
       getVoiceprint: (userId: string) => Promise<Buffer | null>;
     };
-    userLookup: (identifier: string) => Promise<TUser | null>;
+    userLookup: (identifier: string) => Promise<User | null>;
   }) {
     this.voiceAuthService = new VoiceAuthService(options);
-    this.provider = new VoiceAuthProvider<TUser>(
+    this.provider = new VoiceAuthProvider(
       this.voiceAuthService,
       options.userLookup
     );
   }
 
-  async initialize(authManager: DynamicAuthManager<TUser>): Promise<void> {
+  async initialize(authManager: DynamicAuthManager): Promise<void> {
     console.log('Voice Recognition Authentication plugin initialized');
     // Any initialization logic - perhaps set up database tables or connections
   }
 
-  getProviders(): Record<string, AuthProvider<TUser>> {
+  getProviders(): Record<string, AuthProvider> {
     return {
       voice: this.provider,
     };

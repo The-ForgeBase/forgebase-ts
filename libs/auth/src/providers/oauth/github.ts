@@ -15,9 +15,7 @@ export interface GitHubUserAttributes {
   avatar_url: string;
 }
 
-export class GitHubOAuthProvider<
-  TUser extends User
-> extends BaseOAuthProvider<TUser> {
+export class GitHubOAuthProvider extends BaseOAuthProvider {
   clientID: string;
   clientSecret: string;
   callbackURL: string;
@@ -27,7 +25,7 @@ export class GitHubOAuthProvider<
     clientSecret?: string;
     callbackURL: string;
     scopes?: string[];
-    userService: UserService<TUser>;
+    userService: UserService;
     knex: Knex;
     name: string;
   }) {

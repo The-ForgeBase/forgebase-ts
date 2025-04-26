@@ -65,26 +65,26 @@ export const AuthConfigSchema = z.object({
 
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;
 
-export interface AuthInternalConfig<TUser extends User> {
+export interface AuthInternalConfig {
   knex: Knex;
   mfaService?: MfaService;
   rateLimiter?: RateLimiter;
-  emailVerificationService?: EmailVerificationService<TUser>;
-  smsVerificationService?: SmsVerificationService<TUser>;
+  emailVerificationService?: EmailVerificationService;
+  smsVerificationService?: SmsVerificationService;
 }
 
 export interface JwksResponse {
   keys: Array<Record<string, any>>;
 }
 
-export interface UserService<TUser extends User> {
-  findUser(identifier: string): Promise<TUser | null>;
-  createUser(user: Partial<TUser>, password?: string): Promise<TUser>;
-  updateUser(userId: string, user: Partial<TUser>): Promise<TUser>;
+export interface UserService {
+  findUser(identifier: string): Promise<User | null>;
+  createUser(user: Partial<User>, password?: string): Promise<User>;
+  updateUser(userId: string, user: Partial<User>): Promise<User>;
   deleteUser(userId: string): Promise<void>;
-  findUserById(userId: string): Promise<TUser | null>;
-  findUserByEmail(email: string): Promise<TUser | null>;
-  findUserByPhone(phone: string): Promise<TUser | null>;
+  findUserById(userId: string): Promise<User | null>;
+  findUserByEmail(email: string): Promise<User | null>;
+  findUserByPhone(phone: string): Promise<User | null>;
   getConfig(): AuthConfig;
   setRole(userId: string, role: string): Promise<void>;
   removeRTP(
@@ -104,7 +104,7 @@ export interface UserService<TUser extends User> {
   ): Promise<string[]>;
 }
 
-export interface EmailVerificationService<TUser extends User> {
+export interface EmailVerificationService {
   /**
    * Send a verification email to the user
    * @param email The recipient's email address
@@ -114,7 +114,7 @@ export interface EmailVerificationService<TUser extends User> {
    */
   sendVerificationEmail(
     email: string,
-    user: TUser,
+    user: User,
     customVerificationUrlBase?: string
   ): Promise<string | void>;
 
@@ -125,7 +125,7 @@ export interface EmailVerificationService<TUser extends User> {
    * @param user The user object
    * @returns Whether the verification was successful
    */
-  verifyEmail(email: string, token: string, user: TUser): Promise<boolean>;
+  verifyEmail(email: string, token: string, user: User): Promise<boolean>;
 
   /**
    * Send a password reset email to the user
@@ -137,7 +137,7 @@ export interface EmailVerificationService<TUser extends User> {
    */
   sendPasswordResetEmail(
     email: string,
-    user: TUser,
+    user: User,
     resetUrl?: string,
     customResetUrlBase?: string
   ): Promise<string>;
@@ -159,9 +159,9 @@ export interface EmailVerificationService<TUser extends User> {
   consumePasswordResetToken(token: string, userId: string): Promise<boolean>;
 }
 
-export interface SmsVerificationService<TUser extends User> {
-  sendVerificationSms(phone: string, user: TUser): Promise<void>;
-  verifySms?(token: string, phone: string, user: TUser): Promise<boolean>;
+export interface SmsVerificationService {
+  sendVerificationSms(phone: string, user: User): Promise<void>;
+  verifySms?(token: string, phone: string, user: User): Promise<boolean>;
 }
 
 export interface PasswordHasher {
@@ -202,13 +202,16 @@ export interface BaseUser {
   // Add other mandatory fields as needed
 }
 
-// Generic type for custom user fields
-export type User<T extends Record<string, unknown> = {}> = BaseUser & T;
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface UserExtension {}
 
-export interface AuthProvider<TUser extends User = User> {
-  authenticate(credentials: Record<string, string>): Promise<TUser | null>;
-  validate?(token: string): Promise<TUser>;
-  register?(user: Partial<TUser>, password: string): Promise<TUser>;
+// Generic type for custom user fields
+export type User = BaseUser & UserExtension;
+
+export interface AuthProvider {
+  authenticate(credentials: Record<string, string>): Promise<User | null>;
+  validate?(token: string): Promise<User>;
+  register?(user: Partial<User>, password: string): Promise<User>;
   getConfig?(): Promise<Record<string, string>>;
   //   verifyEmail?(token: string): Promise<void>;
   //   sendVerificationEmail?(email: string): Promise<void>;
@@ -353,7 +356,7 @@ export interface RateLimiter {
   ): Promise<{ allowed: boolean; retryAfter?: number }>;
 }
 
-export interface RBACService<TUser extends User> {
+export interface RBACService {
   assignRole(userId: string, role: string): Promise<void>;
   hasPermission(userId: string, permission: string): Promise<boolean>;
 }

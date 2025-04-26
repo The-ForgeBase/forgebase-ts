@@ -3,7 +3,10 @@ import { AdminRequest } from './endpoints/admin/types';
 import { AuthRequest } from './endpoints/auth/types';
 import { WebAuthConfig } from '.';
 
-export function extractTokenFromRequest(req: Request): string | null {
+export function extractTokenFromRequest(
+  req: Request,
+  config: WebAuthConfig
+): string | null {
   if (req.headers.get('Authorization').startsWith('Bearer ')) {
     return req.headers.get('Authorization')?.split(' ')[1];
   }
@@ -11,14 +14,14 @@ export function extractTokenFromRequest(req: Request): string | null {
   if (req.headers.get('Cookie')) {
     const cookies = req.headers.get('Cookie')?.split('; ');
     for (const cookie of cookies || []) {
-      if (cookie.startsWith(`${this.config.cookieName}=`)) {
-        return cookie.substring(`${this.config.cookieName}=`.length);
+      if (cookie.startsWith(`${config.cookieName}=`)) {
+        return cookie.substring(`${config.cookieName}=`.length);
       }
     }
   }
 
-  if (req.headers.get(this.config.cookieName)) {
-    return req.headers.get(this.config.cookieName);
+  if (req.headers.get(config.cookieName)) {
+    return req.headers.get(config.cookieName);
   }
 
   return null;

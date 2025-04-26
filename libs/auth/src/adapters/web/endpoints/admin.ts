@@ -1,19 +1,18 @@
-import { BaseUser } from '../../../types';
 import { AutoRouter, AutoRouterType, RouteEntry } from 'itty-router';
 import { InternalAdminManager } from '../../../admin/internal-admin-manager';
 import { AdminRequest } from './admin/types';
 import { WebAuthConfig } from '..';
 import { DynamicAuthManager } from '../../../authManager';
 
-export class AdminApi<TUser extends BaseUser> {
+export class AdminApi {
   private router: AutoRouterType<AdminRequest>;
-  private authManager: DynamicAuthManager<TUser>;
+  private authManager: DynamicAuthManager;
   private adminManager: InternalAdminManager;
   private config: WebAuthConfig;
   private registeredRoutes: RouteEntry[];
 
   constructor(options: {
-    authManager: DynamicAuthManager<TUser>;
+    authManager: DynamicAuthManager;
     adminManager: InternalAdminManager;
     config: WebAuthConfig;
   }) {

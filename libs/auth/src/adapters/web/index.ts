@@ -1,7 +1,6 @@
 import {
   AuthConfig,
   AuthProvider,
-  BaseUser,
   ConfigStore,
   EmailVerificationService,
   SessionManager,
@@ -45,7 +44,7 @@ export type WebAuthConfig = {
   jwtSecret?: string;
 };
 
-export type AuthClientConfig<TUser extends BaseUser> = {
+export type AuthClientConfig = {
   db: Knex;
   useJWKS?: boolean;
   useJWT?: {
@@ -56,20 +55,20 @@ export type AuthClientConfig<TUser extends BaseUser> = {
   keyOptions?: KeyStorageOptions;
   local?: {
     enabled: boolean;
-    userService?: UserService<TUser>;
+    userService?: UserService;
     configStore?: AuthConfig;
   };
   passwordless?: {
     enabled: boolean;
     sendToken: (email: string, token: string) => Promise<void>;
     tokenStore?: Knex;
-    userService?: KnexUserService<TUser>;
+    userService?: KnexUserService;
   };
-  providers?: Record<string, BaseOAuthProvider<TUser> | AuthProvider<TUser>>;
+  providers?: Record<string, BaseOAuthProvider | AuthProvider>;
   configStore?: ConfigStore;
   sessionManager?: SessionManager;
-  userService?: KnexUserService<TUser>;
-  authManager?: DynamicAuthManager<TUser>;
+  userService?: KnexUserService;
+  authManager?: DynamicAuthManager;
   config: WebAuthConfig;
   admin: {
     enabled: boolean;
@@ -85,7 +84,7 @@ export type AuthClientConfig<TUser extends BaseUser> = {
   };
   email: {
     enabled: boolean;
-    emailVerificationService?: EmailVerificationService<TUser>;
+    emailVerificationService?: EmailVerificationService;
     usePlunk?: {
       enabled: boolean;
       config: PlunkVerificationConfig;
@@ -93,7 +92,7 @@ export type AuthClientConfig<TUser extends BaseUser> = {
   };
   sms: {
     enabled: boolean;
-    smsVerificationService: SmsVerificationService<TUser>;
+    smsVerificationService?: SmsVerificationService;
   };
   authPolicy: {
     emailVerificationRequired?: boolean;
@@ -105,16 +104,17 @@ export type AuthClientConfig<TUser extends BaseUser> = {
   };
 };
 
-export const createWebAuthClient = async <TUser extends BaseUser>(
-  options: AuthClientConfig<TUser>
+export const createWebAuthClient = async (
+  options: AuthClientConfig
 ): Promise<{
-  authManager: DynamicAuthManager<TUser>;
+  authManager: DynamicAuthManager;
   adminManager: InternalAdminManager;
   sessionManager: SessionManager;
-  userService: KnexUserService<TUser>;
+  userService: KnexUserService;
   configStore: ConfigStore;
-  providers: Record<string, BaseOAuthProvider<TUser> | AuthProvider<TUser>>;
+  providers: Record<string, BaseOAuthProvider | AuthProvider>;
   names_of_providers: string[];
+  config: WebAuthConfig;
 }> => {
   await initializeAuthSchema(options.db);
 
@@ -163,16 +163,13 @@ export const createWebAuthClient = async <TUser extends BaseUser>(
 
   const userService =
     options.userService ||
-    new KnexUserService<TUser>(config, {
+    new KnexUserService(config, {
       knex: options.db,
     });
 
   const providers = {
     local: options.local?.enabled
-      ? new LocalAuthProvider<TUser>(
-          userService,
-          options.local?.configStore || config
-        )
+      ? new LocalAuthProvider(userService, options.local?.configStore || config)
       : undefined,
     passwordless: options.passwordless?.enabled
       ? new PasswordlessProvider({
@@ -184,28 +181,27 @@ export const createWebAuthClient = async <TUser extends BaseUser>(
     ...options.providers,
   };
 
-  let emailVerificationService: EmailVerificationService<TUser>;
+  let emailVerificationService: EmailVerificationService;
   if (options.email.enabled) {
     if (options.email.emailVerificationService) {
       emailVerificationService = options.email.emailVerificationService;
     }
     // TODO: Add more email verification services (Sendgrid, Mailgun, etc.)
-    if (options.email.usePlunk) {
-      emailVerificationService = new PlunkEmailVerificationService<TUser>(
-        options.db,
-        {
-          ...options.email.usePlunk.config,
-        }
-      );
+    if (options.email.usePlunk && options.email.usePlunk.enabled) {
+      emailVerificationService = new PlunkEmailVerificationService(options.db, {
+        ...options.email.usePlunk.config,
+      });
     }
   }
 
-  let smsVerificationService: SmsVerificationService<TUser>;
+  let smsVerificationService: SmsVerificationService;
   if (options.sms.enabled) {
-    smsVerificationService = options.sms.smsVerificationService;
+    if (options.sms.smsVerificationService) {
+      smsVerificationService = options.sms.smsVerificationService;
+    }
   }
 
-  const authManager = new DynamicAuthManager<TUser>(
+  const authManager = new DynamicAuthManager(
     configStore,
     providers,
     sessionManager,
@@ -260,23 +256,62 @@ export const createWebAuthClient = async <TUser extends BaseUser>(
     configStore,
     providers,
     names_of_providers,
+    config: options.config,
   };
 };
 
-export const webAuthApi = <TUser extends BaseUser>(options: {
-  authManager: DynamicAuthManager<TUser>;
+export const webAuthApi = (options: {
+  authManager: DynamicAuthManager;
   adminManager: InternalAdminManager;
   config: WebAuthConfig;
   beforeMiddlewares?: RequestHandler[];
   finallyMiddlewares?: ResponseHandler[];
-  cors?: {
+  cors: {
     enabled: boolean;
     corsOptions?: CorsOptions;
   };
-}): AuthApi<TUser> => {
+}): AuthApi => {
   const api = new AuthApi(options);
 
   return api;
 };
 
+export const initializeAuthClient = (options: AuthClientConfig) => {
+  // Start the initialization process
+  const authClientPromise = createWebAuthClient(options).catch((err) => {
+    console.error('Error initializing auth client:', err);
+    throw err;
+  });
+
+  // This will be set when initialization completes
+  let authClient: Awaited<ReturnType<typeof createWebAuthClient>> | null = null;
+
+  // Cache the client when the promise resolves
+  authClientPromise.then((client) => {
+    authClient = client;
+    return client;
+  });
+
+  return {
+    // Get the client when needed - returns the cached instance or waits for initialization
+    getClient: async () => {
+      if (authClient) return authClient;
+      return await authClientPromise;
+    },
+
+    // Check if the client is ready
+    isReady: () => authClient !== null,
+
+    // Get specific parts of the client (will wait for initialization if needed)
+    getAuthManager: async () => (await authClientPromise).authManager,
+    getAdminManager: async () => (await authClientPromise).adminManager,
+    getSessionManager: async () => (await authClientPromise).sessionManager,
+    getUserService: async () => (await authClientPromise).userService,
+    getConfigStore: async () => (await authClientPromise).configStore,
+    getProviders: async () => (await authClientPromise).providers,
+    getConfig: async () => (await authClientPromise).config,
+  };
+};
+
 export * from './endpoints';
+export * from './utils/auth-utils';

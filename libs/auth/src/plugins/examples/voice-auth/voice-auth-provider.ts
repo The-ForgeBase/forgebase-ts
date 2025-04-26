@@ -1,18 +1,16 @@
 import { AuthProvider, User } from '../../../types';
 import { VoiceAuthService } from './voice-auth-service';
 
-export class VoiceAuthProvider<TUser extends User>
-  implements AuthProvider<TUser>
-{
+export class VoiceAuthProvider implements AuthProvider {
   constructor(
     private voiceAuthService: VoiceAuthService,
-    private userLookup: (identifier: string) => Promise<TUser | null>
+    private userLookup: (identifier: string) => Promise<User | null>
   ) {}
 
   async authenticate(credentials: {
     identifier: string; // Email or username
     audioData: string; // Base64 encoded audio data
-  }): Promise<TUser | null> {
+  }): Promise<User | null> {
     try {
       // 1. Find user by identifier
       const user = await this.userLookup(credentials.identifier);
@@ -34,10 +32,7 @@ export class VoiceAuthProvider<TUser extends User>
     }
   }
 
-  async register(
-    partialUser: Partial<TUser>,
-    voiceData: string
-  ): Promise<TUser> {
+  async register(partialUser: Partial<User>, voiceData: string): Promise<User> {
     // 1. Create user account first (typically delegated to another provider)
     // This is just a placeholder - in a real implementation, you would:
     // - Create the user with a base provider first

@@ -1,19 +1,23 @@
 import { Knex } from 'knex';
-import { User } from '../../types';
-import { extendUserTable, UserFieldDefinition } from '../../utils/user-extension';
+import {
+  extendUserTable,
+  UserFieldDefinition,
+} from '../../utils/user-extension';
 
 /**
  * Extended user interface with roles and permissions
  */
-export interface UserWithRolesPermissions extends User {
-  role?: string;
-  permissions?: string[];
-  is_admin?: boolean;
-  access_level?: number;
-  role_assigned_at?: Date;
-  role_expires_at?: Date | null;
-  restricted_access?: boolean;
-  custom_claims?: Record<string, any>;
+declare module '../../types' {
+  interface UserExtension {
+    role?: string;
+    permissions?: string[];
+    is_admin?: boolean;
+    access_level?: number;
+    role_assigned_at?: Date;
+    role_expires_at?: Date | null;
+    restricted_access?: boolean;
+    custom_claims?: Record<string, any>;
+  }
 }
 
 /**
@@ -25,7 +29,7 @@ export const rolesPermissionsFields: UserFieldDefinition[] = [
     type: 'string',
     nullable: true,
     default: 'user',
-    description: 'User\'s primary role',
+    description: "User's primary role",
     validation: {
       maxLength: 50,
     },
@@ -87,7 +91,9 @@ export const rolesPermissionsFields: UserFieldDefinition[] = [
  * @param knex Knex instance
  * @returns Promise that resolves when the operation is complete
  */
-export async function extendUserTableWithRolesPermissions(knex: Knex): Promise<void> {
+export async function extendUserTableWithRolesPermissions(
+  knex: Knex
+): Promise<void> {
   await extendUserTable(knex, {
     fields: rolesPermissionsFields,
     migrateExisting: true,
@@ -152,12 +158,12 @@ export async function rolesPermissionsExample(knex: Knex): Promise<void> {
     'Regular user can read own profile:',
     hasPermission(regularUser[0], 'read:own_profile')
   );
-  
+
   console.log(
     'Regular user can manage users:',
     hasPermission(regularUser[0], 'manage:users')
   );
-  
+
   console.log(
     'Admin user can manage users:',
     hasPermission(adminUser[0], 'manage:users')
@@ -172,7 +178,7 @@ export async function rolesPermissionsExample(knex: Knex): Promise<void> {
     'Regular user can access admin panel:',
     canAccessAdminPanel(regularUser[0])
   );
-  
+
   console.log(
     'Admin user can access admin panel:',
     canAccessAdminPanel(adminUser[0])

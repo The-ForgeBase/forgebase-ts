@@ -1,5 +1,4 @@
 import { Knex } from 'knex';
-import { User } from '../../types';
 import {
   extendUserTable,
   UserFieldDefinition,
@@ -8,24 +7,26 @@ import {
 /**
  * Extended user interface with business fields
  */
-export interface BusinessUser extends User {
-  company_name?: string;
-  job_title?: string;
-  department?: string;
-  employee_id?: string;
-  business_phone?: string;
-  business_email?: string;
-  tax_id?: string;
-  company_size?: string;
-  industry?: string;
-  business_address?: {
-    street: string;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
-  };
-  company_id?: string; // Foreign key to companies table
+declare module '../../types' {
+  interface UserExtension {
+    company_name?: string;
+    job_title?: string;
+    department?: string;
+    employee_id?: string;
+    business_phone?: string;
+    business_email?: string;
+    tax_id?: string;
+    company_size?: string;
+    industry?: string;
+    business_address?: {
+      street: string;
+      city: string;
+      state: string;
+      zip: string;
+      country: string;
+    };
+    company_id?: string;
+  }
 }
 
 /**

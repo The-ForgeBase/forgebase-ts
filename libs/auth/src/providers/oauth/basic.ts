@@ -3,9 +3,7 @@ import { User, AuthProvider, UserService } from '../../types';
 import { OAuthUser } from '.';
 import { AuthOAuthAccountsTable, AuthOAuthProvidersTable } from '../../config';
 
-export abstract class BaseOAuthProvider<TUser extends User>
-  implements AuthProvider<TUser>
-{
+export abstract class BaseOAuthProvider implements AuthProvider {
   abstract clientID: string;
   abstract clientSecret: string;
   abstract callbackURL: string;
@@ -16,7 +14,7 @@ export abstract class BaseOAuthProvider<TUser extends User>
       clientSecret?: string;
       callbackURL: string;
       scopes?: string[];
-      userService: UserService<TUser>;
+      userService: UserService;
       knex: Knex;
       name: string;
     }
@@ -63,7 +61,7 @@ export abstract class BaseOAuthProvider<TUser extends User>
   }: {
     code: string;
     state: string;
-  }): Promise<TUser> {
+  }): Promise<User> {
     const { accessToken } = await this.exchangeCode(code, state);
     const profile = await this.getUserProfile(accessToken);
 
@@ -74,7 +72,7 @@ export abstract class BaseOAuthProvider<TUser extends User>
         email_verified: profile.emailVerified,
         picture: profile.picture,
         email: profile.email,
-      } as Partial<TUser>);
+      } as Partial<User>);
 
       // create oauth account
       await this.config.knex(AuthOAuthAccountsTable).insert({
