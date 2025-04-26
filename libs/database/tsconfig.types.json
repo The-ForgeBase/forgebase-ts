@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/libs/database/types",
+    "declaration": true,
+    "emitDeclarationOnly": true
+  }
+}

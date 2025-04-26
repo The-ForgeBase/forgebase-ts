@@ -1,6 +1,7 @@
 import { Knex } from 'knex';
 import { User, AuthProvider, UserService } from '../../types';
 import { OAuthUser } from '.';
+import { AuthOAuthAccountsTable, AuthOAuthProvidersTable } from '../../config';
 
 export abstract class BaseOAuthProvider<TUser extends User>
   implements AuthProvider<TUser>
@@ -23,7 +24,7 @@ export abstract class BaseOAuthProvider<TUser extends User>
 
   async getConfig() {
     const result = await this.config
-      .knex('oauth_providers')
+      .knex(AuthOAuthProvidersTable)
       .where('name', this.config.name)
       .first();
 
@@ -76,7 +77,7 @@ export abstract class BaseOAuthProvider<TUser extends User>
       } as Partial<TUser>);
 
       // create oauth account
-      await this.config.knex('oauth_accounts').insert({
+      await this.config.knex(AuthOAuthAccountsTable).insert({
         user_id: user.id,
         provider: this.config.name,
         provider_user_id: profile.id,
@@ -86,7 +87,7 @@ export abstract class BaseOAuthProvider<TUser extends User>
 
     // update oauth account
     await this.config
-      .knex('oauth_accounts')
+      .knex(AuthOAuthAccountsTable)
       .where('user_id', user.id)
       .where('provider', this.config.name)
       .update({

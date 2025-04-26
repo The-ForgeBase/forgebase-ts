@@ -1,6 +1,5 @@
 import { BaaSConfig } from '../types';
 import knex from 'knex';
-import Client_Libsql from '@libsql/knex-libsql';
 import {
   ColumnDefinition,
   DatabaseSchema,
@@ -15,80 +14,27 @@ import {
   UpdateColumnDefinition,
   UserContext,
 } from '@forgebase-ts/database';
-import { resolve } from 'path';
 
 export class DatabaseService {
   private config: BaaSConfig['services']['db'];
-  private knexInstance: knex.Knex;
-  private permissionService: PermissionService;
-  private hookableDB: KnexHooks;
   private forgeDatabase: ForgeDatabase;
 
   constructor(config?: BaaSConfig['services']['db']) {
-    this.config = config || {
-      provider: 'sqlite',
-      realtime: false,
-      enforceRls: false,
-      config: {
-        filename: resolve(__dirname, '../database.sqlite'),
-      },
-    };
-    let knexDb: knex.Knex;
-
-    console.log(`Initializing database service with provider: ${this.config}`);
-
-    if (this.config.knex) {
-      knexDb = this.config.knex;
-      console.log('Using knex instance from config');
-    } else {
-      if (this.config.provider === 'sqlite') {
-        knexDb = knex({
-          client: 'sqlite3',
-          connection: {
-            filename: this.config.config.filename,
-          },
-          useNullAsDefault: true,
-          ...this.config.config,
-        });
-        console.log('Using sqlite3');
-      } else if (this.config.provider === 'postgres') {
-        knexDb = knex({
-          client: 'pg',
-          connection: this.config.config.connection,
-          ...this.config.config,
-        });
-      } else if (this.config.provider === 'libsql') {
-        knexDb = knex({
-          client: Client_Libsql,
-          connection: {
-            filename: this.config.config.filename,
-          },
-          useNullAsDefault: true,
-          ...this.config.config,
-        });
-      } else {
-        throw new Error('Unsupported database provider');
-      }
-    }
-
-    this.knexInstance = knexDb;
-    this.permissionService = new PermissionService(this.knexInstance);
-    this.hookableDB = new KnexHooks(this.knexInstance);
+    this.config = config;
     this.forgeDatabase = new ForgeDatabase({
-      db: this.knexInstance,
-      hooks: this.hookableDB,
-      permissions: this.permissionService,
-      realtime: config?.realtime || false,
-      enforceRls: config?.enforceRls || false,
+      db: this.config.config.db,
+      hooks: this.config.config.hooks,
+      permissionsService: this.config.config.permissionsService,
+      ...this.config.config,
     });
   }
 
   getDbInstance(): knex.Knex {
-    return this.knexInstance;
+    return this.forgeDatabase.getKnexInstance();
   }
 
   getPermissionService(): PermissionService {
-    return this.permissionService;
+    return this.forgeDatabase.getPermissionService();
   }
 
   getForgeDatabase(): ForgeDatabase {
@@ -96,8 +42,9 @@ export class DatabaseService {
   }
 
   getHookableDB(): KnexHooks {
-    return this.hookableDB;
+    return this.forgeDatabase.getHooksDb();
   }
+
   async query(
     tableName: string,
     query: DataQueryParams,
@@ -277,9 +224,8 @@ export class DatabaseService {
   }
 
   async getPermissions(tableName: string): Promise<any> {
-    const permissions = await this.permissionService.getPermissionsForTable(
-      tableName
-    );
+    const permissions =
+      await this.getPermissionService().getPermissionsForTable(tableName);
     return permissions;
   }
 
@@ -287,7 +233,7 @@ export class DatabaseService {
     tableName: string,
     permissions: TablePermissions
   ): Promise<TablePermissions> {
-    const result = await this.permissionService.setPermissionsForTable(
+    const result = await this.getPermissionService().setPermissionsForTable(
       tableName,
       permissions
     );

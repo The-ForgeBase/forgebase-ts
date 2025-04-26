@@ -3,7 +3,6 @@ import { DataMutationParams, DataQueryParams } from '@forgebase-ts/database';
 import { BaaSConfig, Context, Handler, ServerAdapter } from '../types';
 import { DatabaseService } from './database';
 import { StorageService } from './storage';
-import { resolve } from 'path';
 import { createRouter, addRoute, findRoute } from 'rou3';
 
 export class ForgeApi {
@@ -27,10 +26,8 @@ export class ForgeApi {
         },
         db: {
           provider: 'sqlite',
-          realtime: true,
-          enforceRls: true,
           config: {
-            filename: resolve(__dirname, '../database.sqlite'),
+            enforceRls: true,
           },
         },
       },

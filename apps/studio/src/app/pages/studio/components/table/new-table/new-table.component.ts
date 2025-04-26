@@ -107,6 +107,8 @@ export class NewTableComponent {
       name: 'id',
       type: 'uuid',
       nullable: false,
+      primary: true,
+      unique: true,
     },
     {
       name: 'created_at',

@@ -9,7 +9,7 @@ export const load = async ({
   event,
 }: PageServerLoad) => {
   const user = event.context['auth'];
-  console.log('user', user);
+  // console.log('user', user);
   return {
     loaded: true,
     user: user,

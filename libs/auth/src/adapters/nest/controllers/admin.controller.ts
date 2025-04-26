@@ -53,7 +53,7 @@ export class AdminController {
     }
   }
 
-  @Post('logout')
+  @Get('logout')
   async logout(@Req() req: Request, @Res() res: Response) {
     try {
       const token = this.extractToken(req);

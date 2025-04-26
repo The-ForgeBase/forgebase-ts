@@ -71,7 +71,6 @@ export class AuthConfigService implements OnModuleInit {
       // Initialize user service
       const userService = new KnexUserService<AppUser>(config, {
         knex: db,
-        tableName: 'users',
       });
 
       // Initialize auth providers
@@ -104,10 +103,13 @@ export class AuthConfigService implements OnModuleInit {
           initialAdminEmail: 'admin@yourdomain.com',
           initialAdminPassword: 'secure-password',
           createInitialAdmin: true,
+          createInitialApiKey: true,
+          initialApiKeyName: 'Initial Admin API Key',
+          initialApiKeyScopes: ['*'],
         },
-        // authPolicy: {
-        //   emailVerificationRequired: true,
-        // },
+        authPolicy: {
+          emailVerificationRequired: false,
+        },
       });
 
       // Configure the options for JoseJwtSessionManager
@@ -152,9 +154,8 @@ export class AuthConfigService implements OnModuleInit {
 
       const plunkVerificationService = new PlunkEmailVerificationService(db, {
         apiKey: process.env.PLUNK_API_KEY || '',
-        fromEmail: 'noreply@yourdomain.com',
-        fromName: 'Your App',
-        templateId: 'your-template-id',
+        fromEmail: 'nexthire@mail.nexthireapp.com',
+        fromName: 'NextHire',
         tokenExpiryMinutes: 30,
         resetTokenExpiryMinutes: 60, // 1 hour for password reset tokens
 

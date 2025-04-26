@@ -37,6 +37,7 @@ interface AuthContextType {
     token: string,
     newPassword: string
   ) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   refreshToken: () => Promise<boolean>;
   fetchUser: () => Promise<User | null>;
   getAccessToken: () => string | null;
@@ -64,7 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   auth,
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(auth.getCurrentUser());
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<AuthError | null>(null);
 
@@ -73,8 +74,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     const initializeAuth = async () => {
       setIsLoading(true);
       try {
-        // The auth instance should already be initialized in its constructor
-        setUser(auth.getCurrentUser());
+        // Always fetch user details if we have a token
+        if (auth.isAuthenticated()) {
+          const user = await auth.fetchUserDetails();
+          setUser(user);
+        } else {
+          setUser(null);
+        }
       } catch (err) {
         console.error('Failed to initialize auth:', err);
         setError(err instanceof AuthError ? err : null);
@@ -199,6 +205,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     [auth]
   );
 
+  // Change password handler
+  const changePassword = useCallback(
+    async (oldPassword: string, newPassword: string) => {
+      setError(null);
+      try {
+        await auth.changePassword(oldPassword, newPassword);
+      } catch (err) {
+        setError(err instanceof AuthError ? err : null);
+        throw err;
+      }
+    },
+    [auth]
+  );
+
   // Refresh token handler
   const refreshToken = useCallback(async () => {
     setError(null);
@@ -259,6 +279,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     verifyEmail,
     forgotPassword,
     resetPassword,
+    changePassword,
     refreshToken,
     fetchUser,
     getAccessToken,

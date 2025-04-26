@@ -1,3 +1,6 @@
+/* eslint-disable prefer-const */
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+
 type FieldKeys<T> = keyof T;
 
 export type WhereOperator =
@@ -156,7 +159,7 @@ export interface QueryParams<T extends Record<string, any>> {
   groupBy?: FieldKeys<T>[];
   having?: HavingClause<T>[];
   aggregates?: AggregateOptions<T>[];
-  rawExpressions?: RawExpression[];
+  // rawExpressions removed for security reasons
   limit?: number;
   offset?: number;
   windowFunctions?: WindowFunction<T>[];
@@ -191,7 +194,13 @@ export interface ApiResponse<T extends Record<string, any>> {
   id?: number;
 }
 
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+export interface AuthInterceptors {
+  request: (config: any) => Promise<any> | any;
+  response: {
+    onFulfilled: (response: any) => Promise<any> | any;
+    onRejected: (error: any) => Promise<any> | any;
+  };
+}
 
 export class DatabaseSDK {
   private baseUrl: string;
@@ -202,13 +211,20 @@ export class DatabaseSDK {
    * @param baseUrl The base URL for API requests
    * @param axiosInstance Optional custom axios instance (e.g., from ForgebaseAuth)
    * @param axiosConfig Optional axios configuration
+   * @param authInterceptors Optional auth interceptors to apply to the axios instance
    */
-  constructor(
-    baseUrl: string,
-    axiosInstance?: AxiosInstance,
-    axiosConfig: AxiosRequestConfig = {}
-  ) {
+  constructor(options: {
+    baseUrl: string;
+    axiosInstance?: AxiosInstance;
+    axiosConfig?: AxiosRequestConfig;
+    authInterceptors?: AuthInterceptors;
+  }) {
+    let { baseUrl, axiosInstance, axiosConfig, authInterceptors } = options;
     this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+
+    if (!axiosConfig) {
+      axiosConfig = {};
+    }
 
     // Use the provided axios instance or create a new one
     if (axiosInstance) {
@@ -216,8 +232,14 @@ export class DatabaseSDK {
     } else {
       this.axiosInstance = axios.create({
         baseURL: this.baseUrl,
+        withCredentials: true,
         ...axiosConfig,
       });
+
+      // Apply auth interceptors if provided
+      if (authInterceptors) {
+        this.applyAuthInterceptors(authInterceptors);
+      }
     }
   }
 
@@ -230,11 +252,47 @@ export class DatabaseSDK {
   }
 
   /**
+   * Set a new base URL for API requests
+   * @param baseUrl The new base URL to use
+   */
+  setBaseUrl(baseUrl: string): void {
+    this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+
+    // Update the axios instance baseURL if it was created by this class
+    if (this.axiosInstance.defaults.baseURL) {
+      this.axiosInstance.defaults.baseURL = this.baseUrl;
+    }
+  }
+
+  /**
    * Get the axios instance used for API requests
    * @returns The axios instance
    */
   getAxiosInstance(): AxiosInstance {
     return this.axiosInstance;
+  }
+
+  /**
+   * Set a new axios instance for API requests
+   * @param axiosInstance The new axios instance to use
+   */
+  setAxiosInstance(axiosInstance: AxiosInstance): void {
+    this.axiosInstance = axiosInstance;
+  }
+
+  /**
+   * Apply auth interceptors to the axios instance
+   * @param authInterceptors The auth interceptors to apply
+   */
+  applyAuthInterceptors(authInterceptors: AuthInterceptors): void {
+    // Add request interceptor
+    this.axiosInstance.interceptors.request.use(authInterceptors.request);
+
+    // Add response interceptors
+    this.axiosInstance.interceptors.response.use(
+      authInterceptors.response.onFulfilled,
+      authInterceptors.response.onRejected
+    );
   }
 
   /**
@@ -274,7 +332,12 @@ export class DatabaseSDK {
         url,
         axiosConfig
       );
-      return response.data;
+      return {
+        records: response.data as T[],
+        params: params,
+        message: 'Records fetched successfully',
+        error: undefined,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || error.message);
@@ -320,7 +383,11 @@ export class DatabaseSDK {
         { data },
         axiosConfig
       );
-      return response.data;
+      return {
+        records: [response.data as T],
+        message: 'Record created successfully',
+        error: undefined,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || error.message);
@@ -351,7 +418,11 @@ export class DatabaseSDK {
         { data },
         axiosConfig
       );
-      return response.data;
+      return {
+        records: [response.data as T],
+        message: 'Record updated successfully',
+        error: undefined,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || error.message);
@@ -377,7 +448,11 @@ export class DatabaseSDK {
         `/${tableName}/${id}`,
         axiosConfig
       );
-      return response.data;
+      return {
+        message: 'Record deleted successfully',
+        error: undefined,
+        records: [],
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || error.message);
@@ -811,7 +886,7 @@ class QueryBuilder<T extends Record<string, any>> {
     }
 
     // Create a new SDK instance for the subquery
-    const subquerySdk = new DatabaseSDK(this.sdk.getBaseUrl());
+    const subquerySdk = new DatabaseSDK({ baseUrl: this.sdk.getBaseUrl() });
 
     // Get the subquery builder
     const subquery = subqueryBuilder(subquerySdk);
@@ -850,7 +925,7 @@ class QueryBuilder<T extends Record<string, any>> {
     }
 
     // Create a new SDK instance for the subquery
-    const subquerySdk = new DatabaseSDK(this.sdk.getBaseUrl());
+    const subquerySdk = new DatabaseSDK({ baseUrl: this.sdk.getBaseUrl() });
 
     // Build the subquery
     const subQueryBuilder = subquerySdk.table(tableName);
@@ -883,19 +958,7 @@ class QueryBuilder<T extends Record<string, any>> {
     return this.params;
   }
 
-  /**
-   * Add a raw expression
-   */
-  rawExpression(sql: string, bindings?: any[]): this {
-    if (!this.params.rawExpressions) {
-      this.params.rawExpressions = [];
-    }
-    this.params.rawExpressions.push({
-      sql,
-      bindings,
-    });
-    return this;
-  }
+  // rawExpression method removed for security reasons
 
   /**
    * Group by clause
@@ -1133,11 +1196,5 @@ class QueryBuilder<T extends Record<string, any>> {
 //     .avg("amount", "average_amount")
 //     .execute();
 
-//   // Raw expressions
-//   db.table<User>("users")
-//     .rawExpression("EXTRACT(YEAR FROM created_at) = ?", [2024])
-//     .groupBy("role")
-//     .having("count", ">", 5)
-//     .count("id", "count")
-//     .execute();
+//   // Raw expressions removed for security reasons
 // }

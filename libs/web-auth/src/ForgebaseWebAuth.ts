@@ -4,6 +4,7 @@ import {
   AuthErrorType,
   AuthResponse,
   AuthStorage,
+  ChangePasswordResponse,
   ForgebaseWebAuthConfig,
   LoginCredentials,
   PasswordResetResponse,
@@ -28,6 +29,8 @@ export class ForgebaseWebAuth {
   private config: ForgebaseWebAuthConfig;
   private refreshPromise: Promise<AuthResponse | null> | null = null;
 
+  apiUrl = '';
+
   /**
    * Create a new ForgebaseWebAuth instance
    * @param config Configuration options
@@ -41,6 +44,8 @@ export class ForgebaseWebAuth {
       ssr: isSSR(),
       ...config,
     };
+
+    this.apiUrl = config.apiUrl;
 
     // Set up storage
     this.storage =
@@ -232,22 +237,17 @@ export class ForgebaseWebAuth {
   }
 
   /**
-   * Initialize the SDK by loading user data from storage
+   * Initialize the SDK by loading tokens from storage
    */
   private async initialize(): Promise<void> {
     try {
-      const userJson = await this.storage.getItem(STORAGE_KEYS.USER);
-      if (userJson) {
-        this.currentUser = JSON.parse(userJson);
-      }
-
       this.accessToken = await this.storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       this.refreshToken = await this.storage.getItem(
         STORAGE_KEYS.REFRESH_TOKEN
       );
 
-      // If we have a token but no user, try to fetch the user
-      if (this.accessToken && !this.currentUser && !this.config.ssr) {
+      // If we have a token, try to fetch the user
+      if (this.accessToken && !this.config.ssr) {
         try {
           await this.fetchUserDetails();
         } catch (error) {
@@ -268,12 +268,6 @@ export class ForgebaseWebAuth {
    */
   private async storeAuthData(response: AuthResponse): Promise<void> {
     this.currentUser = response.user;
-
-    // Store user data
-    await this.storage.setItem(
-      STORAGE_KEYS.USER,
-      JSON.stringify(response.user)
-    );
 
     // Handle different token formats
     if (typeof response.token === 'string') {
@@ -306,7 +300,6 @@ export class ForgebaseWebAuth {
 
     await this.storage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     await this.storage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    await this.storage.removeItem(STORAGE_KEYS.USER);
   }
 
   /**
@@ -317,7 +310,7 @@ export class ForgebaseWebAuth {
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
       const response = await this._api.post<AuthResponse>('/auth/register', {
-        provider: 'password',
+        provider: 'local',
         ...credentials,
       });
 
@@ -339,7 +332,7 @@ export class ForgebaseWebAuth {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       const response = await this._api.post<AuthResponse>('/auth/login', {
-        provider: 'password',
+        provider: 'local',
         ...credentials,
       });
 
@@ -360,7 +353,7 @@ export class ForgebaseWebAuth {
     try {
       // Call the logout endpoint if available
       if (this.accessToken || this.config.useCookies) {
-        await this._api.post('/auth/logout');
+        await this._api.get('/auth/logout');
       }
     } catch (error) {
       console.error('Logout request failed:', error);
@@ -373,9 +366,28 @@ export class ForgebaseWebAuth {
   /**
    * Get the current authenticated user
    * @returns The current user or null if not authenticated
+   * @deprecated Use fetchUserDetails() instead to always get fresh user data
    */
   getCurrentUser(): User | null {
     return this.currentUser;
+  }
+
+  /**
+   * Get the current authenticated user, fetching from server if needed
+   * @returns Promise resolving to the current user or null if not authenticated
+   */
+  async getUser(): Promise<User | null> {
+    if (!this.isAuthenticated()) {
+      console.log('Not authenticated');
+      return null;
+    }
+
+    try {
+      return await this.fetchUserDetails();
+    } catch (error) {
+      console.error('Failed to fetch user details:', error);
+      return null;
+    }
   }
 
   /**
@@ -409,12 +421,8 @@ export class ForgebaseWebAuth {
     try {
       const response = await this._api.get<{ user: User }>('/auth/me');
 
-      // Update the stored user
+      // Update the in-memory user
       this.currentUser = response.data.user;
-      await this.storage.setItem(
-        STORAGE_KEYS.USER,
-        JSON.stringify(response.data.user)
-      );
 
       return response.data.user;
     } catch (error) {
@@ -490,13 +498,9 @@ export class ForgebaseWebAuth {
         }
       );
 
-      // If the response includes updated user data, update the stored user
+      // If the response includes updated user data, update the in-memory user
       if (response.data.user) {
         this.currentUser = response.data.user;
-        await this.storage.setItem(
-          STORAGE_KEYS.USER,
-          JSON.stringify(response.data.user)
-        );
       }
 
       return response.data;
@@ -607,6 +611,45 @@ export class ForgebaseWebAuth {
   }
 
   /**
+   * Change password for the authenticated user
+   * @param oldPassword Current password
+   * @param newPassword New password
+   * @returns Change password response
+   */
+  async changePassword(
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ChangePasswordResponse> {
+    try {
+      // Check if user is authenticated
+      if (!this.isAuthenticated() && !this.config.ssr) {
+        throw new AuthError(
+          'User must be authenticated to change password',
+          AuthErrorType.UNAUTHORIZED
+        );
+      }
+
+      const response = await this._api.post<ChangePasswordResponse>(
+        '/auth/change-password',
+        {
+          oldPassword,
+          newPassword,
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      throw new AuthError(
+        'Password change failed',
+        AuthErrorType.UNKNOWN_ERROR
+      );
+    }
+  }
+
+  /**
    * Get the current access token
    * @returns The current access token or null if not authenticated
    */
@@ -712,6 +755,173 @@ export class ForgebaseWebAuth {
   }
 
   /**
+   * Get the auth interceptors to apply to another axios instance
+   * This allows developers to add authentication to their own axios instances
+   * @returns Object containing request and response interceptors
+   */
+  getAuthInterceptors() {
+    return {
+      request: async (config: any) => {
+        // Skip token handling in SSR mode if using cookies
+        if (this.config.ssr && this.config.useCookies) {
+          return config;
+        }
+
+        // If we don't have the token in memory, try to get it from storage
+        if (!this.accessToken) {
+          this.accessToken = await this.storage.getItem(
+            STORAGE_KEYS.ACCESS_TOKEN
+          );
+        }
+
+        // If we don't have the refresh token in memory, try to get it from storage
+        if (!this.refreshToken) {
+          this.refreshToken = await this.storage.getItem(
+            STORAGE_KEYS.REFRESH_TOKEN
+          );
+        }
+
+        // If we have a token and not using cookies, add it to the request headers
+        if (this.accessToken && !this.config.useCookies && config.headers) {
+          config.headers['Authorization'] = `Bearer ${this.accessToken}`;
+
+          // Add refresh token to headers if available
+          if (this.refreshToken) {
+            config.headers['X-Refresh-Token'] = this.refreshToken;
+          }
+        }
+
+        return config;
+      },
+      response: {
+        onFulfilled: async (response: AxiosResponse) => {
+          return response;
+        },
+        onRejected: async (error: AxiosError) => {
+          const statusCode = error.response?.status;
+          const errorData = error.response?.data as Record<string, unknown>;
+          const originalRequest = error.config;
+
+          // Handle different error types
+          if (!error.response) {
+            throw new AuthError(
+              'Network error. Please check your internet connection.',
+              AuthErrorType.NETWORK_ERROR
+            );
+          }
+
+          // Handle token expiration - attempt to refresh token
+          if (
+            statusCode === 401 &&
+            originalRequest &&
+            !(originalRequest as unknown as { _retry?: boolean })._retry
+          ) {
+            // Skip token refresh in SSR mode
+            if (this.config.ssr) {
+              throw new AuthError(
+                'Authentication required. Please login.',
+                AuthErrorType.SSR_ERROR,
+                statusCode
+              );
+            }
+
+            // Mark the request as retried to prevent infinite loops
+            (originalRequest as unknown as { _retry?: boolean })._retry = true;
+
+            try {
+              // Try to refresh the token
+              const refreshResult = await this.refreshAccessToken();
+
+              if (refreshResult) {
+                // Update the Authorization header with the new token
+                if (!this.config.useCookies && originalRequest.headers) {
+                  originalRequest.headers[
+                    'Authorization'
+                  ] = `Bearer ${this.accessToken}`;
+                }
+
+                // Return a new axios instance to retry the original request
+                return axios(originalRequest);
+              }
+            } catch (refreshError) {
+              console.error('Token refresh failed:', refreshError);
+              // Continue with the error handling below
+            }
+          }
+
+          switch (statusCode) {
+            case 400:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Invalid request',
+                AuthErrorType.INVALID_CREDENTIALS,
+                statusCode
+              );
+            case 401:
+              // Only clear tokens if we couldn't refresh
+              this.clearTokens();
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Unauthorized',
+                AuthErrorType.INVALID_TOKEN,
+                statusCode
+              );
+            case 404:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Resource not found',
+                AuthErrorType.USER_NOT_FOUND,
+                statusCode
+              );
+            case 409:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Conflict',
+                AuthErrorType.EMAIL_ALREADY_EXISTS,
+                statusCode
+              );
+            case 403:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Verification required',
+                AuthErrorType.VERIFICATION_REQUIRED,
+                statusCode
+              );
+            case 500:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Server error',
+                AuthErrorType.SERVER_ERROR,
+                statusCode
+              );
+            default:
+              throw new AuthError(
+                (errorData?.['error'] as string) || 'Unknown error',
+                AuthErrorType.UNKNOWN_ERROR,
+                statusCode
+              );
+          }
+        },
+      },
+    };
+  }
+
+  /**
+   * Apply auth interceptors to an external axios instance
+   * This allows developers to add authentication to their own axios instances
+   * @param axiosInstance The axios instance to apply interceptors to
+   * @returns The axios instance with auth interceptors applied
+   */
+  applyAuthInterceptors(axiosInstance: AxiosInstance): AxiosInstance {
+    const interceptors = this.getAuthInterceptors();
+
+    // Add request interceptor
+    axiosInstance.interceptors.request.use(interceptors.request);
+
+    // Add response interceptors
+    axiosInstance.interceptors.response.use(
+      interceptors.response.onFulfilled,
+      interceptors.response.onRejected
+    );
+
+    return axiosInstance;
+  }
+
+  /**
    * Set initial user and tokens from SSR context
    * This method should be called in SSR environments to hydrate the auth state
    * @param user User object
@@ -739,8 +949,7 @@ export class ForgebaseWebAuth {
       }
     }
 
-    if (user && !this.config.ssr) {
-      this.storage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    }
+    // Store user in memory only, not in storage
+    // This ensures we always fetch fresh user data when needed
   }
 }

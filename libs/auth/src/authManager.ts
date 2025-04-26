@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { hashPassword } from './lib/password';
+import { hashPassword, verifyPasswordHash } from './lib/password';
+import { sanitizeUser } from './lib/sanitize';
 import { BaseOAuthProvider } from './providers';
 import {
   AuthConfig,
@@ -159,7 +160,9 @@ export class DynamicAuthManager<TUser extends User> {
       const token = await this.sessionManager.createSession(user);
       // Execute post-login hooks
       await this.executeHooks('afterLoginFromReg', { user, token });
-      return { user, token };
+      // Sanitize user data before returning
+      const sanitizedUser = sanitizeUser(user);
+      return { user: sanitizedUser, token };
     }
 
     // Handle email verification if required
@@ -191,9 +194,9 @@ export class DynamicAuthManager<TUser extends User> {
       verificationToken,
     });
 
-    // Return user, empty token, and verification token if available
+    // Return sanitized user, empty token, and verification token if available
     return {
-      user,
+      user: sanitizeUser(user),
       token: '',
       verificationToken: verificationToken || undefined,
     };
@@ -257,7 +260,8 @@ export class DynamicAuthManager<TUser extends User> {
     }
 
     const token = await this.sessionManager.createSession(user);
-    return { user, token };
+    // Sanitize user data before returning
+    return { user: sanitizeUser(user), token };
   }
 
   async login(
@@ -326,7 +330,8 @@ export class DynamicAuthManager<TUser extends User> {
     const token = await this.sessionManager.createSession(user);
     // Execute post-login hooks
     await this.executeHooks('afterLogin', { provider, user, token });
-    return { user, token };
+    // Sanitize user data before returning
+    return { user: sanitizeUser(user), token };
   }
 
   getConfig() {
@@ -348,6 +353,10 @@ export class DynamicAuthManager<TUser extends User> {
     return this.sessionManager.createSession(user);
   }
 
+  async validateSessionToken(token: string): Promise<TUser> {
+    return this.sessionManager.validateToken(token) as Promise<TUser>;
+  }
+
   async validateToken(
     token: string,
     provider: string
@@ -364,11 +373,16 @@ export class DynamicAuthManager<TUser extends User> {
 
       const fToken = await this.sessionManager.createSession(user);
 
-      return { user, token: fToken };
+      // Sanitize user data before returning
+      return { user: sanitizeUser(user), token: fToken };
     }
 
-    const user = await this.sessionManager.verifySession(token);
-    return user as { user: TUser; token?: string | AuthToken };
+    const result = await this.sessionManager.verifySession(token);
+    // Sanitize user data before returning
+    return {
+      user: sanitizeUser(result.user) as TUser,
+      token: result.token,
+    };
   }
 
   async logout(token: string): Promise<void> {
@@ -396,7 +410,8 @@ export class DynamicAuthManager<TUser extends User> {
       email_verified: true,
     });
     const token = await this.sessionManager.createSession(user);
-    return { user, token };
+    // Sanitize user data before returning
+    return { user: sanitizeUser(user), token };
   }
 
   /**
@@ -457,7 +472,7 @@ export class DynamicAuthManager<TUser extends User> {
       this.emailVerificationService &&
       'verifyPasswordResetToken' in this.emailVerificationService
     ) {
-      return (this.emailVerificationService as any).verifyPasswordResetToken(
+      return this.emailVerificationService.verifyPasswordResetToken(
         token,
         userId
       );
@@ -488,7 +503,8 @@ export class DynamicAuthManager<TUser extends User> {
       phone_verified: true,
     });
     const token = await this.sessionManager.createSession(user);
-    return { user, token };
+    // Sanitize user data before returning
+    return { user: sanitizeUser(user), token };
   }
 
   /**
@@ -509,9 +525,11 @@ export class DynamicAuthManager<TUser extends User> {
       this.emailVerificationService &&
       'verifyPasswordResetToken' in this.emailVerificationService
     ) {
-      const isValid = await (
-        this.emailVerificationService as any
-      ).verifyPasswordResetToken(token, userId);
+      const isValid =
+        await this.emailVerificationService.verifyPasswordResetToken(
+          token,
+          userId
+        );
       if (!isValid) throw new InvalidCodeError();
     }
 
@@ -539,7 +557,7 @@ export class DynamicAuthManager<TUser extends User> {
       this.emailVerificationService &&
       'consumePasswordResetToken' in this.emailVerificationService
     ) {
-      await (this.emailVerificationService as any).consumePasswordResetToken(
+      await this.emailVerificationService.consumePasswordResetToken(
         token,
         userId
       );
@@ -644,16 +662,82 @@ export class DynamicAuthManager<TUser extends User> {
     });
   }
 
-  async updateConfig(update: Partial<AuthConfig>, adminUser: TUser) {
-    if (!this.hasPermission(adminUser.id, 'configure_auth')) {
-      throw new UserUnAuthorizedError(adminUser.id, 'configure_auth');
-    }
+  /**
+   * Change a user's password (requires authentication)
+   * @param userId The user ID
+   * @param oldPassword The current password
+   * @param newPassword The new password
+   * @returns True if the password was changed successfully
+   */
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<boolean> {
+    // Sanitize inputs
+    userId = userId.trim();
+    oldPassword = oldPassword.trim();
+    newPassword = newPassword.trim();
+
+    // Get the user
+    const user = await this.userService.findUser(userId);
+    if (!user) throw new UserNotFoundError(userId);
+
+    // Verify the old password
+    const passwordHash = user[this.userService.getColumns().passwordHash];
+    const isValid = await verifyPasswordHash(passwordHash, oldPassword);
+    if (!isValid) throw new UserUnAuthorizedError(userId, 'Invalid password');
+
+    // Hash the new password
+    const hash = await hashPassword(newPassword);
+
+    // Update the user's password
+    await this.internalConfig
+      .knex(this.userService.getTable())
+      .where(this.userService.getColumns().id, userId)
+      .update({
+        [this.userService.getColumns().passwordHash]: hash,
+        [this.userService.getColumns().updatedAt]: this.userService
+          .getInternalConfig()
+          .knex.fn.now(),
+      });
+
+    // Execute post-password-change hooks
+    await this.executeHooks('afterPasswordChange', { userId });
+
+    return true;
+  }
+
+  async updateConfig(update: Partial<AuthConfig>) {
     return this.configStore.updateConfig(update);
   }
 
-  private async hasPermission(userId: string | number, permission: string) {
-    //TODO: Implement your permission check logic
-    return true;
+  async setRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]> {
+    return this.userService.setRTP(userId, list, type);
+  }
+
+  async removeRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]> {
+    return this.userService.removeRTP(userId, list, type);
+  }
+
+  async addRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]> {
+    return this.userService.addRTP(userId, list, type);
+  }
+
+  async setRole(userId: string, role: string): Promise<void> {
+    return this.userService.setRole(userId, role);
   }
 }
 

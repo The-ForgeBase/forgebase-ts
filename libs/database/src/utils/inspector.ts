@@ -34,8 +34,9 @@ export class DBInspector {
     };
   }
 
-  async getDatabaseSchema(): Promise<DatabaseSchema> {
-    const tables = await this.getTables();
+  async getDatabaseSchema(excludedTables: string[]): Promise<DatabaseSchema> {
+    let tables = await this.getTables();
+    tables = tables.filter((t) => !excludedTables.includes(t));
     const schema: DatabaseSchema = {};
 
     for (const table of tables) {

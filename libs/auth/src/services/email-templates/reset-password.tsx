@@ -40,7 +40,7 @@ export const ResetPasswordEmail = ({
             </Text>
 
             <Section style={buttonContainer}>
-              <Button href={url} style={button} height={0} width={0}>
+              <Button href={url} style={button} height={0} width={100}>
                 Reset Password
               </Button>
             </Section>
@@ -49,7 +49,7 @@ export const ResetPasswordEmail = ({
               If the button doesn't work, you can also copy and paste this link
               into your browser:
             </Text>
-            <Text style={link}>{url}</Text>
+            <Text style={link}>{String(url)}</Text>
 
             <Text style={paragraph}>
               This password reset link will expire in 1 hour for security

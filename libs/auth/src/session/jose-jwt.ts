@@ -3,6 +3,12 @@ import { Knex } from 'knex';
 import { timeStringToDate } from '@forgebase-ts/common';
 import * as jose from 'jose';
 import crypto from 'crypto';
+import {
+  AuthAccessTokensTable,
+  AuthCryptoKeysTable,
+  AuthRefreshTokensTable,
+  AuthUsersTable,
+} from '../config';
 
 /**
  * Interface for key storage options
@@ -103,20 +109,21 @@ export class JoseJwtSessionManager implements SessionManager {
       this.config.sessionSettings.refreshTokenTTL
     );
 
-    await this.knex('refresh_tokens').insert({
+    await this.knex(AuthRefreshTokensTable).insert({
       token: refreshToken,
       user_id: user.id,
+      access_token: accessToken, // Store reference to the access token
       expires_at: timeStringToDate(this.config.sessionSettings.refreshTokenTTL),
     });
 
-    await this.knex('access_tokens').insert({
+    await this.knex(AuthAccessTokensTable).insert({
       token: accessToken,
       user_id: user.id,
       kid: this.keyId,
       expires_at: timeStringToDate(this.config.sessionSettings.accessTokenTTL),
     });
 
-    await this.knex('users')
+    await this.knex(AuthUsersTable)
       .where({ id: user.id })
       .update({ last_login_at: new Date() });
 
@@ -130,7 +137,7 @@ export class JoseJwtSessionManager implements SessionManager {
    * @returns {Promise<AuthToken>} New token pair
    */
   async refreshSession(refreshToken: string): Promise<AuthToken> {
-    const tokenRecord = await this.knex('refresh_tokens')
+    const tokenRecord = await this.knex(AuthRefreshTokensTable)
       .where({ token: refreshToken })
       .where('expires_at', '>', new Date())
       .first();
@@ -138,18 +145,20 @@ export class JoseJwtSessionManager implements SessionManager {
     if (!tokenRecord) throw new Error('Invalid refresh token');
 
     // Rotate refresh token
-    await this.knex('refresh_tokens').where({ token: refreshToken }).delete();
+    await this.knex(AuthRefreshTokensTable)
+      .where({ token: refreshToken })
+      .delete();
 
     // Delete expired tokens
-    await this.knex('access_tokens')
-      .where('expires_at', '<=', new Date())
+    await this.knex(AuthAccessTokensTable)
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
 
-    await this.knex('refresh_tokens')
-      .where('expires_at', '<=', new Date())
+    await this.knex(AuthRefreshTokensTable)
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
 
-    const user = await this.knex('users')
+    const user = await this.knex(AuthUsersTable)
       .where({ id: tokenRecord.user_id })
       .first();
 
@@ -170,12 +179,14 @@ export class JoseJwtSessionManager implements SessionManager {
       const verified = await this.verifyJwt(token);
       const userId = verified.payload.sub as string;
 
-      const user = await this.knex('users').where({ id: userId }).first();
+      const user = await this.knex(AuthUsersTable)
+        .where({ id: userId })
+        .first();
 
       if (!user) throw new Error('Invalid access token');
 
       // Check if token exists in the database (optional: remove for fully stateless validation)
-      const accessToken = await this.knex('access_tokens')
+      const accessToken = await this.knex(AuthAccessTokensTable)
         .where({ token })
         .where('expires_at', '>', new Date())
         .first();
@@ -183,7 +194,7 @@ export class JoseJwtSessionManager implements SessionManager {
       if (!accessToken) {
         // This is a valid JWT but not in our database - possible token reuse or revoked token
         // We can either reject it or issue a new token pair
-        const refreshToken = await this.knex('refresh_tokens')
+        const refreshToken = await this.knex(AuthRefreshTokensTable)
           .where({ user_id: userId })
           .where('expires_at', '>', new Date())
           .first();
@@ -191,41 +202,76 @@ export class JoseJwtSessionManager implements SessionManager {
         if (!refreshToken) throw new Error('Invalid access token');
 
         // Remove the current refresh token
-        await this.knex('refresh_tokens')
+        await this.knex(AuthRefreshTokensTable)
           .where({ token: refreshToken.token })
           .delete();
 
         // Clean up expired tokens
-        await this.knex('access_tokens')
-          .where('expires_at', '<=', new Date())
+        await this.knex(AuthAccessTokensTable)
+          .where('expires_at', '<=', this.knex.fn.now())
           .delete();
 
-        await this.knex('refresh_tokens')
-          .where('expires_at', '<=', new Date())
+        await this.knex(AuthRefreshTokensTable)
+          .where('expires_at', '<=', this.knex.fn.now())
           .delete();
 
         // Create a new token pair
         const newToken = await this.createSession(user);
+
+        delete user.password_hash; // Remove sensitive data
+        delete user.mfa_secret; // Remove sensitive data
+        delete user.mfa_recovery_codes; // Remove sensitive data
+
         return { user, token: newToken };
       }
 
       return { user };
     } catch {
       // If direct verification fails, try the database lookup as backup
-      const accessToken = await this.knex('access_tokens')
+      const accessToken = await this.knex(AuthAccessTokensTable)
         .where({ token })
         .where('expires_at', '>', new Date())
         .first();
 
       if (!accessToken) throw new Error('Invalid access token');
 
-      const user = await this.knex('users')
+      const user = await this.knex(AuthUsersTable)
         .where({ id: accessToken.user_id })
         .first();
 
       if (!user) throw new Error('Invalid access token');
+
+      delete user.password_hash; // Remove sensitive data
+      delete user.mfa_secret; // Remove sensitive data
+      delete user.mfa_recovery_codes; // Remove sensitive data
+
+      // Clean up expired tokens
+      await this.knex(AuthAccessTokensTable)
+        .where('expires_at', '<=', this.knex.fn.now())
+        .delete();
+      await this.knex(AuthRefreshTokensTable)
+        .where('expires_at', '<=', this.knex.fn.now())
+        .delete();
+
       return { user };
     }
+  }
+
+  /**
+   * Validate a token (optional)
+   *
+   * @param {string} token - Token to validate
+   * @returns {Promise<User>} User associated with the token
+   */
+  async validateToken(token: string): Promise<User> {
+    const verified = await this.verifyJwt(token);
+    const userId = verified.payload.sub as string;
+
+    const user = await this.knex(AuthUsersTable).where({ id: userId }).first();
+
+    if (!user) throw new Error('Invalid access token');
+
+    return user;
   }
 
   /**
@@ -234,14 +280,26 @@ export class JoseJwtSessionManager implements SessionManager {
    * @param {string} token - Token to destroy
    */
   async destroySession(token: string): Promise<void> {
-    await this.knex('access_tokens').where({ token }).delete();
+    console.log('Destroying session for token:', token);
+
+    // Find and delete any refresh tokens associated with this access token
+    await this.knex(AuthRefreshTokensTable)
+      .where({ access_token: token })
+      .delete();
+
+    // Delete the access token
+    await this.knex(AuthAccessTokensTable).where({ token }).delete();
+
     // Also clean up any expired tokens
-    await this.knex('access_tokens')
-      .where('expires_at', '<=', new Date())
+    await this.knex(AuthAccessTokensTable)
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
-    await this.knex('refresh_tokens')
-      .where('expires_at', '<=', new Date())
+    await this.knex(AuthRefreshTokensTable)
+      .where('expires_at', '<=', this.knex.fn.now())
       .delete();
+
+    console.log('Session destroyed successfully.');
+    return;
   }
 
   /**
@@ -277,7 +335,7 @@ export class JoseJwtSessionManager implements SessionManager {
     await this.generateKeyPair();
 
     // Update the previous key's rotation timestamp
-    await this.knex('crypto_keys').where({ is_current: true }).update({
+    await this.knex(AuthCryptoKeysTable).where({ is_current: true }).update({
       is_current: false,
       rotated_at: this.knex.fn.now(),
     });
@@ -289,7 +347,7 @@ export class JoseJwtSessionManager implements SessionManager {
    * Load existing keys or generate new ones
    */
   private async loadOrGenerateKeys(): Promise<void> {
-    const currentKey = await this.knex('crypto_keys')
+    const currentKey = await this.knex(AuthCryptoKeysTable)
       .where({ is_current: true })
       .first();
 
@@ -362,7 +420,7 @@ export class JoseJwtSessionManager implements SessionManager {
       this.publicJwk = publicJwk;
 
       // Save keys to database
-      await this.knex('crypto_keys').insert({
+      await this.knex(AuthCryptoKeysTable).insert({
         kid: this.keyId,
         algorithm: this.algorithm,
         private_key: JSON.stringify(privateJwk),

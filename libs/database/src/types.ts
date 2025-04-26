@@ -5,6 +5,8 @@ import type { PermissionService } from './permissionService';
 import type { DatabaseSchema, TableInfo } from './utils/inspector';
 import { QueryParams } from './sdk/server';
 
+export const FG_PERMISSION_TABLE = 'fg_table_permissions';
+
 // Column definition for schema operations
 export type ColumnType =
   | 'increments'
@@ -56,6 +58,12 @@ export interface ForeignKey {
   };
 }
 
+export type CustomRlsFunction = (
+  userContext: UserContext,
+  row: Record<string, unknown>,
+  knex?: Knex
+) => Promise<boolean> | boolean;
+
 export type PermissionRule = {
   allow:
     | 'public'
@@ -67,11 +75,13 @@ export type PermissionRule = {
     | 'teams'
     | 'static'
     | 'fieldCheck'
-    | 'customSql';
+    | 'customSql'
+    | 'customFunction';
   labels?: string[]; // Array of required labels
   teams?: string[]; // Array of required teams
   static?: boolean; // Static true/false value
   customSql?: string; // Custom SQL condition (full SQL)
+  customFunction?: string; // Name of registered custom function
   fieldCheck?: FieldCheck; // Field-based rules
   roles?: string[];
 };
@@ -102,17 +112,29 @@ export type TablePermissions = {
   };
 };
 
+/**
+ * Type of realtime adapter to use for database table broadcasts
+ */
+export type RealtimeAdapterType = 'websocket' | 'sse';
+
 export interface ForgeDatabaseConfig {
   db?: Knex;
   hooks?: KnexHooks;
-  permissions?: PermissionService;
+  permissionsService?: PermissionService;
   prefix?: string;
   enforceRls?: boolean;
   realtime?: boolean;
+  /** Type of realtime adapter to use (default: 'websocket') */
+  realtimeAdapter?: RealtimeAdapterType;
   defaultPermissions?: TablePermissions;
-  validTables?: string[];
-  checkValidTable?: boolean;
+  excludedTables?: string[];
   websocketPort?: number;
+  /** Whether to automatically initialize permissions for all tables (default: false) */
+  initializePermissions?: boolean;
+  /** Path where the permission initialization report will be saved */
+  permissionReportPath?: string;
+  /** Callback function to be called when permission initialization is complete */
+  onPermissionInitComplete?: (report: PermissionInitializationReport) => void;
 }
 
 // Handler types
@@ -182,30 +204,77 @@ export interface PermissionParams {
   permissions?: TablePermissions;
 }
 
+/**
+ * Report generated after permission initialization
+ */
+export interface PermissionInitializationReport {
+  /** Timestamp when the initialization started */
+  startTime: Date;
+  /** Timestamp when the initialization completed */
+  endTime: Date;
+  /** Total number of tables processed */
+  totalTables: number;
+  /** Number of tables that already had permissions */
+  tablesWithPermissions: number;
+  /** Number of tables that had permissions initialized */
+  tablesInitialized: number;
+  /** Number of tables excluded from initialization */
+  tablesExcluded: number;
+  /** List of tables that had permissions initialized */
+  initializedTables: string[];
+  /** List of tables that already had permissions */
+  existingPermissionTables: string[];
+  /** List of tables that were excluded */
+  excludedTables: string[];
+  /** Any errors that occurred during initialization */
+  errors: Array<{ table: string; error: string }>;
+}
+
 export interface ForgeDatabaseEndpoints {
   schema: {
     get: () => Promise<DatabaseSchema>;
-    create: (params: SchemaCreateParams) => Promise<{
+    create: (
+      params: SchemaCreateParams,
+      trx?: Knex.Transaction
+    ) => Promise<{
       message: string;
       tablename: string;
       action: string;
     }>;
-    delete: (tableName: string) => Promise<{
+    delete: (
+      tableName: string,
+      trx?: Knex.Transaction
+    ) => Promise<{
       message: string;
       tablename: string;
       action: string;
     }>;
-    modify: (params: ModifySchemaParams) => Promise<any>;
-    addForeingKey: (params: AddForeignKeyParams) => Promise<any>;
-    dropForeignKey: (params: DropForeignKeyParams) => Promise<any>;
-    truncateTable: (tableName: string) => Promise<any>;
+    modify: (
+      params: ModifySchemaParams,
+      trx?: Knex.Transaction
+    ) => Promise<any>;
+    addForeingKey: (
+      params: AddForeignKeyParams,
+      trx?: Knex.Transaction
+    ) => Promise<any>;
+    dropForeignKey: (
+      params: DropForeignKeyParams,
+      trx?: Knex.Transaction
+    ) => Promise<any>;
+    truncateTable: (tableName: string, trx?: Knex.Transaction) => Promise<any>;
     getTables: () => Promise<string[]>;
     getTableSchema: (tableName: string) => Promise<{
       name: string;
       info: TableInfo;
     }>;
-    getTablePermissions: (tableName: string) => Promise<TablePermissions>;
-    getTableSchemaWithPermissions: (tableName: string) => Promise<{
+    getTablePermissions: (
+      tableName: string,
+      trx?: Knex.Transaction
+    ) => Promise<TablePermissions>;
+    getTableSchemaWithPermissions: (
+      tableName: string,
+      trx?: Knex.Transaction
+    ) => Promise<{
       name: string;
       info: TableInfo;
       permissions: TablePermissions;
@@ -216,26 +285,33 @@ export interface ForgeDatabaseEndpoints {
       tableName: string,
       params: DataQueryParams,
       user?: UserContext,
-      isSystem?: boolean
+      isSystem?: boolean,
+      trx?: Knex.Transaction
     ) => Promise<T[]>;
     create: (
       params: DataMutationParams,
       user?: UserContext,
-      isSystem?: boolean
+      isSystem?: boolean,
+      trx?: Knex.Transaction
     ) => Promise<any>;
     update: (
       params: DataMutationParams,
       user?: UserContext,
-      isSystem?: boolean
+      isSystem?: boolean,
+      trx?: Knex.Transaction
     ) => Promise<any>;
     delete: (
       params: DataDeleteParams,
       user?: UserContext,
-      isSystem?: boolean
+      isSystem?: boolean,
+      trx?: Knex.Transaction
     ) => Promise<any>;
   };
   permissions: {
-    get: (params: PermissionParams) => Promise<TablePermissions | undefined>;
-    set: (params: PermissionParams) => Promise<any>;
+    get: (
+      params: PermissionParams,
+      trx?: Knex.Transaction
+    ) => Promise<TablePermissions | undefined>;
+    set: (params: PermissionParams, trx?: Knex.Transaction) => Promise<any>;
   };
 }

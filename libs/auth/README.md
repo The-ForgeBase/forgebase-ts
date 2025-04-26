@@ -44,6 +44,7 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
   - Brute force protection and rate limiting
   - Password policies with HaveIBeenPwned
   - Input validation and sanitization
+  - User data sanitization for sensitive fields
   - CSRF protection
   - Security headers management
 
@@ -73,11 +74,19 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
   - Backup methods
 
 - **API Security**:
+
   - OpenID Connect discovery
   - OAuth 2.0 compliance
   - Key rotation policies
   - Token revocation
   - Scope-based permissions
+
+- **User Table Extension**:
+  - Extend the user table with custom fields
+  - TypeScript type generation for extended user models
+  - Validation for custom fields
+  - Migration helpers for schema changes
+  - Best practices for user data extension
 
 ## Table of Contents
 
@@ -102,6 +111,7 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
   - [Password Reset Flow](#password-reset-flow)
   - [NestJS Integration](#nestjs-integration-1)
 - [Session Management](#session-management)
+- [User Table Extension](#user-table-extension)
 - [Plugin System](#plugin-system)
 - [Error Handling](#error-handling)
 - [API Reference](#api-reference)
@@ -1220,10 +1230,16 @@ const data = await sessionManager.getTokenData(token);
    - Proper key size (RSA 2048+ bits)
 
 4. **Token Validation**:
+
    - Verify signature
    - Check expiration
    - Validate issuer and audience
    - Verify claims
+
+5. **User Data Sanitization**:
+   - Remove sensitive fields before sending to clients
+   - Sanitize user objects in all auth responses
+   - Protect password hashes, MFA secrets, and recovery codes
 
 Example security configuration:
 
@@ -1250,6 +1266,160 @@ const securityConfig = {
   },
 };
 ```
+
+## User Table Extension
+
+ForgeBase Auth provides a comprehensive API for extending the user table with custom fields:
+
+```typescript
+import { extendUserTable, UserFieldDefinition } from '@forgebase-ts/auth/utils';
+import { Knex } from 'knex';
+
+// Define your custom fields
+const customFields: UserFieldDefinition[] = [
+  {
+    name: 'first_name',
+    type: 'string',
+    nullable: true,
+    description: "User's first name",
+    validation: {
+      maxLength: 100,
+    },
+  },
+  {
+    name: 'last_name',
+    type: 'string',
+    nullable: true,
+    description: "User's last name",
+    validation: {
+      maxLength: 100,
+    },
+  },
+  {
+    name: 'subscription_tier',
+    type: 'string',
+    nullable: false,
+    default: 'free',
+    description: "User's subscription tier",
+    validation: {
+      pattern: '^(free|basic|premium|enterprise)$',
+    },
+  },
+  {
+    name: 'organization_id',
+    type: 'uuid',
+    nullable: true,
+    description: "Reference to the user's organization",
+    foreignKeys: {
+      columnName: 'organization_id',
+      references: {
+        tableName: 'organizations',
+        columnName: 'id',
+      },
+    },
+  },
+];
+
+// Extend the user table
+async function setupCustomFields(knex: Knex) {
+  await extendUserTable(knex, {
+    fields: customFields,
+    migrateExisting: true,
+  });
+}
+
+// Define your extended user type
+import { User } from '@forgebase-ts/auth';
+
+interface CustomUser extends User {
+  first_name?: string;
+  last_name?: string;
+  subscription_tier: string;
+}
+
+// Use the extended type with auth services
+const userService = new KnexUserService<CustomUser>(config, {
+  knex,
+  tableName: 'users',
+});
+```
+
+### Migration Helpers
+
+```typescript
+import { addColumns, renameColumn, modifyColumn, dropColumns } from '@forgebase-ts/auth/utils';
+
+// Add new columns
+await addColumns(knex, {
+  fields: [
+    {
+      name: 'new_field',
+      type: 'string',
+      nullable: true,
+    },
+  ],
+});
+
+// Rename a column
+await renameColumn(knex, {
+  oldName: 'old_field_name',
+  newName: 'new_field_name',
+});
+
+// Modify a column
+await modifyColumn(knex, {
+  field: {
+    name: 'existing_field',
+    type: 'string',
+    nullable: false,
+    default: 'new default',
+  },
+});
+
+// Drop columns
+await dropColumns(knex, {
+  columnNames: ['field_to_drop'],
+});
+```
+
+### Validation
+
+```typescript
+import { validateUserDataWithZod } from '@forgebase-ts/auth/utils';
+
+// Validate user data against field definitions
+const validationResult = validateUserDataWithZod(userData, customFields);
+if (!validationResult.valid) {
+  console.error('Validation errors:', validationResult.errors);
+}
+```
+
+### TypeScript Type Generation
+
+```typescript
+import { generateTypeInterface } from '@forgebase-ts/auth/utils';
+
+// Generate TypeScript interface from field definitions
+const typeCode = generateTypeInterface({
+  interfaceName: 'CustomUser',
+  fields: customFields,
+});
+
+console.log(typeCode);
+// Output:
+// import { User } from '@forgebase-ts/auth';
+//
+// /**
+//  * Extended user interface with custom fields
+//  */
+// export interface CustomUser extends User {
+//   first_name?: string;
+//   last_name?: string;
+//   subscription_tier: string;
+// }
+```
+
+For more detailed information and examples, see the [User Extension Guide](./docs/user-extension-guide.md) and [User Table Schema](./docs/user-table.md) documentation.
 
 ## Plugin System
 
@@ -1316,6 +1486,16 @@ try {
 ```
 
 ## API Reference
+
+### Utility Functions
+
+```typescript
+// Sanitize a user object by removing sensitive fields
+function sanitizeUser<T extends User>(user: T): T;
+
+// Sanitize an array of user objects
+function sanitizeUsers<T extends User>(users: T[]): T[];
+```
 
 ### DynamicAuthManager
 

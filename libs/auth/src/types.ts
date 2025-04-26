@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 import { z } from 'zod';
 
 export const AuthConfigSchema = z.object({
-  id: z.any().optional(),
+  id: z.number().optional(),
   enabledProviders: z.array(z.string()).default(['local']),
   authPolicy: z.object({
     emailVerificationRequired: z.boolean().default(true),
@@ -37,12 +37,18 @@ export const AuthConfigSchema = z.object({
       createInitialAdmin: z.boolean().default(true),
       initialAdminEmail: z.string().email().default('admin@example.com'),
       initialAdminPassword: z.string().min(8).default('changeme123'),
+      createInitialApiKey: z.boolean().default(false),
+      initialApiKeyName: z.string().default('Initial Admin API Key'),
+      initialApiKeyScopes: z.array(z.string()).default(['*']),
     })
     .default({
       enabled: false,
       createInitialAdmin: true,
       initialAdminEmail: 'admin@example.com',
       initialAdminPassword: 'changeme123',
+      createInitialApiKey: false,
+      initialApiKeyName: 'Initial Admin API Key',
+      initialApiKeyScopes: ['*'],
     }),
   rateLimiting: z
     .record(
@@ -61,18 +67,6 @@ export type AuthConfig = z.infer<typeof AuthConfigSchema>;
 
 export interface AuthInternalConfig<TUser extends User> {
   knex: Knex;
-  tableName?: string;
-  userColumns?: {
-    id?: string;
-    email?: string;
-    phone?: string;
-    name?: string;
-    smsVerified?: boolean;
-    emailVerified?: boolean;
-    passwordHash?: string;
-    createdAt?: string;
-    updatedAt?: string;
-  };
   mfaService?: MfaService;
   rateLimiter?: RateLimiter;
   emailVerificationService?: EmailVerificationService<TUser>;
@@ -92,6 +86,22 @@ export interface UserService<TUser extends User> {
   findUserByEmail(email: string): Promise<TUser | null>;
   findUserByPhone(phone: string): Promise<TUser | null>;
   getConfig(): AuthConfig;
+  setRole(userId: string, role: string): Promise<void>;
+  removeRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]>;
+  addRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]>;
+  setRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ): Promise<string[]>;
 }
 
 export interface EmailVerificationService<TUser extends User> {
@@ -165,6 +175,7 @@ export interface TokenStore {
 }
 
 export interface ConfigStore {
+  initialize(): Promise<void>;
   getConfig(): Promise<AuthConfig>;
   updateConfig(update: Partial<AuthConfig>): Promise<AuthConfig>;
 }
@@ -175,6 +186,10 @@ export interface BaseUser {
   name?: string;
   phone?: string;
   picture?: string;
+  permissions?: string | string[];
+  role?: string;
+  labels?: string | string[];
+  teams?: string | string[];
   password_hash?: string;
   email_verified: boolean;
   phone_verified: boolean;
@@ -213,12 +228,14 @@ export type AuthRequiredType =
   | 'sms-required or email-required';
 
 export interface SessionManager {
+  initialize?(): Promise<void>;
   createSession(user: User): Promise<AuthToken | string>;
-  destroySession(token: string): Promise<void>;
+  destroySession(token: string, id?: string): Promise<void>;
   verifySession(
     token: string
   ): Promise<{ user: User; token?: string | AuthToken }>;
   refreshSession?(refreshToken: string): Promise<AuthToken | string>;
+  validateToken?(token: string): Promise<User>;
 }
 
 export class UserNotFoundError extends Error {

@@ -15,10 +15,9 @@ import { ForgeApiWithChildModule } from './forge-api-with-child.module';
         db: {
           provider: 'sqlite',
           config: {
-            filename: 'database.sqlite',
+            realtime: true,
+            enforceRls: true,
           },
-          enforceRls: false,
-          realtime: false,
         },
         storage: {
           provider: 'local',
@@ -44,10 +43,9 @@ export class AppModule {}
         db: {
           provider: 'sqlite',
           config: {
-            filename: 'database.sqlite',
+            realtime: true,
+            enforceRls: true,
           },
-          enforceRls: false,
-          realtime: false,
         },
         storage: {
           provider: 'local',
@@ -73,10 +71,9 @@ export class AppModuleWithChild {}
         db: {
           provider: 'sqlite',
           config: {
-            filename: 'database.sqlite',
+            enforceRls: false,
+            realtime: false,
           },
-          enforceRls: false,
-          realtime: false,
         },
         storage: {
           provider: 'local',

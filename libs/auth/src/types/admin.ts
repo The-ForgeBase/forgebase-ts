@@ -42,6 +42,32 @@ export interface AdminAuditLog {
 }
 
 /**
+ * Admin API key interface
+ */
+export interface AdminApiKey {
+  id: string;
+  admin_id: string;
+  key_prefix: string;
+  key_hash: string;
+  name: string;
+  scopes?: string[];
+  expires_at?: Date | null; // null means non-expiring key
+  last_used_at?: Date;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * Admin API key creation options
+ */
+export interface AdminApiKeyCreateOptions {
+  name: string;
+  admin_id: string;
+  scopes?: string[];
+  expires_at?: Date | null; // null means non-expiring key
+}
+
+/**
  * Admin service interface for admin management operations
  */
 export interface AdminService {

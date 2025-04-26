@@ -47,6 +47,7 @@ This library simplifies database operations by providing an abstraction layer th
   - User context filtering
   - Audit logging
   - Permission inheritance
+  - Automatic permission initialization
 
 - **Real-time Features**:
 
@@ -93,6 +94,8 @@ Our mission is to simplify backend development by providing a highly flexible, l
 - [API Reference](#api-reference)
   - [ForgeDatabase](#forgedatabase)
   - [SchemaInspector](#schemainspector)
+  - [Transactions](#transactions)
+  - [Permission Initialization](#automatic-permission-initialization)
 - [Building](#building)
 - [Running Tests](#running-tests)
 - [Security Best Practices](#security-best-practices)
@@ -129,6 +132,7 @@ const db = createForgeDatabase({
   }),
   enforceRls: true,
   realtime: true,
+  realtimeAdapter: 'websocket', // or 'sse' for Server-Sent Events
 });
 ```
 
@@ -279,6 +283,40 @@ const unsubscribe = await db.subscribe('posts', {
 unsubscribe();
 ```
 
+#### Realtime Adapters
+
+ForgeBase Database supports two types of realtime adapters for table broadcasts:
+
+1. **WebSocket Adapter (default)**: Uses uWebSockets.js for high-performance WebSocket communication.
+
+2. **SSE Adapter**: Uses Server-Sent Events (SSE) for one-way communication from server to client. This is useful in environments where WebSockets might be blocked or when you need simpler one-way communication.
+
+To configure the adapter type:
+
+```typescript
+const db = createForgeDatabase({
+  // ... other options
+  realtime: true,
+  realtimeAdapter: 'sse', // 'websocket' (default) or 'sse'
+  websocketPort: 9001, // Optional, defaults to 9001
+});
+```
+
+Benefits of SSE adapter:
+
+- Works through proxies and load balancers that might block WebSockets
+- Simpler implementation for one-way communication
+- Better compatibility with certain environments
+- Lower overhead for read-only scenarios
+- Uses pub/sub pattern for efficient message distribution
+
+The SSE adapter uses the pub/sub pattern from the crossws library, which provides several advantages:
+
+- Efficient message distribution to multiple subscribers
+- Automatic channel management
+- Simplified subscription handling
+- Reduced memory footprint
+
 ## Configuration
 
 ### SQLite
@@ -389,6 +427,137 @@ class SchemaInspector {
 }
 ```
 
+#### Transactions
+
+All database operations in the ForgeDatabase library support transactions, allowing you to perform multiple operations atomically. This ensures data consistency and prevents partial updates in case of errors.
+
+There are two ways to use transactions in ForgeDatabase:
+
+1. **Explicit Transactions**: Pass a transaction object to each method
+2. **Implicit Transactions**: Use the built-in transaction method
+
+##### Explicit Transactions
+
+```typescript
+// Import the necessary modules
+import { createForgeDatabase } from '@forgebase-ts/database';
+import knex from 'knex';
+
+// Initialize the database
+const knexInstance = knex({
+  client: 'sqlite3',
+  connection: {
+    filename: './database.sqlite',
+  },
+  useNullAsDefault: true,
+});
+
+const db = createForgeDatabase({ db: knexInstance });
+
+// Example: Using explicit transactions for multiple operations
+async function createUserWithProfile() {
+  // Start a transaction
+  await knexInstance.transaction(async (trx) => {
+    // Create a user
+    const user = await db.endpoints.data.create(
+      {
+        tableName: 'users',
+        data: { name: 'John Doe', email: 'john@example.com' },
+      },
+      { userId: 1 }, // user context
+      false, // isSystem
+      trx // pass the transaction
+    );
+
+    // Create a profile linked to the user
+    await db.endpoints.data.create(
+      {
+        tableName: 'profiles',
+        data: {
+          user_id: user[0].id,
+          bio: 'Software developer',
+        },
+      },
+      { userId: 1 },
+      false,
+      trx
+    );
+
+    // If any operation fails, the entire transaction will be rolled back
+  });
+}
+```
+
+##### Implicit Transactions
+
+ForgeDatabase also provides a built-in transaction method that automatically handles transactions for you:
+
+```typescript
+// Example: Using the built-in transaction method
+async function createUserWithProfile() {
+  // Use the built-in transaction method
+  await db.transaction(async (trx) => {
+    // Create a user
+    const user = await db.endpoints.data.create(
+      {
+        tableName: 'users',
+        data: { name: 'John Doe', email: 'john@example.com' },
+      },
+      { userId: 1 }, // user context
+      false, // isSystem
+      trx // pass the transaction
+    );
+
+    // Create a profile linked to the user
+    await db.endpoints.data.create(
+      {
+        tableName: 'profiles',
+        data: {
+          user_id: user[0].id,
+          bio: 'Software developer',
+        },
+      },
+      { userId: 1 },
+      false,
+      trx
+    );
+  });
+}
+```
+
+##### Automatic Transaction Management
+
+All database operations in ForgeDatabase now automatically create a transaction if one is not provided. This makes the code more backward compatible and easier to use:
+
+```typescript
+// Example: Using automatic transaction management
+async function createUserWithProfile() {
+  // Create a user - transaction is created automatically
+  const user = await db.endpoints.data.create(
+    {
+      tableName: 'users',
+      data: { name: 'John Doe', email: 'john@example.com' },
+    },
+    { userId: 1 } // user context
+  );
+
+  // Create a profile - transaction is created automatically
+  await db.endpoints.data.create(
+    {
+      tableName: 'profiles',
+      data: {
+        user_id: user[0].id,
+        bio: 'Software developer',
+      },
+    },
+    { userId: 1 }
+  );
+
+  // Note: These are two separate transactions. For atomic operations,
+  // use one of the transaction methods above.
+}
+```
+
 ## Building
 
 Run `nx build database` to build the library.
@@ -411,6 +580,8 @@ nx test database --testPathPattern=postgres
 
 1. **Row-Level Security**:
 
+### Basic RLS
+
 ```typescript
 // Enable RLS
 const db = createForgeDatabase({
@@ -430,6 +601,169 @@ await db.setPermissions('documents', {
           valueType: 'userContext',
           value: 'userId',
         },
+      },
+    ],
+  },
+});
+
+// Advanced RLS with customSql
+// Example: Limit free users to 5 CVs, but allow pro users unlimited CVs
+await db.setPermissions('cvs', {
+  operations: {
+    INSERT: [
+      {
+        allow: 'customSql',
+        customSql: `
+          SELECT 1 WHERE
+            -- Check if user is on pro plan
+            EXISTS (SELECT 1 FROM subscriptions WHERE user_id = :userId AND plan_type = 'pro')
+            -- OR check if user is on free plan but has fewer than 5 CVs
+            OR (
+              NOT EXISTS (SELECT 1 FROM subscriptions WHERE user_id = :userId AND plan_type = 'pro')
+              AND (SELECT COUNT(*) FROM cvs WHERE user_id = :userId) < 5
+            )
+        `,
+      },
+    ],
+  },
+});
+
+// Advanced RLS with custom functions
+// Register a custom RLS function
+import { rlsFunctionRegistry } from '@forgebase-ts/database';
+
+// Register a function that checks subscription limits
+rlsFunctionRegistry.register('checkSubscriptionLimits', async (userContext, row, knex) => {
+  if (!knex) return false;
+
+  // Check if user is on pro plan
+  const proSub = await knex('subscriptions').where({ user_id: userContext.userId, plan_type: 'pro' }).first();
+
+  if (proSub) return true; // Pro users can create unlimited resources
+
+  // For free users, check resource count
+  const count = await knex('cvs').where({ user_id: userContext.userId }).count('id as count').first();
+
+  return count && count.count < 5; // Allow if less than 5 resources
+});
+
+// Use the registered function in permissions
+await db.setPermissions('cvs', {
+  operations: {
+    INSERT: [
+      {
+        allow: 'customFunction',
+        customFunction: 'checkSubscriptionLimits',
+      },
+    ],
+  },
+});
+```
+
+### Custom SQL RLS
+
+For complex permission rules that require database queries, use the `customSql` rule type. This allows you to write SQL queries that can access multiple tables and use the full power of SQL to determine permissions.
+
+### Custom Function RLS
+
+For the most flexible permission rules, you can register custom JavaScript functions that will be executed during permission checks. These functions have access to:
+
+- The user context (userId, role, etc.)
+- The row data being accessed
+- The database connection (knex instance)
+
+#### Comparison between customSql and customFunction
+
+| Feature            | customSql        | customFunction        |
+| ------------------ | ---------------- | --------------------- |
+| Database Access    | Yes (SQL only)   | Yes (full Knex API)   |
+| Language           | SQL              | JavaScript/TypeScript |
+| External API Calls | No               | Yes                   |
+| Complexity         | Limited by SQL   | Unlimited             |
+| Performance        | Generally faster | May be slower         |
+| Reusability        | Limited          | High                  |
+| Debugging          | SQL errors only  | Full error handling   |
+| Testability        | Difficult        | Easy to unit test     |
+
+### Automatic Permission Initialization
+
+ForgeDatabase can automatically initialize permissions for all tables in your database. This feature is useful when you want to ensure that all tables have at least basic permissions set.
+
+#### Configuration
+
+You can enable automatic permission initialization when creating the ForgeDatabase instance:
+
+```typescript
+const db = createForgeDatabase({
+  db: knexInstance,
+  // Enable automatic permission initialization
+  initializePermissions: true,
+  // Optional: Specify where to save the initialization report
+  permissionReportPath: './permission-report.md',
+  // Optional: Callback function when initialization completes
+  onPermissionInitComplete: (report) => {
+    console.log(`Initialized permissions for ${report.tablesInitialized} tables`);
+  },
+});
+```
+
+#### Manual Initialization
+
+You can also manually trigger permission initialization at any time:
+
+```typescript
+// Initialize permissions with default options from config
+db.initializePermissions();
+
+// Or specify custom options
+db.initializePermissions('./custom-report-path.md', (report) => {
+  console.log('Permission initialization completed!');
+  console.log(`Tables initialized: ${report.initializedTables.join(', ')}`);
+});
+```
+
+#### How It Works
+
+1. The initialization process runs in the background (non-blocking)
+2. It retrieves all tables from the database
+3. It filters out tables in the excludedTables list
+4. For each table without permissions, it sets the default permissions
+5. It generates a detailed report of the initialization process
+
+#### Report Format
+
+The report is generated as a markdown file with the following information:
+
+- Start and end time of the initialization
+- Total number of tables processed
+- Number of tables that already had permissions
+- Number of tables that had permissions initialized
+- Number of tables excluded from initialization
+- Lists of tables in each category
+- Any errors that occurred during initialization
+
+To use custom functions:
+
+1. Register your functions at application startup
+2. Reference them by name in your permission rules
+
+```typescript
+// Register functions during app initialization
+import { rlsFunctionRegistry } from '@forgebase-ts/database';
+
+rlsFunctionRegistry.register('myCustomCheck', async (userContext, row, knex) => {
+  // Implement complex permission logic here
+  // Can use async/await, make database queries, call external services, etc.
+  return true; // Return true to grant access, false to deny
+});
+
+// Later, use the function in permission rules
+await db.setPermissions('myTable', {
+  operations: {
+    UPDATE: [
+      {
+        allow: 'customFunction',
+        customFunction: 'myCustomCheck',
       },
     ],
   },

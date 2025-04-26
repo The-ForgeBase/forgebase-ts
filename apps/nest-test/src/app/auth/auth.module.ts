@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthConfigService } from './auth.config.service';
 import {
   AdminController,
@@ -8,6 +9,7 @@ import {
 } from '@forgebase-ts/auth/adapters/nest';
 import { db } from '../app.module';
 import { CustomJwksController } from './jwks/custom-jwks.controller';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 @Module({
   imports: [
@@ -47,7 +49,16 @@ import { CustomJwksController } from './jwks/custom-jwks.controller';
       controllers: [AuthController, AdminController, JwksController],
     }),
   ],
-  providers: [AuthConfigService],
+  providers: [
+    AuthConfigService,
+    {
+      provide: APP_INTERCEPTOR,
+      useFactory: (authConfigService: AuthConfigService) => {
+        return new AuthInterceptor(authConfigService);
+      },
+      inject: [AuthConfigService],
+    },
+  ],
   controllers: [CustomJwksController],
   exports: [AuthConfigService],
 })

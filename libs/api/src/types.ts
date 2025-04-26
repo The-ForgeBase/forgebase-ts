@@ -1,8 +1,7 @@
-import knex from 'knex';
 import type { DatabaseService } from './core/database';
 import type { StorageService } from './core/storage';
 
-import { UserContext } from '@forgebase-ts/database';
+import { ForgeDatabaseConfig, UserContext } from '@forgebase-ts/database';
 import { SupportedFramework } from './frameworks/index';
 import {
   LocalStorageConfig,
@@ -29,10 +28,7 @@ export interface BaaSConfig {
     };
     db: {
       provider: 'sqlite' | 'postgres' | 'libsql';
-      config: Record<string, any>;
-      knex?: knex.Knex;
-      realtime: boolean;
-      enforceRls: boolean;
+      config: ForgeDatabaseConfig;
     };
   };
   api?: {
@@ -63,7 +59,22 @@ export interface Context {
   };
 }
 
+export interface WebContext {
+  req: Request;
+  userContext?: UserContext;
+  isSystem?: boolean; // Add isSystem flag to request context
+  params: Record<string, any>;
+  query: Record<string, any>;
+  res?: {
+    body: any;
+    status: number;
+    headers: Record<string, any>;
+  };
+}
+
 export type Handler = (ctx: Context) => Promise<void>;
+
+export type WebHandler = (ctx: WebContext) => Promise<void>;
 
 export type Route = {
   path: string;

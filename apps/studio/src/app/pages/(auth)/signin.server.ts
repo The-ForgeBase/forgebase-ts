@@ -44,14 +44,14 @@ export async function action({ event }: PageServerAction) {
     }
 
     // Set the admin token cookie
-    // if (data.token) {
-    //   setCookie(event, 'admin_token', data.token, {
-    //     httpOnly: true,
-    //     secure: process.env['NODE_ENV'] === 'production',
-    //     path: '/',
-    //     maxAge: 60 * 60 * 24 * 7, // 7 days
-    //   });
-    // }
+    if (data.token) {
+      setCookie(event, 'admin_token', data.token, {
+        httpOnly: true,
+        secure: process.env['NODE_ENV'] === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+    }
 
     return json({ success: true });
   } catch (error) {
@@ -62,7 +62,7 @@ export async function action({ event }: PageServerAction) {
 
 export const load = async ({ event }: PageServerLoad) => {
   const user = event.context['auth'];
-
+  console.log('user', user);
   if (user) {
     return sendRedirect(event, '/studio', 302);
   }

@@ -5,12 +5,15 @@ import type {
   UserContextFields,
 } from './types';
 import { PermissionService } from './permissionService';
+import type { Knex } from 'knex';
+import { rlsFunctionRegistry } from './rlsFunctionRegistry';
 
-export function evaluatePermission(
+export async function evaluatePermission(
   rules: PermissionRule[],
   userContext: UserContext,
-  row: Record<string, any> = {}
-): boolean {
+  row: Record<string, unknown> = {},
+  knex?: Knex
+): Promise<boolean> {
   for (const rule of rules) {
     switch (rule.allow) {
       case 'public':
@@ -21,7 +24,8 @@ export function evaluatePermission(
 
       case 'role':
         if (!rule.roles || rule.roles.length === 0) {
-          return false;
+          // If no roles specified, continue to next rule
+          continue;
         }
         if (
           rule.roles &&
@@ -30,41 +34,57 @@ export function evaluatePermission(
         ) {
           return true;
         }
-        return false;
+        // If we reach here, the role rule didn't match
+        // Continue to the next rule instead of returning false
+        continue;
 
       case 'auth':
         if (userContext.userId) {
           return true;
         }
-        break;
+        // If we reach here, the auth rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'guest':
         if (!userContext.userId) return true;
-        break;
+        // If we reach here, the guest rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'labels':
         if (
           rule.labels !== undefined &&
-          userContext.labels.some((label) => rule.labels!.includes(label))
+          userContext.labels.some(
+            (label) => rule.labels && rule.labels.includes(label)
+          )
         ) {
           return true;
         }
-        break;
+        // If we reach here, the labels rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'teams':
         if (
           rule.teams !== undefined &&
-          userContext.teams.some((team) => rule.teams!.includes(team))
+          userContext.teams.some(
+            (team) => rule.teams && rule.teams.includes(team)
+          )
         ) {
           return true;
         }
-        break;
+        // If we reach here, the teams rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'static':
         if (typeof rule.static === 'boolean') {
           return rule.static;
         }
-        break;
+        // If we reach here, the static rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'fieldCheck':
         if (rule.fieldCheck) {
@@ -101,23 +121,110 @@ export function evaluatePermission(
               break;
           }
         }
-        break;
+        // If we reach here, the fieldCheck rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
 
       case 'customSql':
-        if (rule.customSql) {
-          const parsedSql = rule.customSql.replace(
-            /:([a-zA-Z_]+)/g,
-            (_, key) => {
-              if (userContext[key as UserContextFields] === undefined) {
-                throw new Error(`Missing context value for key: ${key}`);
+        if (rule.customSql && knex) {
+          try {
+            // Replace placeholders with userContext values
+            const parsedSql = rule.customSql.replace(
+              /:([a-zA-Z_]+)/g,
+              (_match, key: string): string => {
+                if (userContext[key as UserContextFields] === undefined) {
+                  throw new Error(`Missing context value for key: ${key}`);
+                }
+                // For SQL parameters, we need to handle different types appropriately
+                const value = userContext[key as UserContextFields];
+                if (typeof value === 'string') {
+                  return `'${value.replace(/'/g, "''")}'`; // Escape single quotes for SQL
+                } else if (value === null) {
+                  return 'NULL';
+                } else if (Array.isArray(value)) {
+                  // Convert array to SQL array format
+                  return `(${value
+                    .map((item) => {
+                      if (typeof item === 'string')
+                        return `'${item.replace(/'/g, "''")}'`;
+                      return item;
+                    })
+                    .join(', ')})`;
+                }
+                return String(value);
               }
-              return JSON.stringify(userContext[key as UserContextFields]);
+            );
+
+            console.log(`Executing custom SQL: ${parsedSql}`);
+
+            // Execute the SQL query
+            const result = await knex.raw(parsedSql);
+
+            // Check if the query returned any rows or a truthy value
+            if (Array.isArray(result)) {
+              // For most database drivers, result is an array
+              return result.length > 0 && result[0].length > 0;
+            } else if (result && typeof result === 'object') {
+              // For some drivers, result might be an object with rows property
+              const rows = result.rows || result;
+              return Array.isArray(rows) ? rows.length > 0 : !!rows;
             }
-          );
-          console.log(`Executing custom SQL: ${parsedSql}`);
-          return true; // Simulate SQL execution
+
+            // Default to false if we couldn't determine the result
+            return false;
+          } catch (error) {
+            console.error(`Error executing custom SQL:`, error);
+            return false;
+          }
         }
-        break;
+        // If we reach here, the customSql rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
+
+      case 'customFunction':
+        if (rule.customFunction) {
+          try {
+            // Get the function from the registry
+            const customFn = rlsFunctionRegistry.get(rule.customFunction);
+            if (!customFn) {
+              console.error(
+                `Custom RLS function "${rule.customFunction}" not found in registry`
+              );
+              return false;
+            }
+
+            // console.log(
+            //   `Executing custom RLS function "${rule.customFunction}" with userContext:`,
+            //   userContext,
+            //   'and row data:',
+            //   row
+            // );
+
+            // Execute the custom function with userContext and row data
+            const result = await Promise.resolve(
+              customFn(userContext, row, knex)
+            );
+
+            // console.log(
+            //   `Custom RLS function "${rule.customFunction}" returned:`,
+            //   !!result,
+            //   'for userContext:',
+            //   userContext,
+            //   'and row data:',
+            //   row
+            // );
+            return !!result;
+          } catch (error) {
+            console.error(
+              `Error executing custom RLS function "${rule.customFunction}":`,
+              error
+            );
+            return false;
+          }
+        }
+        // If we reach here, the customFunction rule didn't match
+        // Continue to the next rule instead of breaking
+        continue;
     }
   }
   return false;
@@ -125,19 +232,21 @@ export function evaluatePermission(
 
 const CHUNK_SIZE = 1000;
 
-type Row = Record<string, any>;
+type Row = Record<string, unknown>;
 
 export async function enforcePermissions(
   tableName: string,
   operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE',
   userContext: UserContext,
   permissionService: PermissionService,
-  rows?: Row | Row[]
+  rows?: Row | Row[],
+  knex?: Knex
 ): Promise<{
   row?: Row | Row[];
   status: boolean;
   message?: string;
   hasFieldCheck: boolean;
+  hasCustomFunction: boolean;
 }> {
   const tablePermissions = (await permissionService.getPermissionsForTable(
     tableName
@@ -149,6 +258,7 @@ export async function enforcePermissions(
       status: false,
       message: `No permissions defined for table "${tableName}"`,
       hasFieldCheck: false,
+      hasCustomFunction: false,
     };
   }
 
@@ -158,6 +268,7 @@ export async function enforcePermissions(
       status: false,
       message: `No permissions defined for operation "${operation}" on table "${tableName}"`,
       hasFieldCheck: false,
+      hasCustomFunction: false,
     };
   }
 
@@ -165,26 +276,105 @@ export async function enforcePermissions(
 
   // Early return if no rules
   if (!rules || rules.length === 0) {
-    return { row: rows, status: true, hasFieldCheck: false };
+    return {
+      row: rows,
+      status: true,
+      hasFieldCheck: false,
+      hasCustomFunction: false,
+    };
   }
 
-  // Separate rules into fieldCheck and non-fieldCheck
+  // Separate rules into different types
   const fieldCheckRules = rules.filter((rule) => rule.allow === 'fieldCheck');
-  const nonFieldCheckRules = rules.filter(
-    (rule) => rule.allow !== 'fieldCheck'
+  const customFunctionRules = rules.filter(
+    (rule) => rule.allow === 'customFunction'
+  );
+  const simpleRules = rules.filter(
+    (rule) => rule.allow !== 'fieldCheck' && rule.allow !== 'customFunction'
   );
 
-  // First check non-fieldCheck rules
-  if (nonFieldCheckRules.length > 0) {
-    const hasAccess = nonFieldCheckRules.some((rule) =>
-      evaluatePermission([rule], userContext, {})
-    );
-    if (hasAccess) {
+  // First check simple rules that don't need row data
+  if (simpleRules.length > 0) {
+    // Check each rule and find the first one that grants access
+    for (const rule of simpleRules) {
+      const hasAccess = await evaluatePermission([rule], userContext, {}, knex);
+      if (hasAccess) {
+        return {
+          row: rows,
+          status: true,
+          hasFieldCheck: false,
+          hasCustomFunction: false,
+        };
+      }
+    }
+  }
+
+  // Check customFunction rules if no simple rules matched
+  // These need row data like fieldCheck rules
+  if (customFunctionRules.length > 0) {
+    // If no rows provided but we need to check with custom functions, return early
+    if (!rows) {
       return {
-        row: rows,
-        status: true,
+        row: undefined,
+        status: false,
         hasFieldCheck: false,
+        hasCustomFunction: true,
+        message: 'Custom function check required, please provide row data',
       };
+    }
+
+    // Handle array of rows
+    if (Array.isArray(rows)) {
+      const result: Row[] = [];
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        // Filter rows based on custom function rules
+        const filteredChunk = [];
+        for (const row of chunk) {
+          // Check each row against all custom function rules
+          for (const rule of customFunctionRules) {
+            const hasAccess = await evaluatePermission(
+              [rule],
+              userContext,
+              row,
+              knex
+            );
+            if (hasAccess) {
+              filteredChunk.push(row);
+              break; // Move to the next row once we find a rule that grants access
+            }
+          }
+        }
+        result.push(...filteredChunk);
+      }
+
+      // If any rows passed the custom function checks, return success
+      if (result.length > 0) {
+        return {
+          row: result,
+          status: true,
+          hasFieldCheck: false,
+          hasCustomFunction: false,
+        };
+      }
+    } else {
+      // Handle single row
+      for (const rule of customFunctionRules) {
+        const hasAccess = await evaluatePermission(
+          [rule],
+          userContext,
+          rows,
+          knex
+        );
+        if (hasAccess) {
+          return {
+            row: rows,
+            status: true,
+            hasFieldCheck: false,
+            hasCustomFunction: false,
+          };
+        }
+      }
     }
   }
 
@@ -197,6 +387,7 @@ export async function enforcePermissions(
         row: undefined,
         status: false,
         hasFieldCheck: true,
+        hasCustomFunction: false,
         message: 'Field-level check required, please provide row data',
       };
     }
@@ -206,17 +397,30 @@ export async function enforcePermissions(
       const result: Row[] = [];
       for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
         const chunk = rows.slice(i, i + CHUNK_SIZE);
-        const filteredChunk = chunk.filter((row) => {
-          return fieldCheckRules.some((rule) =>
-            evaluatePermission([rule], userContext, row)
-          );
-        });
+        // Filter rows based on field check rules
+        const filteredChunk = [];
+        for (const row of chunk) {
+          // Check each row against all field check rules
+          for (const rule of fieldCheckRules) {
+            const hasAccess = await evaluatePermission(
+              [rule],
+              userContext,
+              row,
+              knex
+            );
+            if (hasAccess) {
+              filteredChunk.push(row);
+              break; // Move to the next row once we find a rule that grants access
+            }
+          }
+        }
         result.push(...filteredChunk);
       }
       return {
         row: result,
         status: result.length > 0,
         hasFieldCheck: false,
+        hasCustomFunction: false,
         message:
           result.length === 0
             ? 'No rows matched the field-level permission rules'
@@ -225,14 +429,22 @@ export async function enforcePermissions(
     }
 
     // Handle single row
-    const hasFieldAccess = fieldCheckRules.some((rule) =>
-      evaluatePermission([rule], userContext, rows)
-    );
+    let hasFieldAccess = false;
+    for (const rule of fieldCheckRules) {
+      hasFieldAccess = await evaluatePermission(
+        [rule],
+        userContext,
+        rows,
+        knex
+      );
+      if (hasFieldAccess) break;
+    }
 
     return {
       row: rows,
       status: hasFieldAccess,
       hasFieldCheck: false,
+      hasCustomFunction: false,
       message: !hasFieldAccess
         ? `User does not have field-level permission to perform operation "${operation}" on table "${tableName}"`
         : undefined,
@@ -244,6 +456,7 @@ export async function enforcePermissions(
     row: rows,
     status: false,
     hasFieldCheck: false,
+    hasCustomFunction: false,
     message: `User does not have permission to perform operation "${operation}" on table "${tableName}"`,
   };
 }

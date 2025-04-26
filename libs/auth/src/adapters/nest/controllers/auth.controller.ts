@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   Controller,
   Post,
@@ -10,10 +11,13 @@ import {
   UnauthorizedException,
   Param,
   Inject,
+  Put,
+  Delete,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { User } from '../../../types';
 import { AuthGuard } from '../guards/auth.guard';
+import { AdminGuard } from '../guards/admin.guard';
 import { AuthService } from '../services/auth.service';
 import { NestAuthConfig } from '..';
 
@@ -225,16 +229,18 @@ export class AuthController<TUser extends User> {
     }
   }
 
-  @Post('logout')
-  @UseGuards(AuthGuard)
+  @Get('logout')
   async logout(@Req() req: Request, @Res() res: Response) {
+    console.log('Logout called');
     try {
       const token = this.extractToken(req);
+      if (!token) {
+        throw new UnauthorizedException('No token provided');
+      }
       await this.authService.logout(token);
-      //TODO: Clear the token cookie and Auth header
       res.clearCookie('token');
       res.clearCookie('refreshToken');
-      return { success: true };
+      return res.json({ success: true });
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
@@ -351,6 +357,7 @@ export class AuthController<TUser extends User> {
     @Res() res: Response
   ) {
     try {
+      console.log('Verifying reset token:', token);
       const isValid = await this.authService.verifyPasswordResetToken(
         userId,
         token
@@ -374,6 +381,38 @@ export class AuthController<TUser extends User> {
         newPassword,
         token
       );
+      return res.json({ success });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Post('change-password')
+  @UseGuards(AuthGuard)
+  async changePassword(
+    @Req() req: Request,
+    @Body('oldPassword') oldPassword: string,
+    @Body('newPassword') newPassword: string,
+    @Res() res: Response
+  ) {
+    try {
+      // Get the user ID from the authenticated request
+      // @ts-ignore
+      const userId = req['user'].id;
+
+      console.log('User ID:', userId);
+      console.log('Old Password:', oldPassword);
+      console.log('New Password:', newPassword);
+
+      // Call the service to change the password
+      const success = await this.authService.changePassword(
+        userId,
+        oldPassword,
+        newPassword
+      );
+
+      console.log('Password changed successfully:', success);
+
       return res.json({ success });
     } catch (error) {
       return res.status(400).json({ error: error.message });
@@ -416,6 +455,7 @@ export class AuthController<TUser extends User> {
     @Res() res: Response
   ) {
     try {
+      // @ts-ignore
       const result = await this.authService.enableMfa(req['user'].id, code);
       return res.json(result);
     } catch (error) {
@@ -431,6 +471,26 @@ export class AuthController<TUser extends User> {
     return { user };
   }
 
+  //TODO: To be deprecated
+  @Post('verify-token')
+  @UseGuards(AuthGuard)
+  async verifyToken(@Body('token') token: string, @Res() res: Response) {
+    try {
+      // Use the auth service to validate the token
+      const result = await this.authService.validateSessionToken(token);
+
+      return res.json({
+        valid: true,
+        user: result,
+      });
+    } catch (error) {
+      return res.status(401).json({
+        valid: false,
+        error: error.message,
+      });
+    }
+  }
+
   @Post('disable-mfa')
   @UseGuards(AuthGuard)
   async disableMfa(
@@ -439,10 +499,175 @@ export class AuthController<TUser extends User> {
     @Res() res: Response
   ) {
     try {
+      // @ts-ignore
       const result = await this.authService.disableMfa(req['user'].id, code);
       return res.json(result);
     } catch (error) {
       res.status(400).json({ error: error.message });
+    }
+  }
+
+  @Put('add-labels')
+  @UseGuards(AdminGuard)
+  async addLabels(
+    @Body() data: { userId: string; labels: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const labels = await this.authService.addLabels(data.userId, data.labels);
+
+      return res.json(labels);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Post('set-labels')
+  @UseGuards(AdminGuard)
+  async setLabels(
+    @Body() data: { userId: string; labels: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const labels = await this.authService.setLabels(data.userId, data.labels);
+
+      return res.json(labels);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Delete('remove-labels')
+  @UseGuards(AdminGuard)
+  async removeLabels(
+    @Body() data: { userId: string; labels: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const labels = await this.authService.removeLabels(
+        data.userId,
+        data.labels
+      );
+
+      return res.json(labels);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Put('add-permissions')
+  @UseGuards(AdminGuard)
+  async addPermissions(
+    @Body() data: { userId: string; permissions: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const permissions = await this.authService.addPermissions(
+        data.userId,
+        data.permissions
+      );
+
+      return res.json(permissions);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Post('set-permissions')
+  @UseGuards(AdminGuard)
+  async setPermissions(
+    @Body() data: { userId: string; permissions: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const permissions = await this.authService.setPermissions(
+        data.userId,
+        data.permissions
+      );
+
+      return res.json(permissions);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Delete('remove-permissions')
+  @UseGuards(AdminGuard)
+  async removePermissions(
+    @Body() data: { userId: string; permissions: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const permissions = await this.authService.removePermissions(
+        data.userId,
+        data.permissions
+      );
+
+      return res.json(permissions);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Post('set-teams')
+  @UseGuards(AdminGuard)
+  async setTeams(
+    @Body() data: { userId: string; teams: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const teams = await this.authService.setTeams(data.userId, data.teams);
+
+      return res.json(teams);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Put('add-teams')
+  @UseGuards(AdminGuard)
+  async addTeams(
+    @Body() data: { userId: string; teams: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const teams = await this.authService.addTeams(data.userId, data.teams);
+
+      return res.json(teams);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Delete('remove-teams')
+  @UseGuards(AdminGuard)
+  async removeTeams(
+    @Body() data: { userId: string; teams: string[] },
+    @Res() res: Response
+  ) {
+    try {
+      const teams = await this.authService.removeTeams(data.userId, data.teams);
+
+      return res.json(teams);
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
+    }
+  }
+
+  @Put('update-role')
+  @UseGuards(AdminGuard)
+  async updateRole(
+    @Body() data: { userId: string; role: string },
+    @Res() res: Response
+  ) {
+    try {
+      await this.authService.setRole(data.userId, data.role);
+
+      return res.json({
+        role: data.role,
+      });
+    } catch (error) {
+      res.status(400).json({ error, message: error.message });
     }
   }
 }

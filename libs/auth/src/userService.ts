@@ -1,3 +1,4 @@
+import { AuthUsersTable } from './config';
 import { hashPassword } from './lib/password';
 import {
   AuthConfig,
@@ -17,13 +18,13 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
   constructor(config: AuthConfig, internalConfig: AuthInternalConfig<TUser>) {
     this.config = config;
     this.internalConfig = internalConfig;
-    this.table = internalConfig.tableName || 'users';
+    this.table = AuthUsersTable;
     this.columns = {
-      id: internalConfig.userColumns?.id || 'id',
-      email: internalConfig.userColumns?.email || 'email',
-      passwordHash: internalConfig.userColumns?.passwordHash || 'password_hash',
-      createdAt: internalConfig.userColumns?.createdAt || 'created_at',
-      updatedAt: internalConfig.userColumns?.updatedAt || 'updated_at',
+      id: 'id',
+      email: 'email',
+      passwordHash: 'password_hash',
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
     };
   }
 
@@ -127,5 +128,85 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
       .knex(this.table)
       .where(this.columns.id, userId)
       .delete();
+  }
+
+  async removeRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ) {
+    const [user] = await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .first();
+
+    const existingList: string[] =
+      type === 'labels'
+        ? user.labels.split(',')
+        : type === 'permissions'
+        ? user.permissions.split(',')
+        : user.teams.split(',');
+    const newList = existingList.filter((el) => !list.includes(el));
+
+    await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .update({
+        [type]: newList.join(','),
+      });
+
+    return newList;
+  }
+
+  async addRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ) {
+    const [user] = await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .first();
+
+    const existingList: string[] =
+      type === 'labels'
+        ? user.labels.split(',')
+        : type === 'permissions'
+        ? user.permissions.split(',')
+        : user.teams.split(',');
+    const newList = [...existingList, ...list];
+
+    await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .update({
+        [type]: newList.join(','),
+      });
+
+    return newList;
+  }
+
+  async setRTP(
+    userId: string,
+    list: string[],
+    type: 'teams' | 'permissions' | 'labels'
+  ) {
+    await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .update({
+        [type]: list.join(','),
+      });
+
+    return list;
+  }
+
+  async setRole(userId: string, role: string): Promise<void> {
+    await this.internalConfig
+      .knex(this.table)
+      .where(this.columns.id, userId)
+      .update({
+        role,
+      });
   }
 }

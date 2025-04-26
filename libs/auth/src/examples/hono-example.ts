@@ -34,7 +34,6 @@ async function setupAuth() {
   // Initialize user service
   const userService = new KnexUserService<AppUser>(config, {
     knex: db,
-    tableName: 'users',
   });
 
   // Initialize auth providers

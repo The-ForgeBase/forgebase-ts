@@ -16,20 +16,43 @@ export class AdminGuard implements CanActivate {
     private reflector: Reflector
   ) {}
 
-  private extractToken(request: Request): string | null {
+  private extractToken(request: Request): {
+    token: string | null;
+    type: 'session' | 'apikey';
+  } {
+    // Check for session token
     if (request.headers.authorization?.startsWith('AdminBearer ')) {
-      return request.headers.authorization.substring(12);
+      return {
+        token: request.headers.authorization.substring(12),
+        type: 'session',
+      };
     }
-    // console.log('AdminGuard request.cookies:', request.cookies);
+
+    if (request.cookies && request.cookies.admin_token) {
+      return { token: request.cookies.admin_token, type: 'session' };
+    }
+
+    // Check for API key
+    if (request.headers.authorization?.startsWith('AdminApiKey ')) {
+      return {
+        token: request.headers.authorization.substring(12),
+        type: 'apikey',
+      };
+    }
+
+    // Check X-Admin-API-Key header
+    if (request.headers['x-admin-api-key']) {
+      return {
+        token: request.headers['x-admin-api-key'] as string,
+        type: 'apikey',
+      };
+    }
+
     if (process.env.NODE_ENV !== 'production') {
       console.log('AdminGuard request.headers:', request.headers);
     }
 
-    if (request.cookies && request.cookies.admin_token) {
-      return request.cookies.admin_token;
-    }
-
-    return null;
+    return { token: null, type: 'session' };
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -54,23 +77,57 @@ export class AdminGuard implements CanActivate {
       return true;
     }
 
-    const token = this.extractToken(request);
+    const { token, type } = this.extractToken(request);
     if (!token) {
-      throw new UnauthorizedException('No admin token provided');
+      throw new UnauthorizedException('No admin authentication provided');
     }
 
     try {
-      const { admin } = await this.adminService.validateToken(token);
+      // Get required scopes from metadata if using API key
+      const requiredScopes =
+        this.reflector.get<string[]>('requiredScopes', context.getHandler()) ||
+        [];
 
-      // Add the admin to the request object for use in controllers
-      request['admin'] = admin;
-      return true;
+      if (type === 'session') {
+        // Validate session token
+        const { admin } = await this.adminService.validateToken(token);
+
+        // Add the admin to the request object for use in controllers
+        request['admin'] = admin;
+        request['isApiKeyAuth'] = false;
+        request['adminApiKeyScopes'] = [];
+        return true;
+      } else {
+        // Validate API key
+        const { admin, scopes } = await this.adminService.validateApiKey(token);
+
+        // Check if the API key has the required scopes
+        if (requiredScopes.length > 0) {
+          const hasAllScopes = requiredScopes.every(
+            (scope) => scopes.includes(scope) || scopes.includes('*')
+          );
+
+          if (!hasAllScopes) {
+            throw new UnauthorizedException(
+              'API key does not have the required scopes'
+            );
+          }
+        }
+
+        // Add the admin and scopes to the request object for use in controllers
+        request['admin'] = admin;
+        request['isApiKeyAuth'] = true;
+        request['adminApiKeyScopes'] = scopes;
+        return true;
+      }
     } catch (error) {
-      // console.log('AdminGuard error:', error);
+      console.error('AdminGuard error:', error);
       if (error instanceof AdminFeatureDisabledError) {
         throw new UnauthorizedException('Admin feature is disabled');
       }
-      throw new UnauthorizedException('Invalid admin token');
+      throw new UnauthorizedException(
+        type === 'session' ? 'Invalid admin token' : 'Invalid admin API key'
+      );
     }
   }
 }

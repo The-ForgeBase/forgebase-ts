@@ -10,6 +10,7 @@ A framework-agnostic web authentication SDK for ForgeBase with SSR support.
 - 🍪 Cookie and localStorage support
 - 📱 Responsive to different environments
 - 🔒 Secure authentication flows
+- 🔄 Always fresh user data from the server
 - 🧩 Framework-specific integrations (React, Angular, Next.js, Nitro)
 - 🔄 Support for both Next.js Pages Router and App Router
 - 🚀 Angular integration with signals and standalone components
@@ -52,14 +53,30 @@ await auth.login({
   password: 'securePassword123',
 });
 
-// Get the current user
-const user = auth.getCurrentUser();
+// Get the current user (from memory)
+const user = auth.getCurrentUser(); // Note: This is deprecated
+
+// Get the current user (always fetches fresh data from server)
+const user = await auth.getUser();
 
 // Check if authenticated
 const isAuthenticated = auth.isAuthenticated();
 
 // Logout
 await auth.logout();
+
+// Get the API instance for making authenticated requests
+const api = auth.api;
+
+// Make an authenticated request
+const response = await api.get('/protected-endpoint');
+
+// Get auth interceptors to apply to another axios instance
+const authInterceptors = auth.getAuthInterceptors();
+
+// Apply auth interceptors to your own axios instance
+const myAxios = axios.create({ baseURL: 'https://api.example.com' });
+auth.applyAuthInterceptors(myAxios);
 ```
 
 ## React Integration

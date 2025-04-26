@@ -7,6 +7,7 @@ import {
 import { KnexAdminService } from './admin.knex.service';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { AuthAdminSessionsTable } from '../config';
 
 interface JWTPayload {
   sub: string;
@@ -18,7 +19,7 @@ interface JWTPayload {
  * Session manager for admin authentication
  */
 export class KnexAdminSessionManager implements AdminSessionManager {
-  private readonly tableName = 'internal_admin_sessions';
+  private readonly tableName = AuthAdminSessionsTable;
   private readonly jwtSecret: string;
   private readonly tokenExpiry: string;
 
@@ -55,7 +56,12 @@ export class KnexAdminSessionManager implements AdminSessionManager {
 
     // Set expires_at with proper syntax based on database type
     let expiresAt;
-    if (clientType === 'sqlite' || clientType === 'sqlite3') {
+    if (
+      clientType === 'sqlite' ||
+      clientType === 'sqlite3' ||
+      clientType === 'better-sqlite3' ||
+      clientType === 'libsql'
+    ) {
       expiresAt = this.knex.raw(`datetime('now', '+24 hours')`);
     } else {
       // Postgres, MySQL, etc.

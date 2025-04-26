@@ -9,6 +9,10 @@ export * from './session/jwt';
 export * from './session/jose-jwt'; // Export the new JoseJwtSessionManager
 export * from './utils/token-verifier'; // Export TokenVerifier for external services
 export * from './lib/password';
+export * from './lib/sanitize';
+
+// User table extension utilities
+export * from './utils';
 
 // Provider exports
 export * from './providers';

@@ -2,6 +2,7 @@ import { Knex } from 'knex';
 import { User, AuthProvider } from '../types';
 import { KnexUserService } from '../userService';
 import crypto from 'crypto';
+import { AuthPasswordlessTokensTable } from '../config';
 
 export class PasswordlessProvider<TUser extends User>
   implements AuthProvider<TUser>
@@ -16,7 +17,7 @@ export class PasswordlessProvider<TUser extends User>
 
   async authenticate({ email }: { email: string }): Promise<null> {
     const token = crypto.randomBytes(32).toString('hex');
-    await this.config.tokenStore('passwordless_tokens').insert({
+    await this.config.tokenStore(AuthPasswordlessTokensTable).insert({
       token,
       email,
       expires_at: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
@@ -28,7 +29,7 @@ export class PasswordlessProvider<TUser extends User>
 
   async validate(token: string) {
     const record = await this.config
-      .tokenStore('passwordless_tokens')
+      .tokenStore(AuthPasswordlessTokensTable)
       .where({ token })
       .where('expires_at', '>', new Date())
       .first();

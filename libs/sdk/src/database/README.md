@@ -78,8 +78,12 @@ await auth.login({
   password: 'password123',
 });
 
-// Create a database SDK with the auth axios instance
+// Option 1: Create a database SDK with the auth axios instance
 const db = new DatabaseSDK('https://api.example.com', auth.api);
+
+// Option 2: Create a database SDK with auth interceptors
+const authInterceptors = auth.getAuthInterceptors();
+const db2 = new DatabaseSDK('https://api.example.com', undefined, {}, authInterceptors);
 
 // Now all database requests will include authentication headers
 // and benefit from automatic token refresh
@@ -152,6 +156,54 @@ await db.table('posts').update(456, {
 
 // Delete a record
 await db.table('posts').delete(456);
+```
+
+## Authentication Integration
+
+The DatabaseSDK can be integrated with ForgebaseAuth in two ways:
+
+### 1. Using the Auth Axios Instance
+
+```typescript
+import { DatabaseSDK } from '@forgebase/sdk';
+import { ForgebaseWebAuth } from '@forgebase/web-auth';
+
+// Initialize auth
+const auth = new ForgebaseWebAuth({ apiUrl: 'https://api.example.com' });
+
+// Create a database SDK with the auth axios instance
+const db = new DatabaseSDK('https://api.example.com', auth.api);
+```
+
+### 2. Using Auth Interceptors
+
+```typescript
+import { DatabaseSDK } from '@forgebase/sdk';
+import { ForgebaseWebAuth } from '@forgebase/web-auth';
+
+// Initialize auth
+const auth = new ForgebaseWebAuth({ apiUrl: 'https://api.example.com' });
+
+// Get auth interceptors
+const authInterceptors = auth.getAuthInterceptors();
+
+// Create a database SDK with auth interceptors
+const db = new DatabaseSDK('https://api.example.com', undefined, { timeout: 5000 }, authInterceptors);
+```
+
+You can also apply auth interceptors to an existing DatabaseSDK instance:
+
+```typescript
+import { DatabaseSDK } from '@forgebase/sdk';
+import { ForgebaseWebAuth } from '@forgebase/web-auth';
+
+// Initialize auth and database
+const auth = new ForgebaseWebAuth({ apiUrl: 'https://api.example.com' });
+const db = new DatabaseSDK('https://api.example.com');
+
+// Get auth interceptors and apply them
+const authInterceptors = auth.getAuthInterceptors();
+db.applyAuthInterceptors(authInterceptors);
 ```
 
 ## Axios Configuration

@@ -39,7 +39,7 @@ export const VerifyEmailTemplate = ({
             </Text>
 
             <Section style={buttonContainer}>
-              <Button href={url} style={button} height={0} width={0}>
+              <Button href={url} style={button} height={0} width={200}>
                 Verify My Email
               </Button>
             </Section>

@@ -1,5 +1,6 @@
 import { Knex } from 'knex';
 import {
+  AdminApiKey,
   AdminAuthProvider,
   AdminFeatureDisabledError,
   AdminNotFoundError,
@@ -9,9 +10,11 @@ import {
   InitialAdminRequiredError,
 } from '../types/admin';
 import { KnexAdminService } from '../services/admin.knex.service';
+import { AdminApiKeyService } from '../services/admin-api-key.service';
 import { ConfigStore } from '../types';
 import { AuthConfig } from '../types';
 import { initializeAdminTables } from '../config/schema';
+import { AuthAdminAuditLogsTable } from '../config';
 
 /**
  * Admin audit log interface
@@ -29,6 +32,7 @@ interface AuditLogEntry {
  */
 export class InternalAdminManager {
   private adminService: KnexAdminService;
+  private apiKeyService: AdminApiKeyService;
   private isEnabled = false;
   private hasInitialAdmin = false;
 
@@ -39,6 +43,7 @@ export class InternalAdminManager {
     private configStore: ConfigStore
   ) {
     this.adminService = new KnexAdminService(knex);
+    this.apiKeyService = new AdminApiKeyService(knex);
   }
 
   /**
@@ -77,11 +82,12 @@ export class InternalAdminManager {
     password: string
   ): Promise<void> {
     // Check if any admin exists
-    const { admins, total } = await this.adminService.listAdmins(1, 1);
+    const { total } = await this.adminService.listAdmins(1, 1);
+    const config = await this.configStore.getConfig();
 
     if (total === 0) {
       // Create initial admin with super admin privileges
-      await this.adminService.createAdmin(
+      const admin = await this.adminService.createAdmin(
         {
           email,
           name: 'Initial Admin',
@@ -93,6 +99,31 @@ export class InternalAdminManager {
       );
 
       this.hasInitialAdmin = true;
+
+      // Create initial API key if configured
+      if (config.adminFeature?.createInitialApiKey) {
+        try {
+          const result = await this.createApiKey(admin.id, {
+            name:
+              config.adminFeature.initialApiKeyName || 'Initial Admin API Key',
+            scopes: config.adminFeature.initialApiKeyScopes || ['*'],
+            expires_at: null, // Non-expiring key
+          });
+
+          console.log('Created initial admin API key:', {
+            id: result.apiKey.id,
+            name: result.apiKey.name,
+            key_prefix: result.apiKey.key_prefix,
+            scopes: result.apiKey.scopes,
+          });
+          console.log(
+            'IMPORTANT: Save this API key, it will only be shown once:',
+            result.fullKey
+          );
+        } catch (error) {
+          console.error('Failed to create initial admin API key:', error);
+        }
+      }
     } else {
       this.hasInitialAdmin = true;
     }
@@ -462,7 +493,7 @@ export class InternalAdminManager {
    * @param logEntry Log entry data
    */
   private async createAuditLog(logEntry: AuditLogEntry): Promise<void> {
-    await this.knex('internal_admin_audit_logs').insert({
+    await this.knex(AuthAdminAuditLogsTable).insert({
       admin_id: logEntry.admin_id,
       action: logEntry.action,
       details: logEntry.details ? JSON.stringify(logEntry.details) : null,
@@ -494,7 +525,7 @@ export class InternalAdminManager {
 
     const offset = (page - 1) * limit;
 
-    let query = this.knex('internal_admin_audit_logs')
+    let query = this.knex(AuthAdminAuditLogsTable)
       .select('*')
       .orderBy('created_at', 'desc')
       .limit(limit)
@@ -506,9 +537,7 @@ export class InternalAdminManager {
 
     const logs = await query;
 
-    let countQuery = this.knex('internal_admin_audit_logs').count(
-      'id as count'
-    );
+    let countQuery = this.knex(AuthAdminAuditLogsTable).count('id as count');
 
     if (adminId) {
       countQuery = countQuery.where({ admin_id: adminId });
@@ -522,5 +551,198 @@ export class InternalAdminManager {
       page,
       limit,
     };
+  }
+
+  /**
+   * Create a new API key for an admin
+   * @param adminId The admin ID
+   * @param options API key creation options
+   * @returns The created API key and the full key (only returned once)
+   */
+  async createApiKey(
+    adminId: string,
+    options: {
+      name: string;
+      scopes?: string[];
+      expires_at?: Date | null; // null means non-expiring key
+    }
+  ): Promise<{ apiKey: AdminApiKey; fullKey: string }> {
+    this.checkEnabled();
+
+    // Verify admin exists
+    const admin = await this.adminService.findAdminById(adminId);
+    if (!admin) {
+      throw new AdminNotFoundError(adminId);
+    }
+
+    // Create the API key
+    const result = await this.apiKeyService.createApiKey({
+      admin_id: adminId,
+      name: options.name,
+      scopes: options.scopes,
+      expires_at: options.expires_at,
+    });
+
+    // Log the API key creation
+    await this.createAuditLog({
+      admin_id: adminId,
+      action: 'API_KEY_CREATED',
+      details: {
+        key_id: result.apiKey.id,
+        name: options.name,
+        scopes: options.scopes,
+        expires_at: options.expires_at,
+      },
+    });
+
+    return result;
+  }
+
+  /**
+   * List all API keys for an admin
+   * @param adminId The admin ID
+   * @returns Array of API keys
+   */
+  async listApiKeys(adminId: string): Promise<AdminApiKey[]> {
+    this.checkEnabled();
+
+    // Verify admin exists
+    const admin = await this.adminService.findAdminById(adminId);
+    if (!admin) {
+      throw new AdminNotFoundError(adminId);
+    }
+
+    return this.apiKeyService.listApiKeys(adminId);
+  }
+
+  /**
+   * Get an API key by ID
+   * @param keyId The API key ID
+   * @param adminId The admin ID (for permission checking)
+   * @returns The API key if found and owned by the admin
+   */
+  async getApiKey(keyId: string, adminId: string): Promise<AdminApiKey> {
+    this.checkEnabled();
+
+    const apiKey = await this.apiKeyService.getApiKeyById(keyId);
+    if (!apiKey) {
+      throw new Error(`API key not found: ${keyId}`);
+    }
+
+    // Check if the API key belongs to the admin
+    if (apiKey.admin_id !== adminId) {
+      throw new AdminUnauthorizedError(adminId, 'view_api_key');
+    }
+
+    return apiKey;
+  }
+
+  /**
+   * Update an API key
+   * @param keyId The API key ID
+   * @param adminId The admin ID (for permission checking)
+   * @param updates The updates to apply
+   * @returns The updated API key
+   */
+  async updateApiKey(
+    keyId: string,
+    adminId: string,
+    updates: {
+      name?: string;
+      scopes?: string[];
+      expires_at?: Date | null;
+    }
+  ): Promise<AdminApiKey> {
+    this.checkEnabled();
+
+    // Verify the API key exists and belongs to the admin
+    await this.getApiKey(keyId, adminId);
+
+    // Update the API key
+    const updatedKey = await this.apiKeyService.updateApiKey(keyId, updates);
+    if (!updatedKey) {
+      throw new Error(`Failed to update API key: ${keyId}`);
+    }
+
+    // Log the API key update
+    await this.createAuditLog({
+      admin_id: adminId,
+      action: 'API_KEY_UPDATED',
+      details: {
+        key_id: keyId,
+        updates,
+      },
+    });
+
+    return updatedKey;
+  }
+
+  /**
+   * Delete an API key
+   * @param keyId The API key ID
+   * @param adminId The admin ID (for permission checking)
+   * @returns True if the key was deleted
+   */
+  async deleteApiKey(keyId: string, adminId: string): Promise<boolean> {
+    this.checkEnabled();
+
+    // Verify the API key exists and belongs to the admin
+    const apiKey = await this.getApiKey(keyId, adminId);
+
+    // Delete the API key
+    const deleted = await this.apiKeyService.deleteApiKey(keyId);
+
+    // Log the API key deletion
+    if (deleted) {
+      await this.createAuditLog({
+        admin_id: adminId,
+        action: 'API_KEY_DELETED',
+        details: {
+          key_id: keyId,
+          name: apiKey.name,
+        },
+      });
+    }
+
+    return deleted;
+  }
+
+  /**
+   * Validate an API key and get the associated admin
+   * @param apiKey The API key to validate
+   * @returns The admin associated with the API key if valid
+   */
+  async validateApiKey(
+    apiKey: string
+  ): Promise<{ admin: InternalAdmin; scopes: string[] }> {
+    this.checkEnabled();
+
+    // Validate the API key
+    const key = await this.apiKeyService.validateApiKey(apiKey);
+    if (!key) {
+      throw new Error('Invalid API key');
+    }
+
+    // Get the admin associated with the API key
+    const admin = await this.adminService.findAdminById(key.admin_id);
+    if (!admin) {
+      throw new AdminNotFoundError(key.admin_id);
+    }
+
+    // Return the admin and the API key scopes
+    return {
+      admin,
+      scopes: key.scopes || [],
+    };
+  }
+
+  /**
+   * Check if an API key has a specific scope
+   * @param apiKey The API key
+   * @param scope The scope to check
+   * @returns True if the API key has the scope
+   */
+  hasApiKeyScope(apiKey: AdminApiKey, scope: string): boolean {
+    return this.apiKeyService.hasScope(apiKey, scope);
   }
 }

@@ -7,6 +7,7 @@ import {
 import { TablePermissions, UserContext } from '../types';
 import { evaluatePermission } from '../rlsManager';
 import { PermissionService } from '../permissionService';
+import { RealtimeAdapter } from './RealtimeAdapter';
 
 interface SocketClient extends WebSocket<any> {
   id: string;
@@ -14,7 +15,7 @@ interface SocketClient extends WebSocket<any> {
   userContext?: UserContext;
 }
 
-export class WebSocketManager {
+export class WebSocketManager implements RealtimeAdapter {
   private app: TemplatedApp;
   private clients: Map<string, SocketClient> = new Map();
   private tableSubscriptions: Map<string, Set<string>> = new Map();
@@ -24,6 +25,13 @@ export class WebSocketManager {
     private permissionService: PermissionService
   ) {
     this.app = App();
+    this.initialize();
+  }
+
+  /**
+   * Initialize the WebSocket server
+   */
+  public initialize(): void {
     this.setupWebSocketServer();
   }
 
@@ -119,18 +127,24 @@ export class WebSocketManager {
     this.clients.delete(client.id);
   }
 
-  private canSubscribe(
+  private async canSubscribe(
     userContext: UserContext,
     permissions?: TablePermissions
-  ): boolean {
+  ): Promise<boolean> {
     if (!permissions) return false;
 
     const selectRules = permissions.operations.SELECT;
 
     if (!selectRules) return false;
 
+    // Create a copy of the rules without fieldCheck
+    const rulesWithoutFieldCheck = selectRules.map((rule) => {
+      const { fieldCheck, ...ruleWithoutFieldCheck } = rule;
+      return ruleWithoutFieldCheck;
+    });
+
     // Check if the user has the required permissions to subscribe
-    return evaluatePermission(selectRules, userContext);
+    return evaluatePermission(rulesWithoutFieldCheck, userContext);
   }
 
   private async processBatch(
@@ -200,5 +214,13 @@ export class WebSocketManager {
 
   private sendError(client: SocketClient, message: string) {
     client.send(JSON.stringify({ type: 'error', message }));
+  }
+
+  /**
+   * Get the port the WebSocket server is listening on
+   * @returns The port number
+   */
+  public getPort(): number {
+    return this.port;
   }
 }

@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 // hookableDb.ts
 import EventEmitter from 'events';
 import type { Knex } from 'knex';
-import { WebSocketManager } from './websocket/WebSocketManager';
+import { RealtimeAdapter } from './websocket/RealtimeAdapter';
 
 type MutationType = 'create' | 'update' | 'delete';
 
 type QueryFunction<T extends {}> = (
-  query: Knex.QueryBuilder<T, T[]>
+  query: Knex.QueryBuilder<T, any>
 ) => Promise<T[]>;
 
 type MutationFunction<T extends {}> = (
@@ -40,9 +41,9 @@ type KnexHooksEvents = {
 class KnexHooks {
   private knex: Knex;
   private events: EventEmitter;
-  private wsManager?: WebSocketManager;
+  private realtimeAdapter?: RealtimeAdapter;
 
-  constructor(knexInstance: Knex, wsManager?: WebSocketManager) {
+  constructor(knexInstance: Knex, realtimeAdapter?: RealtimeAdapter) {
     if (!knexInstance) {
       throw new Error(
         'A Knex.js instance is required to initialize HookableDB.'
@@ -50,7 +51,9 @@ class KnexHooks {
     }
     this.knex = knexInstance;
     this.events = new EventEmitter();
-    this.wsManager = wsManager;
+    if (realtimeAdapter) {
+      this.realtimeAdapter = realtimeAdapter;
+    }
   }
 
   getKnexInstance(): Knex {
@@ -61,11 +64,16 @@ class KnexHooks {
   async query<T extends {}>(
     tableName: string,
     queryFn: QueryFunction<T>,
-    context?: HookContext
+    context?: HookContext,
+    trx?: Knex.Transaction
   ): Promise<T[]> {
     this.events.emit('beforeQuery', { tableName, context });
     await this.beforeQuery(tableName, context);
-    const result = await queryFn(this.knex(tableName));
+
+    // Use transaction if provided, otherwise use the knex instance
+    const queryBuilder = trx ? trx<T>(tableName) : this.knex<T>(tableName);
+    const result = await queryFn(queryBuilder);
+
     this.events.emit('afterQuery', { tableName, result, context });
     await this.afterQuery(tableName, result, context);
     return result;
@@ -77,7 +85,8 @@ class KnexHooks {
     mutationType: MutationType,
     mutationFn: MutationFunction<T>,
     data?: any,
-    context?: HookContext
+    context?: HookContext,
+    trx?: Knex.Transaction
   ): Promise<any> {
     this.events.emit('beforeMutation', {
       tableName,
@@ -87,7 +96,18 @@ class KnexHooks {
     });
 
     await this.beforeMutation(tableName, mutationType, data, context);
-    const result = await mutationFn(this.knex<T>(tableName));
+
+    // Use transaction if provided, otherwise use the knex instance
+    const queryBuilder = trx ? trx<T>(tableName) : this.knex<T>(tableName);
+    const result = await mutationFn(queryBuilder);
+
+    // console.log('afterMutation', {
+    //   tableName,
+    //   mutationType,
+    //   result,
+    //   data,
+    //   context,
+    // });
 
     this.events.emit('afterMutation', {
       tableName,
@@ -133,11 +153,11 @@ class KnexHooks {
     context?: HookContext
   ): Promise<void> {
     // Emit real-time events on mutations
-    if (this.wsManager) {
+    if (this.realtimeAdapter) {
       //TODO: Check if  real-time is allowed for the table
-      this.wsManager.broadcast(tableName, mutationType, {
+      this.realtimeAdapter.broadcast(tableName, mutationType, {
         type: mutationType,
-        data: result,
+        data: mutationType === 'delete' ? data : result,
       });
     }
   }

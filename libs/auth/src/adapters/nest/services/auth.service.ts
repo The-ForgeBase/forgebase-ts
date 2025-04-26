@@ -150,6 +150,21 @@ export class AuthService<TUser extends User> {
     return this.authManager.resetPassword(userId, newPassword, token);
   }
 
+  /**
+   * Change a user's password by verifying the old password first
+   * @param userId The user ID
+   * @param oldPassword The current password
+   * @param newPassword The new password
+   * @returns Whether the password was changed successfully
+   */
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<boolean> {
+    return this.authManager.changePassword(userId, oldPassword, newPassword);
+  }
+
   async verifySms(userId: string, code: string) {
     return this.authManager.verifySms(userId, code);
   }
@@ -171,6 +186,58 @@ export class AuthService<TUser extends User> {
     provider: string
   ): Promise<{ user: TUser; token?: string | AuthToken }> {
     return this.authManager.validateToken(token, provider);
+  }
+
+  async validateSessionToken(token: string): Promise<TUser> {
+    return this.authManager.validateSessionToken(token);
+  }
+
+  async setLabels(userId: string, labels: string[]): Promise<string[]> {
+    return this.authManager.setRTP(userId, labels, 'labels');
+  }
+  async setPermissions(
+    userId: string,
+    permissions: string[]
+  ): Promise<string[]> {
+    return this.authManager.setRTP(userId, permissions, 'permissions');
+  }
+
+  async setTeams(userId: string, teams: string[]): Promise<string[]> {
+    return this.authManager.setRTP(userId, teams, 'teams');
+  }
+
+  async removeLabels(userId: string, labels: string[]): Promise<string[]> {
+    return this.authManager.removeRTP(userId, labels, 'labels');
+  }
+
+  async removePermissions(
+    userId: string,
+    permissions: string[]
+  ): Promise<string[]> {
+    return this.authManager.removeRTP(userId, permissions, 'permissions');
+  }
+
+  async removeTeams(userId: string, teams: string[]): Promise<string[]> {
+    return this.authManager.removeRTP(userId, teams, 'teams');
+  }
+
+  async addLabels(userId: string, labels: string[]): Promise<string[]> {
+    return this.authManager.addRTP(userId, labels, 'labels');
+  }
+
+  async addPermissions(
+    userId: string,
+    permissions: string[]
+  ): Promise<string[]> {
+    return this.authManager.addRTP(userId, permissions, 'permissions');
+  }
+
+  async addTeams(userId: string, teams: string[]): Promise<string[]> {
+    return this.authManager.addRTP(userId, teams, 'teams');
+  }
+
+  async setRole(userId: string, role: string): Promise<void> {
+    return this.authManager.setRole(userId, role);
   }
 
   getProviderConfig(provider: string) {
