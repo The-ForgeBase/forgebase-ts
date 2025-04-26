@@ -12,9 +12,9 @@ import { Request, Response } from 'express';
 import { NestAuthConfig } from '..';
 
 @Injectable()
-export class AuthGuard<TUser extends User> implements CanActivate {
+export class AuthGuard implements CanActivate {
   constructor(
-    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager<TUser>,
+    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager,
     @Inject('AUTH_CONFIG') private adminConfig: NestAuthConfig,
     private reflector: Reflector
   ) {}

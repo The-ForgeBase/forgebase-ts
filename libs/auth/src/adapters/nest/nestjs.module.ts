@@ -12,18 +12,18 @@ import { InternalAdminManager } from '../../admin';
 import { JwksController, JwksService, NestAuthConfig } from '.';
 import { JoseJwtSessionManager } from '../../session/jose-jwt';
 
-export interface NestAuthModuleOptions<TUser extends User> {
-  authManager: DynamicAuthManager<TUser>;
+export interface NestAuthModuleOptions {
+  authManager: DynamicAuthManager;
   config?: NestAuthConfig;
   adminManager?: InternalAdminManager;
   adminConfig?: NestAuthConfig;
   joseJwtManager?: JoseJwtSessionManager; // Optional, if you want to use JoseJwtManager
 }
 
-export interface NestAuthModuleAsyncOptions<TUser extends User> {
+export interface NestAuthModuleAsyncOptions {
   useFactory: (
     ...args: any[]
-  ) => Promise<NestAuthModuleOptions<TUser>> | NestAuthModuleOptions<TUser>;
+  ) => Promise<NestAuthModuleOptions> | NestAuthModuleOptions;
   inject?: any[];
   imports?:
     | any[]
@@ -38,9 +38,7 @@ export interface NestAuthModuleAsyncOptions<TUser extends User> {
   exports: [AuthService, AdminService, AuthGuard, AdminGuard],
 })
 export class NestAuthModule {
-  static forRoot<TUser extends User>(
-    options: NestAuthModuleOptions<TUser>
-  ): DynamicModule {
+  static forRoot(options: NestAuthModuleOptions): DynamicModule {
     return {
       module: NestAuthModule,
       providers: [
@@ -69,9 +67,7 @@ export class NestAuthModule {
     };
   }
 
-  static forRootAsync<TUser extends User>(
-    options: NestAuthModuleAsyncOptions<TUser>
-  ): DynamicModule {
+  static forRootAsync(options: NestAuthModuleAsyncOptions): DynamicModule {
     return {
       module: NestAuthModule,
       imports: options.imports || [],
@@ -83,28 +79,28 @@ export class NestAuthModule {
         },
         {
           provide: 'AUTH_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.authManager;
           },
           inject: ['AUTH_OPTIONS'],
         },
         {
           provide: 'AUTH_CONFIG',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.config || {};
           },
           inject: ['AUTH_OPTIONS'],
         },
         {
           provide: 'ADMIN_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.adminManager;
           },
           inject: ['AUTH_OPTIONS'],
         },
         {
           provide: 'ADMIN_CONFIG',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.adminConfig || {};
           },
           inject: ['AUTH_OPTIONS'],
@@ -121,9 +117,7 @@ export class NestAuthModule {
 
 @Module({})
 export class NestAuthModuleWithJWKS {
-  static forRootAsync<TUser extends User>(
-    options: NestAuthModuleAsyncOptions<TUser>
-  ): DynamicModule {
+  static forRootAsync(options: NestAuthModuleAsyncOptions): DynamicModule {
     return {
       module: NestAuthModuleWithJWKS,
       imports: options.imports || [],
@@ -135,35 +129,35 @@ export class NestAuthModuleWithJWKS {
         },
         {
           provide: 'AUTH_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.authManager;
           },
           inject: ['AUTH_OPTIONS'],
         },
         {
           provide: 'JOSE_JWT_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.joseJwtManager;
           },
           inject: ['AUTH_OPTIONS'],
         },
         {
           provide: 'AUTH_CONFIG',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.config || {};
           },
           inject: ['AUTH_OPTIONS'],
         },
         {
           provide: 'ADMIN_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.adminManager;
           },
           inject: ['AUTH_OPTIONS'],
         },
         {
           provide: 'ADMIN_CONFIG',
-          useFactory: async (authOptions: NestAuthModuleOptions<TUser>) => {
+          useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.adminConfig || {};
           },
           inject: ['AUTH_OPTIONS'],

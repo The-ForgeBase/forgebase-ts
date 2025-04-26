@@ -1,4 +1,3 @@
-import { BaseUser } from '../../../types';
 import { DynamicAuthManager } from '../../../authManager';
 import {
   AutoRouter,
@@ -29,21 +28,26 @@ import {
 import { AuthRequest } from './auth/types';
 import { InternalAdminManager } from '../../../admin/internal-admin-manager';
 import { rpltEndpoints } from './auth/rplt';
+import {
+  processAuthTokens,
+  SessionData,
+  applySessionToRequest,
+} from '../utils/auth-utils';
 
-export class AuthApi<TUser extends BaseUser> {
+export class AuthApi {
   private router: AutoRouterType<AuthRequest>;
-  private authManager: DynamicAuthManager<TUser>;
-  private adminManager: InternalAdminManager;
-  private config: WebAuthConfig;
+  authManager: DynamicAuthManager;
+  adminManager: InternalAdminManager;
+  config: WebAuthConfig;
   private registeredRoutes: RouteEntry[];
 
   constructor(options: {
-    authManager: DynamicAuthManager<TUser>;
+    authManager: DynamicAuthManager;
     adminManager: InternalAdminManager;
     config: WebAuthConfig;
     beforeMiddlewares?: RequestHandler[];
     finallyMiddlewares?: ResponseHandler[];
-    cors?: {
+    cors: {
       enabled: boolean;
       corsOptions?: CorsOptions;
     };
@@ -61,7 +65,7 @@ export class AuthApi<TUser extends BaseUser> {
       before: [
         options.cors?.enabled ? preflight : undefined,
         ...beforeMiddlewares,
-        userContextMiddleware.bind(this, this.authManager),
+        userContextMiddleware.bind(this, this.authManager, this.adminManager),
       ],
       finally: [
         options.cors?.enabled ? corsify : undefined,
@@ -74,10 +78,12 @@ export class AuthApi<TUser extends BaseUser> {
     this.registeredRoutes = this.router.routes;
 
     console.log(this.registeredRoutes.map((r) => r[3]));
+
+    console.log('Auth API initialized');
   }
 
   private setupRoutes() {
-    this.router.post('/register', async (req: Request) => {
+    this.router.post('/register', async (req: AuthRequest) => {
       try {
         const { provider, password, ...credentials } = await req.json();
         const result = await this.authManager.register(
@@ -105,7 +111,7 @@ export class AuthApi<TUser extends BaseUser> {
       }
     });
 
-    this.router.post('/login', async (req: Request) => {
+    this.router.post('/login', async (req: AuthRequest) => {
       try {
         const { provider, ...credentials } = await req.json();
         const result = await this.authManager.login(provider, credentials);
@@ -233,7 +239,7 @@ export class AuthApi<TUser extends BaseUser> {
 
     this.router.get('/logout', async (req) => {
       try {
-        const token = extractTokenFromRequest(req);
+        const token = extractTokenFromRequest(req, this.config);
         if (!token) {
           return new Response(JSON.stringify({ error: 'UnAuthrized' }), {
             status: 401,
@@ -252,8 +258,9 @@ export class AuthApi<TUser extends BaseUser> {
           setCookie(res, 'refreshToken', '', {
             maxAge: 0,
           });
-        } catch (e) {
-          /// console.log(e);
+        } catch (error) {
+          // Ignore error when clearing refresh token
+          console.debug('Error clearing refresh token:', error.message);
         }
         return res;
       } catch (e) {
@@ -315,6 +322,27 @@ export class AuthApi<TUser extends BaseUser> {
 
   async handleRequest(req: AuthRequest): Promise<Response> {
     return this.router.fetch(req);
+  }
+
+  async getSession(req: AuthRequest): Promise<SessionData | null> {
+    try {
+      // Use the shared utility function to process tokens
+      return await processAuthTokens(
+        req,
+        this.authManager,
+        this.config,
+        this.adminManager
+      );
+    } catch (e) {
+      console.error('Error in getSession:', e.message);
+      return null;
+    }
+  }
+
+  setSession(req: AuthRequest, session: SessionData) {
+    // Use the shared utility function to apply session data to the request
+    applySessionToRequest(req, session);
+    return req;
   }
 }
 

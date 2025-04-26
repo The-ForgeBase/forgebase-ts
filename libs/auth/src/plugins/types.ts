@@ -1,11 +1,11 @@
 import { AuthProvider, User } from '../types';
 import { DynamicAuthManager } from '../authManager';
 
-export interface AuthPlugin<TUser extends User = User> {
+export interface AuthPlugin {
   name: string;
   version: string;
-  initialize(authManager: DynamicAuthManager<TUser>): Promise<void>;
-  getProviders(): Record<string, AuthProvider<TUser>>;
+  initialize(authManager: DynamicAuthManager): Promise<void>;
+  getProviders(): Record<string, AuthProvider>;
 
   // Optional extension points
   getMiddlewares?(): Record<string, any>;

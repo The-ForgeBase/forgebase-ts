@@ -1,60 +1,82 @@
-import { BaseUser } from '../../../../types';
 import { DynamicAuthManager } from '../../../../authManager';
-import {
-  extractRefreshTokenFromRequest,
-  extractTokenFromRequest,
-  setAuthCookies,
-} from '../../uils';
+import { setAuthCookies } from '../../uils';
 import { AuthRequest } from './types';
-import { UserContext } from '@forgebase-ts/database';
 import { error } from 'itty-router';
 import { WebAuthConfig } from '../..';
+import { InternalAdminManager } from '../../../../admin';
+import {
+  processAuthTokens,
+  applySessionToRequest,
+} from '../../utils/auth-utils';
 
-export const userContextMiddleware = async <TUser extends BaseUser = any>(
-  req: AuthRequest | any,
-  authManager: DynamicAuthManager<TUser>
+/**
+ * Extract admin token from request
+ */
+export function extractAdminToken(req: Request): {
+  token: string | null;
+  type: 'session' | 'apikey';
+} {
+  // Check for AdminBearer in Authorization header
+  if (req.headers.get('Authorization')?.startsWith('AdminBearer ')) {
+    return {
+      token: req.headers.get('Authorization').split(' ')[1],
+      type: 'session',
+    };
+  }
+
+  // Check for admin token in cookies
+  if (req.headers.get('Cookie')) {
+    const cookies = req.headers.get('Cookie')?.split('; ');
+    for (const cookie of cookies || []) {
+      if (cookie.startsWith(`admin_token=`)) {
+        return {
+          token: cookie.substring(`admin_token=`.length),
+          type: 'session',
+        };
+      }
+    }
+  }
+
+  // Check for AdminApiKey in Authorization header
+  if (req.headers.get('Authorization')?.startsWith('AdminApiKey ')) {
+    return {
+      token: req.headers.get('Authorization').split(' ')[1],
+      type: 'apikey',
+    };
+  }
+
+  // Check for X-Admin-API-Key header
+  if (req.headers.get('X-Admin-API-Key')) {
+    return {
+      token: req.headers.get('X-Admin-API-Key'),
+      type: 'apikey',
+    };
+  }
+
+  return { token: null, type: 'session' };
+}
+
+/**
+ * Middleware to attach user and admin context to the request
+ */
+export const userContextMiddleware = async (
+  req: AuthRequest,
+  authManager: DynamicAuthManager,
+  config: WebAuthConfig,
+  adminManager?: InternalAdminManager
 ) => {
   try {
-    const token = extractTokenFromRequest(req);
-    if (token) {
-      const { user, token: newToken } = await authManager.validateToken(
-        token as string,
-        'local'
-      );
-      const labels: string[] =
-        typeof user.labels === 'string'
-          ? user.labels.split(',')
-          : Array.isArray(user.labels)
-          ? user.labels
-          : [];
-      const teams: string[] =
-        typeof user.teams === 'string'
-          ? user.teams.split(',')
-          : Array.isArray(user.teams)
-          ? user.teams
-          : [];
-      const permissions: string[] =
-        typeof user.permissions === 'string'
-          ? user.permissions.split(',')
-          : Array.isArray(user.permissions)
-          ? user.permissions
-          : [];
+    // Use the shared utility function to process tokens
+    const sessionData = await processAuthTokens(
+      req,
+      authManager,
+      config,
+      adminManager
+    );
 
-      const userContext: UserContext = {
-        userId: user.id,
-        role: user.role || '',
-        labels,
-        teams,
-        permissions,
-      };
-
-      req.user = user;
-      req.userContext = userContext;
-      if (newToken) {
-        req.newToken = newToken;
-      } else {
-        req.token = token;
-      }
+    // Apply session data to the request
+    if (sessionData) {
+      applySessionToRequest(req, sessionData);
     }
   } catch (e) {
     return error(401, e.message);
@@ -62,7 +84,7 @@ export const userContextMiddleware = async <TUser extends BaseUser = any>(
 };
 
 export const attachNewToken = async (
-  req: AuthRequest | any,
+  req: AuthRequest,
   res: Response,
   config: WebAuthConfig
 ) => {
@@ -73,16 +95,23 @@ export const attachNewToken = async (
   return res;
 };
 
-export const authGuard = async <TUser extends BaseUser = any>(
+export const authGuard = async (
   req: AuthRequest,
-  authManager: DynamicAuthManager<TUser>
+  authManager: DynamicAuthManager
 ) => {
   try {
+    // Check if user is an admin - admins can bypass regular auth checks
+    if (req.isAdmin && req.admin) {
+      return; // Admin is authenticated, allow access
+    }
+
+    // Regular user authentication check
     const token = req.token || req.newToken;
     const user = req.user;
     if (!token || !user) {
       return error(401, 'Unauthorized');
     }
+
     const config = authManager.getConfig();
     const mfaStatus = authManager.getMfaStatus();
     const route = new URL(req.url).pathname;

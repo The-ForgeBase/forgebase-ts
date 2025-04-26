@@ -21,19 +21,19 @@ const SENSITIVE_USER_FIELDS = [
  * @param user User object to sanitize
  * @returns Sanitized user object
  */
-export function sanitizeUser<T extends User>(user: T): T {
+export function sanitizeUser(user: User): User {
   if (!user) return user;
-  
+
   // Create a shallow copy of the user object
   const sanitizedUser = { ...user };
-  
+
   // Remove sensitive fields
   for (const field of SENSITIVE_USER_FIELDS) {
     if (field in sanitizedUser) {
       delete sanitizedUser[field];
     }
   }
-  
+
   return sanitizedUser;
 }
 
@@ -42,7 +42,7 @@ export function sanitizeUser<T extends User>(user: T): T {
  * @param users Array of user objects to sanitize
  * @returns Array of sanitized user objects
  */
-export function sanitizeUsers<T extends User>(users: T[]): T[] {
+export function sanitizeUsers(users: User[]): User[] {
   if (!users) return users;
-  return users.map(user => sanitizeUser(user));
+  return users.map((user) => sanitizeUser(user));
 }

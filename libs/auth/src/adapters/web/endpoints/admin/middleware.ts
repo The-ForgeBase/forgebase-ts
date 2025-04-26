@@ -5,7 +5,7 @@ import {
 } from '../../../../admin';
 import { AdminRequest } from './types';
 
-export function extractAdminToken(
+function extractAdminToken(
   req: Request,
   config: any
 ): {

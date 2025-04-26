@@ -4,13 +4,11 @@ import { KnexUserService } from '../userService';
 import crypto from 'crypto';
 import { AuthPasswordlessTokensTable } from '../config';
 
-export class PasswordlessProvider<TUser extends User>
-  implements AuthProvider<TUser>
-{
+export class PasswordlessProvider implements AuthProvider {
   constructor(
     private config: {
       tokenStore: Knex;
-      userService: KnexUserService<TUser>;
+      userService: KnexUserService;
       sendToken: (email: string, token: string) => Promise<void>;
     }
   ) {}
@@ -27,7 +25,7 @@ export class PasswordlessProvider<TUser extends User>
     return null; // No immediate user return
   }
 
-  async validate(token: string) {
+  async validate(token: string): Promise<User> {
     const record = await this.config
       .tokenStore(AuthPasswordlessTokensTable)
       .where({ token })

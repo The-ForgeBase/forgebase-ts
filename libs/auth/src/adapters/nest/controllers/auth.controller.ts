@@ -22,9 +22,9 @@ import { AuthService } from '../services/auth.service';
 import { NestAuthConfig } from '..';
 
 @Controller('auth')
-export class AuthController<TUser extends User> {
+export class AuthController {
   constructor(
-    private authService: AuthService<TUser>,
+    private authService: AuthService,
     @Inject('AUTH_CONFIG') private adminConfig: NestAuthConfig
   ) {}
 

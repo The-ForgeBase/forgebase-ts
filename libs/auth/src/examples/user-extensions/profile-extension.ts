@@ -1,19 +1,23 @@
 import { Knex } from 'knex';
-import { User } from '../../types';
-import { extendUserTable, UserFieldDefinition } from '../../utils/user-extension';
+import {
+  extendUserTable,
+  UserFieldDefinition,
+} from '../../utils/user-extension';
 
 /**
  * Extended user interface with profile fields
  */
-export interface UserWithProfile extends User {
-  first_name?: string;
-  last_name?: string;
-  bio?: string;
-  birth_date?: Date;
-  location?: string;
-  website?: string;
-  avatar_url?: string;
-  social_links?: Record<string, string>;
+declare module '../../types' {
+  interface UserExtension {
+    first_name?: string;
+    last_name?: string;
+    bio?: string;
+    birth_date?: Date;
+    location?: string;
+    website?: string;
+    avatar_url?: string;
+    social_links?: Record<string, string>;
+  }
 }
 
 /**
@@ -24,7 +28,7 @@ export const profileFields: UserFieldDefinition[] = [
     name: 'first_name',
     type: 'string',
     nullable: true,
-    description: 'User\'s first name',
+    description: "User's first name",
     validation: {
       maxLength: 100,
     },
@@ -33,7 +37,7 @@ export const profileFields: UserFieldDefinition[] = [
     name: 'last_name',
     type: 'string',
     nullable: true,
-    description: 'User\'s last name',
+    description: "User's last name",
     validation: {
       maxLength: 100,
     },
@@ -42,7 +46,7 @@ export const profileFields: UserFieldDefinition[] = [
     name: 'bio',
     type: 'text',
     nullable: true,
-    description: 'User\'s biography or description',
+    description: "User's biography or description",
     validation: {
       maxLength: 1000,
     },
@@ -51,13 +55,13 @@ export const profileFields: UserFieldDefinition[] = [
     name: 'birth_date',
     type: 'date',
     nullable: true,
-    description: 'User\'s date of birth',
+    description: "User's date of birth",
   },
   {
     name: 'location',
     type: 'string',
     nullable: true,
-    description: 'User\'s location or address',
+    description: "User's location or address",
     validation: {
       maxLength: 200,
     },
@@ -66,7 +70,7 @@ export const profileFields: UserFieldDefinition[] = [
     name: 'website',
     type: 'string',
     nullable: true,
-    description: 'User\'s website URL',
+    description: "User's website URL",
     validation: {
       isUrl: true,
       maxLength: 255,
@@ -76,7 +80,7 @@ export const profileFields: UserFieldDefinition[] = [
     name: 'avatar_url',
     type: 'string',
     nullable: true,
-    description: 'URL to user\'s avatar image',
+    description: "URL to user's avatar image",
     validation: {
       isUrl: true,
       maxLength: 255,
@@ -86,7 +90,7 @@ export const profileFields: UserFieldDefinition[] = [
     name: 'social_links',
     type: 'json',
     nullable: true,
-    description: 'User\'s social media links',
+    description: "User's social media links",
   },
 ];
 
@@ -131,17 +135,13 @@ export async function profileExtensionExample(knex: Knex): Promise<void> {
   console.log('Created user with profile:', user[0]);
 
   // 3. Update profile data
-  await knex('users')
-    .where('id', user[0].id)
-    .update({
-      bio: 'Updated bio with more information',
-      avatar_url: 'https://example.com/avatars/johndoe.jpg',
-    });
+  await knex('users').where('id', user[0].id).update({
+    bio: 'Updated bio with more information',
+    avatar_url: 'https://example.com/avatars/johndoe.jpg',
+  });
 
   // 4. Query user with profile data
-  const updatedUser = await knex('users')
-    .where('id', user[0].id)
-    .first();
+  const updatedUser = await knex('users').where('id', user[0].id).first();
 
   console.log('Updated user profile:', updatedUser);
 }

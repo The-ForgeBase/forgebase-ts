@@ -17,9 +17,7 @@ export interface GoogleUserAttributes {
   picture: string;
 }
 
-export class GoogleOAuthProvider<
-  TUser extends User
-> extends BaseOAuthProvider<TUser> {
+export class GoogleOAuthProvider extends BaseOAuthProvider {
   clientID: string;
   clientSecret: string;
   callbackURL: string;
@@ -29,7 +27,7 @@ export class GoogleOAuthProvider<
     clientSecret?: string;
     callbackURL: string;
     scopes?: string[];
-    userService: UserService<TUser>;
+    userService: UserService;
     knex: Knex;
     name: string;
   }) {

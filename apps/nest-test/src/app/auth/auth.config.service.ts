@@ -27,7 +27,7 @@ export interface AppUser extends User {
 @Injectable()
 export class AuthConfigService implements OnModuleInit {
   private readonly logger = new Logger(AuthConfigService.name);
-  private authManager: DynamicAuthManager<AppUser>;
+  private authManager: DynamicAuthManager;
   private joseJwtManager: JoseJwtSessionManager;
   private isInitialized = false;
 
@@ -69,7 +69,7 @@ export class AuthConfigService implements OnModuleInit {
       let config = await configStore.getConfig();
 
       // Initialize user service
-      const userService = new KnexUserService<AppUser>(config, {
+      const userService = new KnexUserService(config, {
         knex: db,
       });
 

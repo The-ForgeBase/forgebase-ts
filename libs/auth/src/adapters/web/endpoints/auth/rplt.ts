@@ -1,13 +1,12 @@
 import { RouterType, error } from 'itty-router';
-import { BaseUser } from '../../../../types';
 import { DynamicAuthManager } from '../../../../authManager';
 import { InternalAdminManager } from '../../../../admin';
 import { adminGuard } from '../admin/middleware';
 import { AdminRequest } from '../admin/types';
 
-export function rpltEndpoints<TUser extends BaseUser>(
+export function rpltEndpoints(
   router: RouterType<AdminRequest>,
-  authManager: DynamicAuthManager<TUser>,
+  authManager: DynamicAuthManager,
   adminManager: InternalAdminManager
 ) {
   router.put(

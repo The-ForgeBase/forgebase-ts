@@ -1,6 +1,13 @@
 # ForgeBase Auth
 
-A flexible, comprehensive authentication library for Server side js applications, providing multiple authentication strategies, framework adapters, and advanced session management with JWKS support.
+A flexible, comprehensive authentication library for Server side js applications, providing multiple authentication strategies, a framework-agnostic web standard adapter, and advanced session management with JWKS support.
+
+## Recent Updates
+
+- **Web Standard Adapter**: Replaced framework-specific adapters (Express, Fastify, Hono) with a single, framework-agnostic Web Standard Adapter
+- **Restructured Types**: Improved TypeScript integration with a central `UserExtension` interface
+- **Improved User Extension**: Enhanced the type system to make extending the User type more flexible and type-safe
+- **Cross-Platform Token Validation**: Enhanced support for using tokens across different platforms
 
 ## Purpose
 
@@ -25,10 +32,9 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
 
 - **Framework Integration**:
 
-  - Express.js adapter with middleware support
+  - Web standard adapter with framework-agnostic design
   - NestJS adapter with JWKS and admin features
-  - Fastify adapter with cookie support
-  - Hono adapter for edge compatibility
+  - Cross-platform token validation
 
 - **Admin Management**:
 
@@ -98,10 +104,10 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
   - [Passwordless Provider](#passwordless-provider)
   - [Custom Providers](#custom-providers)
 - [Framework Integration](#framework-integration)
-  - [Express](#express)
+  - [Web Standard Adapter](#web-standard-adapter)
   - [NestJS](#nestjs)
-  - [Fastify](#fastify)
-  - [Hono](#hono)
+  - [NestJS Integration with JWKS](#nestjs-integration-with-jwks)
+  - [Cross-Platform Token Validation](#cross-platform-token-validation)
 - [Admin Management](#admin-management)
 - [Multi-Factor Authentication](#multi-factor-authentication)
 - [Email & Phone Verification](#email--phone-verification)
@@ -109,7 +115,7 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
   - [JSX-Email Templates](#jsx-email-templates)
 - [Password Reset](#password-reset)
   - [Password Reset Flow](#password-reset-flow)
-  - [NestJS Integration](#nestjs-integration-1)
+  - [NestJS Integration](#nestjs-integration)
 - [Session Management](#session-management)
 - [User Table Extension](#user-table-extension)
 - [Plugin System](#plugin-system)
@@ -342,8 +348,8 @@ await adminManager.createAuditLog({
 Extend functionality by implementing custom providers:
 
 ```typescript
-class CustomProvider implements AuthProvider<User> {
-  constructor(private userService: KnexUserService<User>) {}
+class CustomProvider implements AuthProvider {
+  constructor(private userService: KnexUserService) {}
 
   async authenticate(credentials: Record<string, any>) {
     // Custom authentication logic
@@ -536,12 +542,12 @@ You can create custom authentication providers by implementing the `AuthProvider
 ```typescript
 import { AuthProvider, User } from '@forgebase-ts/auth';
 
-class CustomAuthProvider<TUser extends User> implements AuthProvider<TUser> {
-  async authenticate(credentials: Record<string, any>): Promise<TUser | null> {
+class CustomAuthProvider implements AuthProvider {
+  async authenticate(credentials: Record<string, any>): Promise<User | null> {
     // Custom authentication logic
   }
 
-  async register(userData: Partial<TUser>, password?: string): Promise<TUser> {
+  async register(userData: Partial<User>, password?: string): Promise<User> {
     // Custom registration logic
   }
 
@@ -549,7 +555,7 @@ class CustomAuthProvider<TUser extends User> implements AuthProvider<TUser> {
     // Return provider configuration
   }
 
-  validate?(token: string): Promise<TUser> {
+  validate?(token: string): Promise<User> {
     // Validate a token (for passwordless or other token-based flows)
   }
 }
@@ -557,26 +563,71 @@ class CustomAuthProvider<TUser extends User> implements AuthProvider<TUser> {
 
 ## Framework Integration
 
-### Express
+> **Note:** The Express, Fastify, and Hono adapters have been removed in favor of a more flexible, framework-agnostic Web Standard Adapter that works with any JavaScript framework or runtime that supports standard Web APIs.
+
+### Web Standard Adapter
+
+The Web Standard Adapter provides a framework-agnostic approach to authentication that can be used with any JavaScript framework or runtime that supports standard Web APIs.
 
 ```typescript
-import express from 'express';
-import { ExpressAuthAdapter } from '@forgebase-ts/auth';
+import { createWebAuthClient, webAuthApi } from '@forgebase-ts/auth';
 
-const app = express();
-app.use(express.json());
-
-// Initialize Express auth adapter
-const authAdapter = new ExpressAuthAdapter(authManager);
-
-// Setup auth routes
-authAdapter.setupRoutes(app);
-
-// Protected route example
-app.get('/protected', authAdapter.authenticate, (req, res) => {
-  res.json({ message: 'This is a protected route', user: req['user'] });
+// Initialize the auth client
+const { authManager, adminManager, sessionManager } = await createWebAuthClient({
+  db: knexInstance,
+  keyOptions: {
+    keyDirectory: './keys',
+    algorithm: 'RS256',
+    rotationDays: 90,
+  },
+  local: {
+    enabled: true,
+  },
+  admin: {
+    enabled: true,
+    initialAdminEmail: 'admin@example.com',
+    initialAdminPassword: 'secure-password',
+    createInitialAdmin: true,
+  },
 });
+
+// Create the auth API
+const authApi = webAuthApi({
+  authManager,
+  adminManager,
+  config: {
+    basePath: '/auth',
+    cookieName: 'auth_token',
+    cookieOptions: {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+    },
+  },
+  cors: {
+    enabled: true,
+    corsOptions: {
+      origin: ['https://yourdomain.com'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    },
+  },
+});
+
+// Handle requests
+async function handleRequest(req: Request): Promise<Response> {
+  return authApi.handleRequest(req);
+}
 ```
+
+The Web Standard Adapter provides:
+
+- Standard Web API compatibility (works with Request/Response)
+- CORS support
+- Cookie handling
+- Middleware support
+- Authentication endpoints
+- User management
+- Token validation
 
 ### NestJS
 
@@ -688,7 +739,7 @@ const authManager = new DynamicAuthManager(
 
 ### JWKS Endpoints
 
-When using `NestAuthModuleWithJWKS`, the following endpoints are automatically exposed:
+When using `NestAuthModuleWithJWKS` or the Web Standard Adapter, the following endpoints are automatically exposed:
 
 - `GET /.well-known/jwks.json` - Returns the JWKS (JSON Web Key Set)
 
@@ -758,50 +809,25 @@ NestAuthModuleWithJWKS.forRootAsync({
 });
 ```
 
-### Fastify
+### Cross-Platform Token Validation
+
+The library supports cross-platform token validation, allowing tokens to be used across different platforms:
 
 ```typescript
-import Fastify from 'fastify';
-import { FastifyAuthAdapter } from '@forgebase-ts/auth';
+// Web app validating a token from a mobile app
+import { TokenVerifier } from '@forgebase-ts/auth';
 
-const app = Fastify();
-
-// Initialize Fastify auth adapter
-const authAdapter = new FastifyAuthAdapter(authManager);
-
-// Setup auth routes with cookie support
-authAdapter.setupRoutes(app, true);
-
-// Protected route example
-app.get('/protected', {
-  preHandler: [authAdapter.authenticate],
-  handler: async (request, reply) => {
-    return { message: 'This is a protected route', user: request['user'] };
-  },
+const verifier = new TokenVerifier({
+  jwksUrl: 'https://your-auth-server.com/.well-known/jwks.json',
+  cacheTimeMs: 3600000, // Cache for 1 hour
 });
-```
 
-### Hono
-
-```typescript
-import { Hono } from 'hono';
-import { HonoAuthAdapter } from '@forgebase-ts/auth';
-
-const app = new Hono();
-
-// Initialize Hono auth adapter
-const authAdapter = new HonoAuthAdapter(authManager);
-
-// Setup auth routes
-authAdapter.setupRoutes(app);
-
-// Protected route example
-app.get('/protected', authAdapter.authenticate, (c) => {
-  return c.json({
-    message: 'This is a protected route',
-    user: c.get('user'),
-  });
-});
+// Validate a token
+const result = await verifier.validateToken(token);
+if (result.valid) {
+  // Token is valid, user data is in result.payload
+  const userData = result.payload;
+}
 ```
 
 ## Admin Management
@@ -1007,6 +1033,7 @@ The typical password reset flow works as follows:
    ```
 
 4. **Reset Password**:
+
    ```typescript
    // User submits new password with token
    const success = await authManager.resetPassword(userId, newPassword, token);
@@ -1269,51 +1296,98 @@ const securityConfig = {
 
 ## User Table Extension
 
-ForgeBase Auth provides a comprehensive API for extending the user table with custom fields:
+ForgeBase Auth provides a comprehensive API for extending the user table with custom fields. The library has been restructured to make user extension more flexible and type-safe.
+
+### UserExtension Interface
+
+The library now uses a central `UserExtension` interface that can be extended to add custom fields to the user model. Here's an example of how you might extend it with business-related fields:
+
+```typescript
+// Example: Extending the UserExtension interface with business information fields
+declare module '@forgebase-ts/auth/types' {
+  interface UserExtension {
+    company_name?: string;
+    job_title?: string;
+    department?: string;
+    employee_id?: string;
+    business_phone?: string;
+    business_email?: string;
+    tax_id?: string;
+    company_size?: string;
+    industry?: string;
+    business_address?: {
+      street: string;
+      city: string;
+      state: string;
+      zip: string;
+      country: string;
+    };
+    company_id?: string;
+  }
+}
+```
+
+This approach provides better TypeScript integration and ensures that your custom fields are recognized throughout the auth library.
+
+### Adding Custom Fields to the Database
 
 ```typescript
 import { extendUserTable, UserFieldDefinition } from '@forgebase-ts/auth/utils';
 import { Knex } from 'knex';
 
-// Define your custom fields
+// Example: Define custom fields that match your UserExtension interface
 const customFields: UserFieldDefinition[] = [
   {
-    name: 'first_name',
+    name: 'company_name',
     type: 'string',
     nullable: true,
-    description: "User's first name",
+    description: "User's company name",
     validation: {
       maxLength: 100,
     },
   },
   {
-    name: 'last_name',
+    name: 'job_title',
     type: 'string',
     nullable: true,
-    description: "User's last name",
+    description: "User's job title",
     validation: {
       maxLength: 100,
     },
   },
   {
-    name: 'subscription_tier',
+    name: 'business_phone',
     type: 'string',
-    nullable: false,
-    default: 'free',
-    description: "User's subscription tier",
+    nullable: true,
+    description: "User's business phone number",
     validation: {
-      pattern: '^(free|basic|premium|enterprise)$',
+      pattern: '^\\+?[0-9]{10,15}$',
     },
   },
   {
-    name: 'organization_id',
+    name: 'business_email',
+    type: 'string',
+    nullable: true,
+    description: "User's business email address",
+    validation: {
+      isEmail: true,
+    },
+  },
+  {
+    name: 'business_address',
+    type: 'json',
+    nullable: true,
+    description: "User's business address",
+  },
+  {
+    name: 'company_id',
     type: 'uuid',
     nullable: true,
-    description: "Reference to the user's organization",
+    description: "Reference to the user's company",
     foreignKeys: {
-      columnName: 'organization_id',
+      columnName: 'company_id',
       references: {
-        tableName: 'organizations',
+        tableName: 'companies',
         columnName: 'id',
       },
     },
@@ -1327,21 +1401,41 @@ async function setupCustomFields(knex: Knex) {
     migrateExisting: true,
   });
 }
+```
 
-// Define your extended user type
-import { User } from '@forgebase-ts/auth';
+### Using the Extended User Type
 
-interface CustomUser extends User {
-  first_name?: string;
-  last_name?: string;
-  subscription_tier: string;
-}
+The User type is now automatically extended with your custom fields:
 
-// Use the extended type with auth services
-const userService = new KnexUserService<CustomUser>(config, {
+```typescript
+import { User, KnexUserService } from '@forgebase-ts/auth';
+
+// The User type already includes your custom fields
+// No need to create a custom interface
+
+// Use the user service with the extended User type
+const userService = new KnexUserService(config, {
   knex,
   tableName: 'users',
 });
+
+// Example of using the extended fields (assuming you've extended with business fields)
+async function updateUserBusinessInfo(userId: string, businessInfo: Partial<User>) {
+  const user = await userService.findUserById(userId);
+
+  // Access your custom fields
+  console.log(user.company_name);
+  console.log(user.business_address?.city);
+
+  // Update with your custom fields
+  return userService.updateUser(userId, {
+    company_name: businessInfo.company_name,
+    job_title: businessInfo.job_title,
+    business_phone: businessInfo.business_phone,
+    business_email: businessInfo.business_email,
+    business_address: businessInfo.business_address,
+  });
+}
 ```
 
 ### Migration Helpers
@@ -1394,29 +1488,31 @@ if (!validationResult.valid) {
 }
 ```
 
-### TypeScript Type Generation
+### Common Extension Patterns
+
+The library provides several common extension patterns:
+
+1. **Business Information** - Company details, job titles, business contact info
+2. **Profile Data** - Personal details, social links, avatars
+3. **User Preferences** - Theme, language, notification settings
+4. **Roles and Permissions** - Access control, custom claims
+
+Another example of extending with roles and permissions:
 
 ```typescript
-import { generateTypeInterface } from '@forgebase-ts/auth/utils';
-
-// Generate TypeScript interface from field definitions
-const typeCode = generateTypeInterface({
-  interfaceName: 'CustomUser',
-  fields: customFields,
-});
-
-console.log(typeCode);
-// Output:
-// import { User } from '@forgebase-ts/auth';
-//
-// /**
-//  * Extended user interface with custom fields
-//  */
-// export interface CustomUser extends User {
-//   first_name?: string;
-//   last_name?: string;
-//   subscription_tier: string;
-// }
+// Example: Extending with roles and permissions
+declare module '@forgebase-ts/auth/types' {
+  interface UserExtension {
+    role?: string;
+    permissions?: string[];
+    is_admin?: boolean;
+    access_level?: number;
+    role_assigned_at?: Date;
+    role_expires_at?: Date | null;
+    restricted_access?: boolean;
+    custom_claims?: Record<string, any>;
+  }
+}
 ```
 
 For more detailed information and examples, see the [User Extension Guide](./docs/user-extension-guide.md) and [User Table Schema](./docs/user-table.md) documentation.
@@ -1429,7 +1525,7 @@ ForgeBase Auth has a powerful plugin system that allows you to extend its functi
 import { AuthPlugin } from '@forgebase-ts/auth';
 
 // Create a custom auth plugin
-class MyCustomPlugin implements AuthPlugin<User> {
+class MyCustomPlugin implements AuthPlugin {
   name = 'my-custom-plugin';
   version = '1.0.0';
 
@@ -1491,26 +1587,26 @@ try {
 
 ```typescript
 // Sanitize a user object by removing sensitive fields
-function sanitizeUser<T extends User>(user: T): T;
+function sanitizeUser(user: User): User;
 
 // Sanitize an array of user objects
-function sanitizeUsers<T extends User>(users: T[]): T[];
+function sanitizeUsers(users: User[]): User[];
 ```
 
 ### DynamicAuthManager
 
 ```typescript
-class DynamicAuthManager<TUser extends User> {
-  constructor(configStore: ConfigStore, providers: Record<string, AuthProvider<TUser>>, sessionManager: SessionManager, userService: KnexUserService<TUser>, refreshInterval?: number, enableConfigIntervalCheck?: boolean, internalConfig: AuthInternalConfig<TUser>, EmailVerificationService?: EmailVerificationService, plugins?: AuthPlugin<TUser>[]);
+class DynamicAuthManager {
+  constructor(configStore: ConfigStore, providers: Record<string, AuthProvider>, sessionManager: SessionManager, userService: KnexUserService, refreshInterval?: number, enableConfigIntervalCheck?: boolean, internalConfig: AuthInternalConfig, EmailVerificationService?: EmailVerificationService, plugins?: AuthPlugin[]);
 
   // Core authentication methods
-  async register(provider: string, credentials: Partial<TUser>, password: string);
+  async register(provider: string, credentials: Partial<User>, password: string);
   async login(provider: string, credentials: Record<string, string>);
   async oauthCallback(provider: string, { code, state }: { code: string; state: string });
   async validateToken(token: string, provider: string);
   async logout(token: string);
   async refreshToken(refreshToken: string);
-  async createToken(user: TUser): Promise<AuthToken | string>;
+  async createToken(user: User): Promise<AuthToken | string>;
 
   // MFA methods
   async enableMfa(userId: string, code?: string);
@@ -1529,8 +1625,8 @@ class DynamicAuthManager<TUser extends User> {
   async verifyPasswordResetToken(userId: string, token: string): Promise<boolean>;
 
   // Plugin management
-  async registerPlugin(plugin: AuthPlugin<TUser>);
-  getPlugins(): AuthPlugin<TUser>[];
+  async registerPlugin(plugin: AuthPlugin);
+  getPlugins(): AuthPlugin[];
 
   // Provider management
   getProviders();
@@ -1540,7 +1636,7 @@ class DynamicAuthManager<TUser extends User> {
   // Configuration
   getConfig();
   getMfaStatus();
-  updateConfig(update: Partial<AuthConfig>, adminUser: TUser);
+  updateConfig(update: Partial<AuthConfig>, adminUser: User);
 }
 ```
 

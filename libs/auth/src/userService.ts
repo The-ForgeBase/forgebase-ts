@@ -1,21 +1,15 @@
 import { AuthUsersTable } from './config';
 import { hashPassword } from './lib/password';
-import {
-  AuthConfig,
-  AuthInternalConfig,
-  BaseUser,
-  User,
-  UserService,
-} from './types';
+import { AuthConfig, AuthInternalConfig, User, UserService } from './types';
 
-export class KnexUserService<TUser extends User> implements UserService<TUser> {
+export class KnexUserService implements UserService {
   private table: string;
   private columns: Record<string, string>;
 
   private config: AuthConfig;
-  private internalConfig: AuthInternalConfig<TUser>;
+  private internalConfig: AuthInternalConfig;
 
-  constructor(config: AuthConfig, internalConfig: AuthInternalConfig<TUser>) {
+  constructor(config: AuthConfig, internalConfig: AuthInternalConfig) {
     this.config = config;
     this.internalConfig = internalConfig;
     this.table = AuthUsersTable;
@@ -44,7 +38,7 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
     return this.columns;
   }
 
-  async findUser(identifier: string): Promise<TUser | null> {
+  async findUser(identifier: string): Promise<User | null> {
     return this.internalConfig
       .knex(this.table)
       .where(this.columns.email, identifier)
@@ -52,28 +46,25 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
       .first();
   }
 
-  async findUserById(userId: string): Promise<TUser | null> {
+  async findUserById(userId: string): Promise<User | null> {
     return this.internalConfig
       .knex(this.table)
       .where(this.columns.id, userId)
       .first();
   }
 
-  async findUserByEmail(email: string): Promise<TUser | null> {
+  async findUserByEmail(email: string): Promise<User | null> {
     return this.internalConfig
       .knex(this.table)
       .where(this.columns.email, email)
       .first();
   }
 
-  async findUserByPhone(phone: string): Promise<TUser | null> {
+  async findUserByPhone(phone: string): Promise<User | null> {
     return this.internalConfig.knex(this.table).where('phone', phone).first();
   }
 
-  async createUser(
-    userData: Partial<TUser>,
-    password?: string
-  ): Promise<TUser> {
+  async createUser(userData: Partial<User>, password?: string): Promise<User> {
     const { ...rest } = userData;
 
     // check if email is already taken
@@ -107,10 +98,7 @@ export class KnexUserService<TUser extends User> implements UserService<TUser> {
     return user[0];
   }
 
-  async updateUser(
-    userId: string,
-    userData: Partial<Omit<TUser, keyof BaseUser>>
-  ): Promise<TUser> {
+  async updateUser(userId: string, userData: Partial<User>): Promise<User> {
     const user = await this.internalConfig
       .knex(this.table)
       .where(this.columns.id, userId)

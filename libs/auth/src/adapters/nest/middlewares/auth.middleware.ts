@@ -6,7 +6,7 @@ import { User } from '../../../types';
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   constructor(
-    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager<User>
+    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager
   ) {}
 
   private extractToken(request: Request): string | null {

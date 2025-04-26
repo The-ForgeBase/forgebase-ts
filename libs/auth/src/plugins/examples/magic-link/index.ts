@@ -8,11 +8,11 @@ import { DynamicAuthManager } from '../../../authManager';
 /**
  * Plugin for magic link authentication (passwordless email login)
  */
-export class MagicLinkPlugin<TUser extends User> implements AuthPlugin<TUser> {
+export class MagicLinkPlugin implements AuthPlugin {
   name = 'magic-link';
   version = '1.0.0';
 
-  private provider: MagicLinkProvider<TUser>;
+  private provider: MagicLinkProvider;
   private tokenStorage: Map<
     string,
     { userId: string; email: string; expires: number }
@@ -20,7 +20,7 @@ export class MagicLinkPlugin<TUser extends User> implements AuthPlugin<TUser> {
   private tokenExpiryMs: number;
   private baseUrl: string;
   private emailService: EmailService;
-  private authManager?: DynamicAuthManager<TUser>;
+  private authManager?: DynamicAuthManager;
 
   constructor(options: {
     tokenExpirySeconds?: number;
@@ -32,10 +32,10 @@ export class MagicLinkPlugin<TUser extends User> implements AuthPlugin<TUser> {
     this.emailService = options.emailService || new DefaultEmailService();
 
     // Create the provider that will be registered with auth system
-    this.provider = new MagicLinkProvider<TUser>(this);
+    this.provider = new MagicLinkProvider(this);
   }
 
-  async initialize(authManager: DynamicAuthManager<TUser>): Promise<void> {
+  async initialize(authManager: DynamicAuthManager): Promise<void> {
     console.log('Magic Link Authentication plugin initialized');
     this.authManager = authManager;
 
@@ -43,7 +43,7 @@ export class MagicLinkPlugin<TUser extends User> implements AuthPlugin<TUser> {
     setInterval(() => this.cleanupExpiredTokens(), 60000); // Every minute
   }
 
-  getProviders(): Record<string, AuthProvider<TUser>> {
+  getProviders(): Record<string, AuthProvider> {
     return {
       magicLink: this.provider,
     };
@@ -104,7 +104,7 @@ export class MagicLinkPlugin<TUser extends User> implements AuthPlugin<TUser> {
     return magicLink;
   }
 
-  async verifyMagicLink(token: string): Promise<TUser | null> {
+  async verifyMagicLink(token: string): Promise<User | null> {
     if (!this.authManager) {
       throw new Error('Plugin not initialized');
     }

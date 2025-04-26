@@ -1,12 +1,11 @@
 import { RouterType, error } from 'itty-router';
-import { BaseUser } from '../../../../types';
 import { DynamicAuthManager } from '../../../../authManager';
 import { AuthRequest } from './types';
 import { authGuard } from './middleware';
 
-export function verifyEndpoints<TUser extends BaseUser>(
+export function verifyEndpoints(
   router: RouterType<AuthRequest>,
-  authManager: DynamicAuthManager<TUser>
+  authManager: DynamicAuthManager
 ) {
   router.post('/verify-email', async ({ json }) => {
     try {

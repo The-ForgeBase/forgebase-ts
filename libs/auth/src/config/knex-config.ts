@@ -68,8 +68,8 @@ export class KnexConfigStore implements ConfigStore {
           period: 30,
         },
       });
-      console.log('Inserting default config:', defaultConfig);
-      console.log('Default config JSON:', JSON.stringify(defaultConfig));
+      // console.log('Inserting default config:', defaultConfig);
+      // console.log('Default config JSON:', JSON.stringify(defaultConfig));
       const [id] = await this.knex(this.tableName)
         .insert({ config: JSON.stringify(defaultConfig) })
         .returning('id');
@@ -100,8 +100,8 @@ export class KnexConfigStore implements ConfigStore {
   async updateConfig(update: Partial<AuthConfig>): Promise<AuthConfig> {
     const current = await this.getConfig();
     const updated = AuthConfigSchema.parse({ ...current, ...update });
-    console.log('Current config:', current);
-    console.log('Updating config in database:', updated);
+    // console.log('Current config:', current);
+    // console.log('Updating config in database:', updated);
 
     await this.knex(this.tableName)
       .where('id', current.id)

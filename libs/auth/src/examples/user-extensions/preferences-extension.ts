@@ -1,22 +1,26 @@
 import { Knex } from 'knex';
-import { User } from '../../types';
-import { extendUserTable, UserFieldDefinition } from '../../utils/user-extension';
+import {
+  extendUserTable,
+  UserFieldDefinition,
+} from '../../utils/user-extension';
 
 /**
  * Extended user interface with preference fields
  */
-export interface UserWithPreferences extends User {
-  theme_preference?: 'light' | 'dark' | 'system';
-  language_preference?: string;
-  notification_settings?: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-    marketing: boolean;
-  };
-  timezone?: string;
-  date_format?: string;
-  time_format?: string;
+declare module '../../types' {
+  interface UserExtension {
+    theme_preference?: 'light' | 'dark' | 'system';
+    language_preference?: string;
+    notification_settings?: {
+      email: boolean;
+      push: boolean;
+      sms: boolean;
+      marketing: boolean;
+    };
+    timezone?: string;
+    date_format?: string;
+    time_format?: string;
+  }
 }
 
 /**
@@ -28,7 +32,7 @@ export const preferenceFields: UserFieldDefinition[] = [
     type: 'string',
     nullable: true,
     default: 'system',
-    description: 'User\'s theme preference (light, dark, or system)',
+    description: "User's theme preference (light, dark, or system)",
     validation: {
       pattern: '^(light|dark|system)$',
     },
@@ -38,7 +42,7 @@ export const preferenceFields: UserFieldDefinition[] = [
     type: 'string',
     nullable: true,
     default: 'en',
-    description: 'User\'s preferred language (ISO code)',
+    description: "User's preferred language (ISO code)",
     validation: {
       pattern: '^[a-z]{2}(-[A-Z]{2})?$',
       maxLength: 10,
@@ -54,13 +58,13 @@ export const preferenceFields: UserFieldDefinition[] = [
       sms: false,
       marketing: false,
     }),
-    description: 'User\'s notification preferences',
+    description: "User's notification preferences",
   },
   {
     name: 'timezone',
     type: 'string',
     nullable: true,
-    description: 'User\'s timezone (IANA format)',
+    description: "User's timezone (IANA format)",
     validation: {
       maxLength: 50,
     },
@@ -70,7 +74,7 @@ export const preferenceFields: UserFieldDefinition[] = [
     type: 'string',
     nullable: true,
     default: 'YYYY-MM-DD',
-    description: 'User\'s preferred date format',
+    description: "User's preferred date format",
     validation: {
       maxLength: 20,
     },
@@ -80,7 +84,7 @@ export const preferenceFields: UserFieldDefinition[] = [
     type: 'string',
     nullable: true,
     default: 'HH:mm',
-    description: 'User\'s preferred time format',
+    description: "User's preferred time format",
     validation: {
       maxLength: 20,
     },
@@ -92,7 +96,9 @@ export const preferenceFields: UserFieldDefinition[] = [
  * @param knex Knex instance
  * @returns Promise that resolves when the operation is complete
  */
-export async function extendUserTableWithPreferences(knex: Knex): Promise<void> {
+export async function extendUserTableWithPreferences(
+  knex: Knex
+): Promise<void> {
   await extendUserTable(knex, {
     fields: preferenceFields,
     migrateExisting: true,
@@ -140,19 +146,17 @@ export async function preferencesExtensionExample(knex: Knex): Promise<void> {
     });
 
   // 4. Query user with preference data
-  const updatedUser = await knex('users')
-    .where('id', user[0].id)
-    .first();
+  const updatedUser = await knex('users').where('id', user[0].id).first();
 
   console.log('Updated user preferences:', updatedUser);
 
   // 5. Example of using preferences in application logic
   const notificationSettings = JSON.parse(updatedUser.notification_settings);
-  
+
   if (notificationSettings.email) {
     console.log('Would send email notification to:', updatedUser.email);
   }
-  
+
   if (notificationSettings.sms && updatedUser.phone) {
     console.log('Would send SMS notification to:', updatedUser.phone);
   }

@@ -35,10 +35,7 @@ export async function setupPlunkWithJsxEmail(knex: Knex) {
   };
 
   // Create the service
-  const verificationService = new PlunkEmailVerificationService<AppUser>(
-    knex,
-    config
-  );
+  const verificationService = new PlunkEmailVerificationService(knex, config);
 
   // Example user
   const user: AppUser = {

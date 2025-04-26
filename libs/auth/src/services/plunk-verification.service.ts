@@ -95,9 +95,7 @@ export interface PlunkVerificationConfig {
   additionalQueryParams?: Record<string, string>;
 }
 
-export class PlunkEmailVerificationService<TUser extends User>
-  implements EmailVerificationService<TUser>
-{
+export class PlunkEmailVerificationService implements EmailVerificationService {
   private readonly tableName = AuthVerificationTokensTable;
   private readonly tokenExpiryMinutes: number;
   private transporter: Transporter | null = null;
@@ -203,7 +201,7 @@ export class PlunkEmailVerificationService<TUser extends User>
    */
   async sendVerificationEmail(
     email: string,
-    user: TUser,
+    user: User,
     customVerificationUrlBase?: string
   ): Promise<string> {
     // Generate a verification token
@@ -333,7 +331,7 @@ export class PlunkEmailVerificationService<TUser extends User>
   async verifyEmail(
     email: string,
     token: string,
-    user: TUser
+    user: User
   ): Promise<boolean> {
     // Find and validate the token
     const verificationToken = await this.knex(this.tableName)
@@ -367,7 +365,7 @@ export class PlunkEmailVerificationService<TUser extends User>
    */
   async sendPasswordResetEmail(
     email: string,
-    user: TUser,
+    user: User,
     resetUrl?: string,
     customResetUrlBase?: string
   ): Promise<string> {

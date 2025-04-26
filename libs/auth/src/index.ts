@@ -18,8 +18,7 @@ export * from './utils';
 export * from './providers';
 
 // Export adapters
-export * from './adapters/express';
-export * from './adapters/hono';
+export * from './adapters/web';
 export * from './adapters/nest';
 
 // Admin exports
