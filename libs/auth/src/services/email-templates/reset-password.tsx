@@ -49,7 +49,7 @@ export const ResetPasswordEmail = ({
               If the button doesn't work, you can also copy and paste this link
               into your browser:
             </Text>
-            <Text style={link}>{url}</Text>
+            <Text style={link}>{String(url)}</Text>
 
             <Text style={paragraph}>
               This password reset link will expire in 1 hour for security

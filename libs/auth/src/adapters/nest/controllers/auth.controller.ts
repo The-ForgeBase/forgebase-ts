@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   Controller,
   Post,
@@ -396,6 +397,7 @@ export class AuthController<TUser extends User> {
   ) {
     try {
       // Get the user ID from the authenticated request
+      // @ts-ignore
       const userId = req['user'].id;
 
       console.log('User ID:', userId);
@@ -453,6 +455,7 @@ export class AuthController<TUser extends User> {
     @Res() res: Response
   ) {
     try {
+      // @ts-ignore
       const result = await this.authService.enableMfa(req['user'].id, code);
       return res.json(result);
     } catch (error) {
@@ -496,6 +499,7 @@ export class AuthController<TUser extends User> {
     @Res() res: Response
   ) {
     try {
+      // @ts-ignore
       const result = await this.authService.disableMfa(req['user'].id, code);
       return res.json(result);
     } catch (error) {

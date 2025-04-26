@@ -20,16 +20,21 @@
       "@forgebase-ts/auth": ["libs/auth/src/index.ts"],
       "@forgebase-ts/auth/*": ["libs/auth/src/*"],
       "@forgebase-ts/common": ["libs/common/src/index.ts"],
+      "@forgebase-ts/common/*": ["libs/common/src/*"],
       "@forgebase-ts/database": ["libs/database/src/index.ts"],
+      "@forgebase-ts/database/*": ["libs/database/src/*"],
       "@forgebase-ts/lib/react-native-auth": [
         "libs/react-native-auth/src/index.ts"
       ],
+      "@forgebase-ts/lib/react-native-auth/*": ["libs/react-native-auth/src/*"],
       "@forgebase-ts/lib/utils": ["libs/studio-ui-utils/src"],
       "@forgebase-ts/lib/utils/*": ["libs/studio-ui-utils/src/*"],
       "@forgebase-ts/real-time": ["libs/real-time/src/index.ts"],
+      "@forgebase-ts/real-time/*": ["libs/real-time/src/*"],
       "@forgebase-ts/sdk": ["libs/sdk/src/index.ts"],
       "@forgebase-ts/sdk/*": ["libs/sdk/src/*"],
       "@forgebase-ts/storage": ["libs/storage/src/index.ts"],
+      "@forgebase-ts/storage/*": ["libs/storage/src/*"],
       "@forgebase-ts/web-auth": ["libs/web-auth/src/index.ts"],
       "@forgebase-ts/web-auth/*": ["libs/web-auth/src/*"],
       "@spartan-ng/ui-accordion-helm": [

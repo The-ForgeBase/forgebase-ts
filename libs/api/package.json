@@ -2,82 +2,82 @@
   "name": "@forgebase-ts/api",
   "version": "0.0.1",
   "private": false,
-  "type": "commonjs",
+  "type": "module",
   "main": "./src/index.js",
-  "module": "./dist/index.js",
+  "module": "./src/index.js",
   "types": "./src/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "require": "./src/index.js",
+      "default": "./src/index.js"
     },
     "./frameworks": {
-      "types": "./dist/frameworks/index.d.ts",
-      "import": "./dist/frameworks/index.js",
-      "require": "./dist/frameworks/index.js",
-      "default": "./dist/frameworks/index.js"
+      "types": "./src/frameworks/index.d.ts",
+      "import": "./src/frameworks/index.js",
+      "require": "./src/frameworks/index.js",
+      "default": "./src/frameworks/index.js"
     },
     "./frameworks/nest": {
-      "types": "./dist/frameworks/nest/index.d.ts",
-      "import": "./dist/frameworks/nest/index.js",
-      "require": "./dist/frameworks/nest/index.js",
-      "default": "./dist/frameworks/nest/index.js"
+      "types": "./src/frameworks/nest/index.d.ts",
+      "import": "./src/frameworks/nest/index.js",
+      "require": "./src/frameworks/nest/index.js",
+      "default": "./src/frameworks/nest/index.js"
     },
     "./core/nest": {
-      "types": "./dist/core/nest/index.d.ts",
-      "import": "./dist/core/nest/index.js",
-      "require": "./dist/core/nest/index.js",
-      "default": "./dist/core/nest/index.js"
+      "types": "./src/core/nest/index.d.ts",
+      "import": "./src/core/nest/index.js",
+      "require": "./src/core/nest/index.js",
+      "default": "./src/core/nest/index.js"
     },
     "./core/hono": {
-      "types": "./dist/core/hono/index.d.ts",
-      "import": "./dist/core/hono/index.js",
-      "require": "./dist/core/hono/index.js",
-      "default": "./dist/core/hono/index.js"
+      "types": "./src/core/hono/index.d.ts",
+      "import": "./src/core/hono/index.js",
+      "require": "./src/core/hono/index.js",
+      "default": "./src/core/hono/index.js"
     },
     "./core/web": {
-      "types": "./dist/core/web/index.d.ts",
-      "import": "./dist/core/web/index.js",
-      "require": "./dist/core/web/index.js",
-      "default": "./dist/core/web/index.js"
+      "types": "./src/core/web/index.d.ts",
+      "import": "./src/core/web/index.js",
+      "require": "./src/core/web/index.js",
+      "default": "./src/core/web/index.js"
     },
     "./core": {
-      "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.js",
-      "require": "./dist/core/index.js",
-      "default": "./dist/core/index.js"
+      "types": "./src/core/index.d.ts",
+      "import": "./src/core/index.js",
+      "require": "./src/core/index.js",
+      "default": "./src/core/index.js"
     }
   },
   "typesVersions": {
     "*": {
       ".": [
-        "./dist/index.d.ts"
+        "./src/index.d.ts"
       ],
       "frameworks": [
-        "./dist/frameworks/index.d.ts"
+        "./src/frameworks/index.d.ts"
       ],
       "frameworks/nest": [
-        "./dist/frameworks/nest/index.d.ts"
+        "./src/frameworks/nest/index.d.ts"
       ],
       "core/nest": [
-        "./dist/core/nest/index.d.ts"
+        "./src/core/nest/index.d.ts"
       ],
       "core/hono": [
-        "./dist/core/hono/index.d.ts"
+        "./src/core/hono/index.d.ts"
       ],
       "core/web": [
-        "./dist/core/web/index.d.ts"
+        "./src/core/web/index.d.ts"
       ],
       "core": [
-        "./dist/core/index.d.ts"
+        "./src/core/index.d.ts"
       ]
     }
   },
   "files": [
-    "dist",
+    "src",
     "!**/*.tsbuildinfo"
   ],
   "publishConfig": {
@@ -94,6 +94,9 @@
     "@nestjs/core": "^10.0.2",
     "@forgebase-ts/storage": "0.0.1",
     "better-auth": "^1.1.14",
-    "@hono/node-server": "^1.13.7"
+    "@hono/node-server": "^1.13.7",
+    "itty-router": "^5.0.18",
+    "@forgebase-ts/auth": "0.0.1",
+    "tsup": "^8.4.0"
   }
 }

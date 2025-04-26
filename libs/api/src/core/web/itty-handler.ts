@@ -43,12 +43,21 @@ class IttyWebHandler {
   private db: DatabaseService;
   private registeredRoutes: RouteEntry[];
 
+  private emptyres = (req: IttyWebRequest) => {
+    return undefined;
+  };
+
+  private emptyreqres = (res: Response, req: IttyWebRequest) => {
+    return res;
+  };
+
   constructor(
     config: {
       enableSchemaEndpoints?: boolean;
       enableDataEndpoints?: boolean;
       enablePermissionEndpoints?: boolean;
       corsOptions?: CorsOptions;
+      corsEnabled?: boolean;
       authMiddleware?: (req: IttyWebRequest) => Promise<Response | undefined>;
       useFgAuth?: {
         enabled: boolean;
@@ -61,7 +70,10 @@ class IttyWebHandler {
     fgConfig: Partial<BaaSConfig> = {}
   ) {
     const { preflight, corsify } = cors(config.corsOptions);
-    let authMiddleware = config.authMiddleware || ((req) => req);
+    let authMiddleware = config.authMiddleware || ((req) => undefined);
+
+    const beforeMiddlewares = config.beforeMiddlewares || [];
+    const finallyMiddlewares = config.finallyMiddlewares || [];
 
     if (!config.authMiddleware && !config.useFgAuth?.enabled) {
       console.warn(
@@ -100,18 +112,21 @@ class IttyWebHandler {
     this.router = AutoRouter<IttyWebRequest>({
       base: fgConfig.prefix || this.config.prefix,
       before: [
-        preflight,
+        config.corsEnabled ? preflight : this.emptyres.bind(this),
         authMiddleware,
         this.schemaGuard.bind(this),
-        ...config.beforeMiddlewares,
+        ...beforeMiddlewares,
       ],
       finally: config.useFgAuth?.enabled
         ? [
-            corsify,
+            config.corsEnabled ? corsify : this.emptyreqres.bind(this),
             attachNewToken.bind(this, config.useFgAuth?.config),
-            ...config.finallyMiddlewares,
+            ...finallyMiddlewares,
           ]
-        : [corsify, ...config.finallyMiddlewares],
+        : [
+            config.corsEnabled ? corsify : this.emptyreqres.bind(this),
+            ...finallyMiddlewares,
+          ],
     });
     this.config = this.mergeConfigs(this.config, fgConfig);
     // Initialize services based on configuration
@@ -121,6 +136,8 @@ class IttyWebHandler {
     this.setupRoutes();
 
     this.registeredRoutes = this.router.routes;
+
+    console.log(this.registeredRoutes.map((r) => r[3]));
   }
 
   private mergeConfigs(
@@ -233,6 +250,7 @@ class IttyWebHandler {
     this.router.get(
       '/db/:tableName',
       async ({ params, userContext, isSystem, query }) => {
+        console.log('query', query);
         try {
           const { tableName } = params;
           const result = await this.db.query(

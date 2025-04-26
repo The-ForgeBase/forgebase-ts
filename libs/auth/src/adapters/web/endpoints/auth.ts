@@ -50,6 +50,9 @@ export class AuthApi<TUser extends BaseUser> {
   }) {
     const { preflight, corsify } = cors(options.cors.corsOptions);
 
+    const beforeMiddlewares = options.beforeMiddlewares || [];
+    const finallyMiddlewares = options.finallyMiddlewares || [];
+
     this.authManager = options.authManager;
     this.adminManager = options.adminManager;
     this.config = options.config;
@@ -57,12 +60,12 @@ export class AuthApi<TUser extends BaseUser> {
       base: options.config.basePath || '/auth',
       before: [
         options.cors?.enabled ? preflight : undefined,
-        ...options.beforeMiddlewares,
+        ...beforeMiddlewares,
         userContextMiddleware.bind(this, this.authManager),
       ],
       finally: [
         options.cors?.enabled ? corsify : undefined,
-        ...options.finallyMiddlewares,
+        ...finallyMiddlewares,
         attachNewToken.bind(this, this.config),
       ],
     });
@@ -70,7 +73,7 @@ export class AuthApi<TUser extends BaseUser> {
 
     this.registeredRoutes = this.router.routes;
 
-    console.log(this.registeredRoutes);
+    console.log(this.registeredRoutes.map((r) => r[3]));
   }
 
   private setupRoutes() {

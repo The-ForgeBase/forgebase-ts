@@ -2,53 +2,52 @@
   "name": "@forgebase-ts/auth",
   "version": "0.0.1",
   "private": false,
-  "type": "commonjs",
+  "type": "module",
   "main": "./src/index.js",
-  "module": "./dist/index.js",
+  "module": "./src/index.js",
   "types": "./src/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
       "require": "./src/index.js",
-      "default": "./dist/index.js"
+      "default": "./src/index.js"
     },
     "./adapters": {
-      "types": "./dist/adapters/index.d.ts",
-      "import": "./dist/adapters/index.js",
+      "types": "./src/adapters/index.d.ts",
+      "import": "./src/adapters/index.js",
       "require": "./src/adapters/index.js",
-      "default": "./dist/adapters/index.js"
+      "default": "./src/adapters/index.js"
     },
     "./adapters/nest": {
-      "types": "./dist/adapters/nest/index.d.ts",
-      "import": "./dist/adapters/nest/index.js",
+      "types": "./src/adapters/nest/index.d.ts",
+      "import": "./src/adapters/nest/index.js",
       "require": "./src/adapters/nest/index.js",
-      "default": "./dist/adapters/nest/index.js"
+      "default": "./src/adapters/nest/index.js"
     }
   },
   "typesVersions": {
     "*": {
       ".": [
-        "./dist/index.d.ts"
+        "./src/index.d.ts"
       ],
       "adapters": [
-        "./dist/adapters/index.d.ts"
+        "./src/adapters/index.d.ts"
       ],
       "adapters/nest": [
-        "./dist/adapters/nest/index.d.ts"
+        "./src/adapters/nest/index.d.ts"
       ]
     }
   },
   "files": [
-    "dist",
+    "src",
     "!**/*.tsbuildinfo"
   ],
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "tslib": "^2.3.0",
     "express": "^4.21.2",
     "fastify": "^5.2.1",
     "@fastify/cookie": "^11.0.2",
@@ -67,6 +66,14 @@
     "axios": "^1.6.0",
     "jsonwebtoken": "^9.0.2",
     "@forgebase-ts/common": "0.0.1",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "itty-router": "^5.0.18",
+    "@forgebase-ts/database": "0.0.1",
+    "jsx-email": "^2.7.1",
+    "react": "18.3.1",
+    "uuid": "^11.1.0",
+    "jose": "^5.9.6",
+    "tsup": "^8.4.0",
+    "tslib": "^2.4.0"
   }
 }

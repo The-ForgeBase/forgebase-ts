@@ -1,8 +1,9 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { showRoutes } from 'hono/dev';
-import { FgAPiVariables } from '@forgebase-ts/api/core/hono';
-import { createIttyHandler, websseHandler } from '@forgebase-ts/api/core/web';
+import { FgAPiVariables } from '@forgebase-ts/api/core/hono/forge-api.handler';
+import { createIttyHandler } from '@forgebase-ts/api/core/web/itty-handler';
+import { websseHandler } from '@forgebase-ts/api/core/web/sse';
 import knex from 'knex';
 import { AuthTables } from '@forgebase-ts/auth/config';
 import { SSEManager, UserContext } from '@forgebase-ts/database';
@@ -59,6 +60,17 @@ const webHandler = createIttyHandler({
     enableSchemaEndpoints: true,
     enableDataEndpoints: true,
     enablePermissionEndpoints: true,
+    authMiddleware: async (req) => {
+      req.userContext = {
+        userId: '1',
+        role: 'user',
+        labels: [],
+        teams: [],
+        permissions: [],
+      };
+
+      return undefined;
+    },
   },
   fgConfig: {
     prefix: '/api',
