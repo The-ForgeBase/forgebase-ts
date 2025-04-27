@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
-* Merge pull request #81 from The-ForgeBase/nest (b0ffab8)
-* feat(real-time): add cross-platform WebSocket and Yjs integration (8668821)
+* Merge pull request #82 from The-ForgeBase/real-time (293ab84)
+* refactor(real-time): simplify WebSocket type and add ping-pong mechanism (420867a)
 
 For changes in previous releases, please check the Git history.
