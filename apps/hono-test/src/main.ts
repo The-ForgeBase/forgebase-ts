@@ -1,4 +1,5 @@
 import { serve } from '@hono/node-server';
+import { UpgradeWebSocket } from 'hono/ws';
 import { Hono } from 'hono';
 import { showRoutes } from 'hono/dev';
 import { FgAPiVariables } from '@forgebase-ts/api/core/hono';
@@ -16,6 +17,7 @@ import {
   webAuthApi,
 } from '@forgebase-ts/auth/adapters/web';
 import { User } from '@forgebase-ts/auth/types';
+import nodeRealtime from '@forgebase-ts/real-time/node';
 
 // Define a type for our custom environment, extending FgAPiVariables
 type MyEnv = {
@@ -175,6 +177,8 @@ async function webHandlerClient() {
   return webHandler;
 }
 
+const realtime = nodeRealtime({}, {});
+
 app.use('/api/*', async (c, next) => {
   const auth = await authClient();
 
@@ -234,6 +238,12 @@ app.post('/api/sse', async (c) => {
 app.all('/api/*', async (ctx) => {
   const webHandler = await webHandlerClient();
   return webHandler.handleRequest(ctx.req.raw as any);
+});
+
+app.all('/live', async ({ req, header }) => {
+  if (req.header('Upgrade') === 'websocket') {
+    // realtime.handleUpgrade(req.raw)
+  }
 });
 
 showRoutes(app, {
