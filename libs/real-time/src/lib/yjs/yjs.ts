@@ -9,8 +9,11 @@ import * as map from 'lib0/map';
 import * as eventloop from 'lib0/eventloop';
 import { LeveldbPersistence } from 'y-leveldb';
 import { callbackHandler, isCallbackSet } from './callback';
-import { WebSocket } from '../crossws/types/web';
+import { WebSocket as WT } from '../crossws/types/web';
 import { UpgradeRequest } from '../crossws/hooks';
+// import { WebSocket as WA } from 'uWebSockets.js';
+
+type WebSocket = WT | Partial<WT>;
 
 // Constants
 const CALLBACK_DEBOUNCE_WAIT = parseInt(
@@ -141,7 +144,7 @@ export const setContentInitializor = (f: ContentInitializer): void => {
  */
 export class WSSharedDoc extends Y.Doc {
   public name: string;
-  public conns: Map<WebSocket | Partial<WebSocket>, Set<number>>;
+  public conns: Map<WebSocket, Set<number>>;
   public awareness: awarenessProtocol.Awareness;
   public whenInitialized: Promise<void>;
 
@@ -151,7 +154,7 @@ export class WSSharedDoc extends Y.Doc {
 
     // Maps from conn to set of controlled user ids
     // Delete all user ids from awareness when this conn is closed
-    this.conns = new Map<WebSocket | Partial<WebSocket>, Set<number>>();
+    this.conns = new Map<WebSocket, Set<number>>();
 
     // Initialize awareness
     this.awareness = new awarenessProtocol.Awareness(this);
@@ -223,7 +226,7 @@ export const getYDoc = (docname: string, gc = true): WSSharedDoc =>
  * Handle incoming messages
  */
 const messageListener = (
-  conn: WebSocket | Partial<WebSocket>,
+  conn: WebSocket,
   doc: WSSharedDoc,
   message: Uint8Array
 ): void => {
@@ -294,11 +297,7 @@ const closeConn = (
 /**
  * Send a message through a WebSocket connection
  */
-const send = (
-  doc: WSSharedDoc,
-  conn: WebSocket | Partial<WebSocket>,
-  m: Uint8Array
-): void => {
+const send = (doc: WSSharedDoc, conn: WebSocket, m: Uint8Array): void => {
   if (
     conn.readyState !== wsReadyStateConnecting &&
     conn.readyState !== wsReadyStateOpen
@@ -333,6 +332,27 @@ export const setupWSConnection = (
   const doc = getYDoc(docName, gc);
   doc.conns.set(conn, new Set());
 
+  // // Check if connection is still alive
+  let pongReceived = true;
+  const pingInterval = setInterval(() => {
+    if (!pongReceived) {
+      if (doc.conns.has(conn)) {
+        closeConn(doc, conn);
+      }
+      clearInterval(pingInterval);
+    } else if (doc.conns.has(conn)) {
+      pongReceived = false;
+      try {
+        // ping
+        conn.send('ping');
+      } catch {
+        // Close connection on ping error
+        closeConn(doc, conn);
+        clearInterval(pingInterval);
+      }
+    }
+  }, pingTimeout);
+
   // Listen and reply to events
   // conn.on('message', (message: ArrayBuffer) =>
   //   messageListener(conn, doc, new Uint8Array(message))
@@ -341,28 +361,11 @@ export const setupWSConnection = (
     if (ev.data instanceof ArrayBuffer) {
       messageListener(conn, doc, new Uint8Array(ev.data));
     }
-  });
 
-  // // Check if connection is still alive
-  // let pongReceived = true;
-  // const pingInterval = setInterval(() => {
-  //   if (!pongReceived) {
-  //     if (doc.conns.has(conn)) {
-  //       closeConn(doc, conn);
-  //     }
-  //     clearInterval(pingInterval);
-  //   } else if (doc.conns.has(conn)) {
-  //     pongReceived = false;
-  //     try {
-  //       // ping
-  //       conn.send('ping');
-  //     } catch {
-  //       // Close connection on ping error
-  //       closeConn(doc, conn);
-  //       clearInterval(pingInterval);
-  //     }
-  //   }
-  // }, pingTimeout);
+    if (ev.data === 'pong') {
+      pongReceived = true;
+    }
+  });
 
   // conn.on('close', () => {
   //   closeConn(doc, conn);
@@ -370,13 +373,10 @@ export const setupWSConnection = (
   // });
   conn.addEventListener('close', () => {
     closeConn(doc, conn);
-    // clearInterval(pingInterval);
+    clearInterval(pingInterval);
   });
 
   // conn.on('pong', () => {
-  //   pongReceived = true;
-  // });
-  // conn.addEventListener('pong', () => {
   //   pongReceived = true;
   // });
 
