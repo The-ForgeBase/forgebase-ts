@@ -11,8 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
-* Merge pull request #80 from The-ForgeBase/nest (77fd7dc)
-* refactor(auth): restructure auth client initialization and usage (d01bdb9)
-* refactor(auth): simplify user type and remove generics (1edb2ab)
+* Merge pull request #81 from The-ForgeBase/nest (b0ffab8)
+* feat(real-time): add cross-platform WebSocket and Yjs integration (8668821)
 
 For changes in previous releases, please check the Git history.
