@@ -54,5 +54,8 @@
     "express": "^4.21.2",
     "jose": "^6.0.10",
     "axios": "^1.7.9"
+  },
+  "peerDependencies": {
+    "@forgebase-ts/database": "0.0.1"
   }
 }

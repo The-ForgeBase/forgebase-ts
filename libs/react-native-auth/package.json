@@ -28,7 +28,9 @@
     "!**/*.tsbuildinfo"
   ],
   "peerDependencies": {
-    "react": ">=16.8.0"
+    "react": ">=16.8.0",
+    "react-native": "0.76.3",
+    "tslib": "^2.4.0"
   },
   "dependencies": {
     "axios": "^1.6.0"

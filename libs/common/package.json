@@ -21,6 +21,13 @@
     "access": "public"
   },
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "express": "^4.21.2",
+    "fastify": "^5.2.1",
+    "hono": "^4.6.19",
+    "@forgebase-ts/database": "0.0.1"
+  },
+  "peerDependencies": {
+    "@forgebase-ts/database": "0.0.1"
   }
 }

@@ -25,6 +25,24 @@
       "import": "./src/adapters/nest/index.js",
       "require": "./src/adapters/nest/index.js",
       "default": "./src/adapters/nest/index.js"
+    },
+    "./adapters/web": {
+      "types": "./src/adapters/web/index.d.ts",
+      "import": "./src/adapters/web/index.js",
+      "require": "./src/adapters/web/index.js",
+      "default": "./src/adapters/web/index.js"
+    },
+    "./adapters/express": {
+      "types": "./src/adapters/express/index.d.ts",
+      "import": "./src/adapters/express/index.js",
+      "require": "./src/adapters/express/index.js",
+      "default": "./src/adapters/express/index.js"
+    },
+    "./adapters/ultimate-express": {
+      "types": "./src/adapters/ultimate-express/index.d.ts",
+      "import": "./src/adapters/ultimate-express/index.js",
+      "require": "./src/adapters/ultimate-express/index.js",
+      "default": "./src/adapters/ultimate-express/index.js"
     }
   },
   "typesVersions": {
@@ -49,8 +67,6 @@
   },
   "dependencies": {
     "express": "^4.21.2",
-    "fastify": "^5.2.1",
-    "@fastify/cookie": "^11.0.2",
     "hono": "^4.6.19",
     "@nestjs/common": "^10.0.2",
     "@nestjs/core": "^10.0.2",
@@ -75,5 +91,9 @@
     "jose": "^5.9.6",
     "tsup": "^8.4.0",
     "tslib": "^2.4.0"
+  },
+  "peerDependencies": {
+    "@forgebase-ts/database": "0.0.1",
+    "@forgebase-ts/common": "0.0.1"
   }
 }
