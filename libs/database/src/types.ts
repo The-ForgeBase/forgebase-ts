@@ -181,23 +181,21 @@ export interface DataMutationParams {
   id?: string | number;
 }
 
-// export interface AdvanceDataMutationParams {
-//   tableName: string;
-//   data: Record<string, any> | Array<Record<string, any>>;
-//   id?: string | number;
-//   query: DataQueryParams;
-// }
+export interface AdvanceDataMutationParams {
+  tableName: string;
+  data: Record<string, any> | Array<Record<string, any>>;
+  query: DataQueryParams;
+}
 
 export interface DataDeleteParams {
   tableName: string;
   id: string | number;
 }
 
-// export interface AdvanceDataDeleteParams {
-//   tableName: string;
-//   id?: string | number;
-//   query: DataQueryParams;
-// }
+export interface AdvanceDataDeleteParams {
+  tableName: string;
+  query: DataQueryParams;
+}
 
 export interface PermissionParams {
   tableName: string;
@@ -300,8 +298,20 @@ export interface ForgeDatabaseEndpoints {
       isSystem?: boolean,
       trx?: Knex.Transaction
     ) => Promise<any>;
+    advanceUpdate: (
+      params: AdvanceDataMutationParams,
+      user?: UserContext,
+      isSystem?: boolean,
+      trx?: Knex.Transaction
+    ) => Promise<any>;
     delete: (
       params: DataDeleteParams,
+      user?: UserContext,
+      isSystem?: boolean,
+      trx?: Knex.Transaction
+    ) => Promise<any>;
+    advanceDelete: (
+      params: AdvanceDataDeleteParams,
       user?: UserContext,
       isSystem?: boolean,
       trx?: Knex.Transaction

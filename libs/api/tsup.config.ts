@@ -10,6 +10,7 @@ export default defineConfig({
     'libs/api/src/core/nest/index.ts',
     'libs/api/src/core/hono/index.ts',
     'libs/api/src/core/web/index.ts',
+    'libs/api/src/core/express/index.ts',
     'libs/api/src/core/index.ts',
   ],
   format: ['esm', 'cjs'], // Both module formats

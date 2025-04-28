@@ -35,7 +35,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/nest-test-e2e/**/*"]
+      "exclude": ["apps/nest-test-e2e/**/*", "apps/express-test-e2e/**/*"]
     },
     {
       "plugin": "@nx/next/plugin",

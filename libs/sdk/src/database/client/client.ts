@@ -309,27 +309,17 @@ export class DatabaseSDK {
     options: QueryOptions = { execute: true },
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
-    // Build query parameters
-    const queryParams = new URLSearchParams();
-
-    // Convert complex query parameters to JSON string
-    const serializedParams = this.serializeQueryParams(params);
-    Object.entries(serializedParams).forEach(([key, value]) => {
-      queryParams.set(key, value);
-    });
-
     // If execute is false, return only the parameters
     if (!options.execute) {
       return { params: params };
     }
 
-    const url = `/${tableName}${
-      queryParams.toString() ? `?${queryParams.toString()}` : ''
-    }`;
+    const url = `/query/${tableName}`;
 
     try {
-      const response = await this.axiosInstance.get<ApiResponse<T>>(
+      const response = await this.axiosInstance.post<ApiResponse<T>>(
         url,
+        { query: params },
         axiosConfig
       );
       return {
@@ -346,22 +336,22 @@ export class DatabaseSDK {
     }
   }
 
-  private serializeQueryParams<T extends Record<string, any>>(
-    params: QueryParams<T>
-  ): Record<string, string> {
-    const serialized: Record<string, string> = {};
+  // private serializeQueryParams<T extends Record<string, any>>(
+  //   params: QueryParams<T>
+  // ): Record<string, string> {
+  //   const serialized: Record<string, string> = {};
 
-    // any param that is type of object should be serialized to JSON
-    Object.entries(params).forEach(([key, value]) => {
-      if (typeof value === 'object') {
-        serialized[key] = JSON.stringify(value);
-      } else {
-        serialized[key] = value.toString();
-      }
-    });
+  //   // any param that is type of object should be serialized to JSON
+  //   Object.entries(params).forEach(([key, value]) => {
+  //     if (typeof value === 'object') {
+  //       serialized[key] = JSON.stringify(value);
+  //     } else {
+  //       serialized[key] = value.toString();
+  //     }
+  //   });
 
-    return serialized;
-  }
+  //   return serialized;
+  // }
 
   /**
    * Creates a new record in the specified table
@@ -379,7 +369,7 @@ export class DatabaseSDK {
 
     try {
       const response = await this.axiosInstance.post<ApiResponse<T>>(
-        `/${tableName}`,
+        `/create/${tableName}`,
         { data },
         axiosConfig
       );
@@ -414,7 +404,7 @@ export class DatabaseSDK {
 
     try {
       const response = await this.axiosInstance.put<ApiResponse<T>>(
-        `/${tableName}/${id}`,
+        `/update/${tableName}/${id}`,
         { data },
         axiosConfig
       );
@@ -422,6 +412,45 @@ export class DatabaseSDK {
         records: [response.data as T],
         message: 'Record updated successfully',
         error: undefined,
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || error.message);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Updates records by Complex Query from the specified table
+   * @param tableName The name of the table containing the record to delete
+   * @param params Query parameters including filters and pagination
+   * @param options Query options
+   * @param data The data to update the record with
+   * @param axiosConfig Custom axios config for this specific request
+   * @returns Promise containing the result of the deletion
+   */
+  async advanceUpdateRecord<T extends Record<string, any>>(
+    tableName: string,
+    data: Partial<T>,
+    params: QueryParams<T> = {},
+    options: QueryOptions = { execute: true },
+    axiosConfig: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<any>> {
+    try {
+      if (!options.execute) {
+        return { params: params };
+      }
+
+      const response = await this.axiosInstance.post<ApiResponse<never>>(
+        `/update/${tableName}`,
+        { query: params, data },
+        axiosConfig
+      );
+      return {
+        message: 'Records updated successfully',
+        error: undefined,
+        records: response.data as T[],
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -442,16 +471,54 @@ export class DatabaseSDK {
     tableName: string,
     id: number | string,
     axiosConfig: AxiosRequestConfig = {}
-  ): Promise<ApiResponse<never>> {
+  ): Promise<ApiResponse<any>> {
     try {
-      const response = await this.axiosInstance.delete<ApiResponse<never>>(
-        `/${tableName}/${id}`,
+      const response = await this.axiosInstance.post<ApiResponse<never>>(
+        `/del/${tableName}/${id}`,
+        {},
         axiosConfig
       );
       return {
         message: 'Record deleted successfully',
         error: undefined,
-        records: [],
+        records: response.data as any[],
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || error.message);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Deletes records by Complex Query from the specified table
+   * @param tableName The name of the table containing the record to delete
+   * @param params Query parameters including filters and pagination
+   * @param options Query options
+   * @param axiosConfig Custom axios config for this specific request
+   * @returns Promise containing the result of the deletion
+   */
+  async advanceDeleteRecord<T extends Record<string, any>>(
+    tableName: string,
+    params: QueryParams<T> = {},
+    options: QueryOptions = { execute: true },
+    axiosConfig: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<any>> {
+    try {
+      if (!options.execute) {
+        return { params: params };
+      }
+
+      const response = await this.axiosInstance.post<ApiResponse<never>>(
+        `/del/${tableName}`,
+        { query: params },
+        axiosConfig
+      );
+      return {
+        message: 'Record deleted successfully',
+        error: undefined,
+        records: response.data as any[],
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -1045,7 +1112,7 @@ class QueryBuilder<T extends Record<string, any>> {
    * @param axiosConfig Optional axios config to be used for this request
    * @returns Promise with the query results
    */
-  async execute(axiosConfig: AxiosRequestConfig = {}): Promise<ApiResponse<T>> {
+  async query(axiosConfig: AxiosRequestConfig = {}): Promise<ApiResponse<T>> {
     const response = await this.sdk.getRecords<T>(
       this.tableName,
       this.params,
@@ -1089,6 +1156,25 @@ class QueryBuilder<T extends Record<string, any>> {
   }
 
   /**
+   * Update records by Complex query
+   * @param data The data to update
+   * @param axiosConfig Optional axios config to be used for this request
+   * @returns Promise with the deletion result
+   */
+  async advanceUpdate(
+    data: Partial<T>,
+    axiosConfig: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<any>> {
+    return this.sdk.advanceUpdateRecord(
+      this.tableName,
+      data,
+      this.params,
+      { execute: true },
+      axiosConfig
+    );
+  }
+
+  /**
    * Delete a record by ID
    * @param id The ID of the record to delete
    * @param axiosConfig Optional axios config to be used for this request
@@ -1097,8 +1183,24 @@ class QueryBuilder<T extends Record<string, any>> {
   async delete(
     id: number | string,
     axiosConfig: AxiosRequestConfig = {}
-  ): Promise<ApiResponse<never>> {
+  ): Promise<ApiResponse<any>> {
     return this.sdk.deleteRecord(this.tableName, id, axiosConfig);
+  }
+
+  /**
+   * Delete records by Complex query
+   * @param axiosConfig Optional axios config to be used for this request
+   * @returns Promise with the deletion result
+   */
+  async advanceDelete(
+    axiosConfig: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<any>> {
+    return this.sdk.advanceDeleteRecord(
+      this.tableName,
+      this.params,
+      { execute: true },
+      axiosConfig
+    );
   }
 
   private applyTransformations(response: ApiResponse<T>): ApiResponse<T> {
@@ -1177,7 +1279,7 @@ class QueryBuilder<T extends Record<string, any>> {
 //         subQuery.where("role", "manager").where("department", "IT");
 //       });
 //     })
-//     .execute();
+//     .query();
 
 //   // Using exists with raw SQL
 //   db.table<Order>("orders")
@@ -1185,7 +1287,7 @@ class QueryBuilder<T extends Record<string, any>> {
 //       "SELECT 1 FROM order_items WHERE order_items.order_id = orders.id AND quantity > ?",
 //       [10]
 //     )
-//     .execute();
+//     .query();
 
 //   // Aggregations with grouping
 //   db.table<Order>("orders")
@@ -1194,7 +1296,7 @@ class QueryBuilder<T extends Record<string, any>> {
 //     .sum("amount", "total_amount")
 //     .count("id", "order_count")
 //     .avg("amount", "average_amount")
-//     .execute();
+//     .query();
 
 //   // Raw expressions removed for security reasons
 // }

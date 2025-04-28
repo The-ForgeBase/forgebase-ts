@@ -19,6 +19,7 @@ import {
   DataQueryParams,
   AuthenticationRequiredError,
   PermissionDeniedError,
+  AdvanceDataMutationParams,
 } from '@forgebase-ts/database';
 import { ApiAdmin } from './decorators/admin.decorator';
 import { ApiPublic } from './decorators/public.decorator';
@@ -271,10 +272,10 @@ export class ForgeApiController {
   }
 
   // Database endpoints
-  @Post('db/:collection')
+  @Post('db/create/:tableName')
   @ApiPublic()
   async createItem(
-    @Param('collection') collection: string,
+    @Param('tableName') tableName: string,
     @Body() body: any,
     @Req() req: Request
   ) {
@@ -294,9 +295,9 @@ export class ForgeApiController {
       }
 
       const id = await this.forgeApiService.getDatabaseService().insert(
-        collection,
+        tableName,
         {
-          tableName: collection,
+          tableName: tableName,
           data,
         },
         req['userContext'],
@@ -319,17 +320,18 @@ export class ForgeApiController {
     }
   }
 
-  @Get('db/:collection')
+  @Post('db/query/:tableName')
   @ApiPublic()
   async queryItems(
-    @Param('collection') collection: string,
-    @Query() query: any,
+    @Param('tableName') tableName: string,
+    @Body() body: any,
     @Req() req: Request
   ) {
     try {
+      const { query } = body;
       return await this.forgeApiService
         .getDatabaseService()
-        .query(collection, query, req['userContext'], req['isSystem']);
+        .query(tableName, query, req['userContext'], req['isSystem']);
     } catch (error) {
       console.error('Error querying items:', error);
       if (error instanceof AuthenticationRequiredError) {
@@ -345,10 +347,10 @@ export class ForgeApiController {
     }
   }
 
-  @Get('db/:collection/:id')
+  @Post('db/query/:tableName/:id')
   @ApiPublic()
   async getItemById(
-    @Param('collection') collection: string,
+    @Param('tableName') tableName: string,
     @Param('id') id: string | number,
     @Req() req: Request
   ) {
@@ -359,7 +361,7 @@ export class ForgeApiController {
       const query: DataQueryParams = { filter: { id: itemId }, select: ['*'] };
       return await this.forgeApiService
         .getDatabaseService()
-        .query(collection, query, req['userContext'], req['isSystem']);
+        .query(tableName, query, req['userContext'], req['isSystem']);
     } catch (error) {
       console.error('Error getting item by id:', error);
       if (error instanceof AuthenticationRequiredError) {
@@ -375,10 +377,10 @@ export class ForgeApiController {
     }
   }
 
-  @Put('db/:collection/:id')
+  @Post('db/update/:tableName/:id')
   @ApiPublic()
   async updateItem(
-    @Param('collection') collection: string,
+    @Param('tableName') tableName: string,
     @Param('id') id: string | number,
     @Body() body: any,
     @Req() req: Request
@@ -393,7 +395,7 @@ export class ForgeApiController {
       }
 
       const params: DataMutationParams = {
-        tableName: collection,
+        tableName: tableName,
         data: data,
         id: itemId,
       };
@@ -417,20 +419,98 @@ export class ForgeApiController {
     }
   }
 
-  @Delete('db/:collection/:id')
+  @Post('db/update/:tableName')
+  @ApiPublic()
+  async updateItems(
+    @Param('tableName') tableName: string,
+    @Body() body: any,
+    @Req() req: Request
+  ) {
+    try {
+      let { data, query } = body;
+
+      // Check if data is an object, then convert to object
+      if (typeof data === 'string') {
+        data = JSON.parse(data);
+      }
+
+      if (typeof query === 'string') {
+        query = JSON.parse(query);
+      }
+
+      const params: AdvanceDataMutationParams = {
+        tableName: tableName,
+        data: data,
+        query,
+      };
+
+      await this.forgeApiService
+        .getDatabaseService()
+        .advanceUpdate(params, req['userContext'], req['isSystem']);
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating item:', error);
+      if (error instanceof AuthenticationRequiredError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else if (error instanceof PermissionDeniedError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else {
+        throw new HttpException(
+          error.message || 'Internal server error',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+    }
+  }
+
+  @Post('db/del/:tableName/:id')
   @ApiPublic()
   async deleteItem(
-    @Param('collection') collection: string,
+    @Param('tableName') tableName: string,
     @Param('id') id: string | number,
     @Req() req: Request
   ) {
     try {
       const itemId = id;
 
-      await this.forgeApiService
+      const data = await this.forgeApiService
         .getDatabaseService()
-        .delete(collection, itemId, req['userContext'], req['isSystem']);
-      return { success: true };
+        .delete(tableName, itemId, req['userContext'], req['isSystem']);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      if (error instanceof AuthenticationRequiredError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else if (error instanceof PermissionDeniedError) {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      } else {
+        throw new HttpException(
+          error.message || 'Internal server error',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+    }
+  }
+
+  @Post('db/del/:tableName')
+  @ApiPublic()
+  async deleteItems(
+    @Param('tableName') tableName: string,
+    @Body('query') query: any,
+    @Req() req: Request
+  ) {
+    try {
+      const data = await this.forgeApiService
+        .getDatabaseService()
+        .advanceDelete(
+          {
+            tableName,
+            query,
+          },
+          req['userContext'],
+          req['isSystem']
+        );
+      return { success: true, data };
     } catch (error) {
       console.error('Error deleting item:', error);
       if (error instanceof AuthenticationRequiredError) {
