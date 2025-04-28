@@ -68,27 +68,27 @@ async function basicQueries() {
     activeUsers: await db
       .table<User>('users')
       .where('status', 'active')
-      .execute(),
+      .query(),
 
     seniorManagers: await db
       .table<User>('users')
       .where('role', 'manager')
       .where('experience', '>=', 5)
-      .execute(),
+      .query(),
 
     sortedUsers: await db
       .table<User>('users')
       .orderBy('lastName', 'asc')
       .orderBy({ field: 'salary', direction: 'desc', nulls: 'first' })
-      .execute(),
+      .query(),
 
-    pagedResults: await db.table<User>('users').offset(20).limit(10).execute(),
+    pagedResults: await db.table<User>('users').offset(20).limit(10).query(),
 
     userEmails: await db
       .table<User>('users')
       .select('id', 'email')
       .where('status', 'active')
-      .execute(),
+      .query(),
 
     rankedSalaries: await db
       .table<User>('users')
@@ -97,7 +97,7 @@ async function basicQueries() {
         partitionBy: ['department'],
         orderBy: [{ field: 'salary', direction: 'desc' }],
       })
-      .execute(),
+      .query(),
 
     departmentStats: await db
       .table<User>('users')
@@ -105,7 +105,7 @@ async function basicQueries() {
       .groupBy('department')
       .count('id', 'total_employees')
       .avg('salary', 'avg_salary')
-      .execute(),
+      .query(),
   };
 
   return results;
@@ -120,7 +120,7 @@ async function aggregationsAndGrouping() {
     .count('id', 'order_count')
     .sum('total', 'total_amount')
     .avg('total', 'average_amount')
-    .execute();
+    .query();
 
   // Having clause
   const highValueOrderGroups = await db
@@ -128,7 +128,7 @@ async function aggregationsAndGrouping() {
     .groupBy('userId')
     .having('total_amount', '>', 1000)
     .sum('total', 'total_amount')
-    .execute();
+    .query();
 
   // Multiple aggregations with complex grouping
   const detailedStats = await db
@@ -141,7 +141,7 @@ async function aggregationsAndGrouping() {
     .max('total', 'max_order')
     .having('order_count', '>', 1)
     .orderBy('revenue', 'desc')
-    .execute();
+    .query();
 
   return { orderStats, highValueOrderGroups, detailedStats };
 }
@@ -153,7 +153,7 @@ async function windowFunctions() {
     .table<User>('users')
     .select('firstName', 'department', 'salary')
     .rowNumber('rank', ['department'], [{ field: 'salary', direction: 'desc' }])
-    .execute();
+    .query();
 
   // Multiple window functions
   const analyzedSalaries = await db
@@ -168,7 +168,7 @@ async function windowFunctions() {
       partitionBy: ['department'],
       orderBy: [{ field: 'hireDate', direction: 'asc' }],
     })
-    .execute();
+    .query();
 
   // Advanced window function
   const advancedAnalysis = await db
@@ -188,7 +188,7 @@ async function windowFunctions() {
     })
     .orderBy('department', 'asc')
     .orderBy('hireDate', 'asc')
-    .execute();
+    .query();
 
   return { advancedAnalysis, rankedUsers, analyzedSalaries };
 }
@@ -204,19 +204,19 @@ async function advancedFiltering() {
         subQuery.where('role', 'manager').where('department', 'IT');
       });
     })
-    .execute();
+    .query();
 
   // Where between
   const salaryRange = await db
     .table<User>('users')
     .whereBetween('salary', [50000, 100000])
-    .execute();
+    .query();
 
   // Where in
   const specificDepts = await db
     .table<User>('users')
     .whereIn('department', ['IT', 'HR', 'Finance'])
-    .execute();
+    .query();
 
   // Where exists with subquery builder - safe from SQL injection
   const usersWithOrders = await db
@@ -224,7 +224,7 @@ async function advancedFiltering() {
     .whereExists((subquery) =>
       subquery.table('orders').where('total', '>', 1000)
     )
-    .execute();
+    .query();
 
   // Where exists with join - more readable and safe approach
   const usersWithExpensiveOrders = await db
@@ -232,7 +232,7 @@ async function advancedFiltering() {
     .whereExistsJoin('orders', 'id', 'user_id', (qb) =>
       qb.where('total', '>', 1000)
     )
-    .execute();
+    .query();
 
   return {
     filteredUsers,
@@ -252,7 +252,7 @@ async function cteExamples() {
   const result = await db
     .table<User>('users')
     .with('high_paid', highPaidUsers)
-    .execute();
+    .query();
 
   // Recursive CTE
   const initialQuery = db
@@ -268,7 +268,7 @@ async function cteExamples() {
     .withRecursive('product_hierarchy', initialQuery, recursiveQuery, {
       unionAll: true,
     })
-    .execute();
+    .query();
 
   return { result, recursiveResult };
 }

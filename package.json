@@ -211,6 +211,7 @@
     "@types/better-sqlite3": "^7.6.12",
     "@types/bun": "^1.2.10",
     "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
     "@types/deno": "^2.2.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.12",

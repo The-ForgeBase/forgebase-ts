@@ -109,19 +109,16 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
       # Uncomment the following steps if you want to publish packages to npm
-      # - name: Setup npm authentication
-      #   run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-      #
-      # - name: Build packages
-      #   run: pnpm exec nx affected -t build
-      #
-      # - name: Publish to npm
-      #   run: |
-      #     # Update package versions
-      #     find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
-      #
-      #     # Publish packages
-      #     find ./dist/libs -type d -maxdepth 1 -exec pnpm publish --access public --no-git-checks {} \;
+      - name: Setup npm authentication
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish to npm
+        run: |
+          # Update package versions
+          find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
+
+          # Publish packages
+          find ./dist/libs -type d -maxdepth 1 -exec pnpm publish --access public --no-git-checks {} \;
 
       - name: Setup Node.js with GitHub Package Registry
         uses: actions/setup-node@v4
@@ -144,3 +141,4 @@ jobs:
           done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

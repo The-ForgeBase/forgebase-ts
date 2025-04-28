@@ -1,5 +1,9 @@
-export * from './forge-api.factory';
-export * from './forge-api.handler';
-export * from './forge-api.service';
-export * from './middlewares/admin.middleware';
-export * from './middlewares/auth.middleware';
+import { SessionData } from '@forgebase-ts/auth/adapters/web';
+import { UserContext } from '@forgebase-ts/database/types';
+
+export type FgAPiVariables = {
+  userContext: UserContext | null;
+  isAdmin: boolean;
+  isSystem: boolean;
+  session: SessionData | null;
+};

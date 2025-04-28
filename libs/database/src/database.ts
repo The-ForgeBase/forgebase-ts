@@ -23,7 +23,11 @@ import {
   type SchemaCreateParams,
   type TablePermissions,
 } from './types';
-import type { UserContext } from './types';
+import type {
+  AdvanceDataDeleteParams,
+  AdvanceDataMutationParams,
+  UserContext,
+} from './types';
 import { createColumn } from './utils/column-utils';
 import {
   addForeignKey,
@@ -745,6 +749,133 @@ export class ForgeDatabase {
         return result;
       },
 
+      advanceUpdate: async (
+        params: AdvanceDataMutationParams,
+        user?: UserContext,
+        isSystem = false,
+        trx?: Knex.Transaction
+      ) => {
+        if (this.excludedTables.includes(params.tableName)) {
+          throw new ExcludedTableError(params.tableName);
+        }
+        // If no transaction is provided, create one internally and manage it
+        if (!trx) {
+          return this.transaction(async (newTrx) => {
+            return await this.endpoints.data.update(
+              params,
+              user,
+              isSystem,
+              newTrx
+            );
+          });
+        }
+
+        const { query, tableName, data } = params;
+
+        const queryParams = this.parseQueryParams(query);
+
+        if (!this.config.enforceRls || isSystem) {
+          const result = this.hooks.mutate(
+            tableName,
+            'update',
+            async (query) =>
+              this.queryHandler
+                .buildQuery(queryParams, query)
+                .update(data)
+                .returning('*'),
+            { ...data },
+            undefined,
+            trx
+          );
+
+          return result;
+        }
+
+        if (!user && !isSystem && this.config.enforceRls) {
+          throw new AuthenticationRequiredError(
+            'Authentication required to update records'
+          );
+        }
+
+        const {
+          status: initialStatus,
+          hasFieldCheck: initialHasFieldCheck,
+          hasCustomFunction: initialHasCustomFunction,
+        } = await enforcePermissions(
+          tableName,
+          'UPDATE',
+          user,
+          this.permissionService,
+          undefined,
+          this.hooks.getKnexInstance()
+        );
+
+        if (
+          !initialStatus &&
+          !initialHasFieldCheck &&
+          !initialHasCustomFunction
+        ) {
+          throw new Error(
+            `User does not have permission to update this records`
+          );
+        }
+
+        if (initialStatus) {
+          // If the user has permission to delete, proceed with the deletion
+          const result = this.hooks.mutate(
+            tableName,
+            'update',
+            async (query) =>
+              this.queryHandler
+                .buildQuery(queryParams, query)
+                .update(data)
+                .returning('*'),
+            { ...data },
+            queryParams,
+            trx
+          );
+
+          return result;
+        }
+
+        const records = await this.hooks.query(
+          tableName,
+          (query) => this.queryHandler.buildQuery(queryParams, query),
+          queryParams,
+          trx
+        );
+
+        const { status } = await enforcePermissions(
+          tableName,
+          'UPDATE',
+          user,
+          this.permissionService,
+          records,
+          this.hooks.getKnexInstance()
+        );
+
+        if (!status) {
+          throw new PermissionDeniedError(
+            `User does not have permission to update this records`
+          );
+        }
+
+        const result = this.hooks.mutate(
+          tableName,
+          'update',
+          async (query) =>
+            this.queryHandler
+              .buildQuery(queryParams, query)
+              .update(data)
+              .returning('*'),
+          { ...data },
+          queryParams,
+          trx
+        );
+
+        return result;
+      },
+
       delete: async (
         params: DataDeleteParams,
         user?: UserContext,
@@ -853,6 +984,124 @@ export class ForgeDatabase {
           async (query) => query.where({ id }).delete(),
           { id },
           undefined,
+          trx
+        );
+      },
+
+      advanceDelete: async (
+        params: AdvanceDataDeleteParams,
+        user?: UserContext,
+        isSystem = false,
+        trx?: Knex.Transaction
+      ) => {
+        if (this.excludedTables.includes(params.tableName)) {
+          throw new ExcludedTableError(params.tableName);
+        }
+        // If no transaction is provided, create one internally and manage it
+        if (!trx) {
+          return this.transaction(async (newTrx) => {
+            return await this.endpoints.data.advanceDelete(
+              params,
+              user,
+              isSystem,
+              newTrx
+            );
+          });
+        }
+
+        const { query, tableName } = params;
+
+        const queryParams = this.parseQueryParams(query);
+
+        if (!this.config.enforceRls || isSystem) {
+          return this.hooks.mutate(
+            tableName,
+            'delete',
+            async (query) =>
+              this.queryHandler
+                .buildQuery(queryParams, query)
+                .del(['id'], { includeTriggerModifications: true }),
+            undefined,
+            queryParams,
+            trx
+          );
+        }
+
+        if (!user && !isSystem && this.config.enforceRls) {
+          throw new AuthenticationRequiredError(
+            'Authentication required to delete records'
+          );
+        }
+
+        const {
+          status: initialStatus,
+          hasFieldCheck: initialHasFieldCheck,
+          hasCustomFunction: initialHasCustomFunction,
+        } = await enforcePermissions(
+          tableName,
+          'DELETE',
+          user,
+          this.permissionService,
+          undefined,
+          this.hooks.getKnexInstance()
+        );
+
+        if (
+          !initialStatus &&
+          !initialHasFieldCheck &&
+          !initialHasCustomFunction
+        ) {
+          throw new PermissionDeniedError(
+            `User does not have permission to delete this records`
+          );
+        }
+
+        if (initialStatus) {
+          // If the user has permission to delete, proceed with the deletion
+          return this.hooks.mutate(
+            tableName,
+            'delete',
+            async (query) =>
+              this.queryHandler
+                .buildQuery(queryParams, query)
+                .del(['id'], { includeTriggerModifications: true }),
+            undefined,
+            queryParams,
+            trx
+          );
+        }
+
+        // get the record to enforce permissions
+        const records = await this.hooks.query(
+          tableName,
+          async (query) => this.queryHandler.buildQuery(queryParams, query),
+          queryParams,
+          trx
+        );
+
+        const { status } = await enforcePermissions(
+          tableName,
+          'DELETE',
+          user,
+          this.permissionService,
+          records,
+          this.hooks.getKnexInstance()
+        );
+        if (!status) {
+          throw new PermissionDeniedError(
+            `User does not have permission to delete this records`
+          );
+        }
+
+        return this.hooks.mutate(
+          tableName,
+          'delete',
+          async (query) =>
+            this.queryHandler
+              .buildQuery(queryParams, query)
+              .del(['id'], { includeTriggerModifications: true }),
+          undefined,
+          queryParams,
           trx
         );
       },

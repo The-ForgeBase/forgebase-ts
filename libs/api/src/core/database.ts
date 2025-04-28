@@ -1,6 +1,8 @@
 import { BaaSConfig } from '../types';
 import knex from 'knex';
 import {
+  AdvanceDataDeleteParams,
+  AdvanceDataMutationParams,
   ColumnDefinition,
   DatabaseSchema,
   DataMutationParams,
@@ -93,6 +95,19 @@ export class DatabaseService {
     return records;
   }
 
+  async advanceUpdate(
+    params: AdvanceDataMutationParams,
+    userContext: UserContext,
+    isSystem = false
+  ): Promise<any> {
+    const records = await this.forgeDatabase.endpoints.data.advanceUpdate(
+      params,
+      userContext,
+      isSystem
+    );
+    return records;
+  }
+
   async delete(
     tableName: string,
     id: string | number,
@@ -101,6 +116,19 @@ export class DatabaseService {
   ): Promise<any> {
     const records = await this.forgeDatabase.endpoints.data.delete(
       { tableName, id },
+      userContext,
+      isSystem
+    );
+    return records;
+  }
+
+  async advanceDelete(
+    params: AdvanceDataDeleteParams,
+    userContext: UserContext,
+    isSystem = false
+  ): Promise<any> {
+    const records = await this.forgeDatabase.endpoints.data.advanceDelete(
+      params,
       userContext,
       isSystem
     );

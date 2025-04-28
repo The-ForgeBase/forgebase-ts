@@ -12,6 +12,7 @@ import {
 // import { StorageService } from '../storage';
 import { DatabaseService } from '../database';
 import {
+  AdvanceDataMutationParams,
   AuthenticationRequiredError,
   DataMutationParams,
   DataQueryParams,
@@ -219,7 +220,7 @@ export class IttyWebHandler {
 
   private dataRoute() {
     this.router.post(
-      '/db/:tableName',
+      '/db/create/:tableName',
       async ({ json, params, userContext, isSystem }) => {
         try {
           const { tableName } = params;
@@ -255,12 +256,12 @@ export class IttyWebHandler {
       }
     );
 
-    this.router.get(
-      '/db/:tableName',
-      async ({ params, userContext, isSystem, query }) => {
-        console.log('query', query);
+    this.router.post(
+      '/db/query/:tableName',
+      async ({ params, userContext, isSystem, json }) => {
         try {
           const { tableName } = params;
+          const { query } = await json();
           const result = await this.db.query(
             tableName,
             query as DataQueryParams,
@@ -278,8 +279,8 @@ export class IttyWebHandler {
       }
     );
 
-    this.router.get(
-      '/db/:tableName/:id',
+    this.router.post(
+      '/db/query/:tableName/:id',
       async ({ params, userContext, isSystem }) => {
         try {
           // eslint-disable-next-line prefer-const
@@ -309,8 +310,8 @@ export class IttyWebHandler {
       }
     );
 
-    this.router.put(
-      '/db/:tableName/:id',
+    this.router.post(
+      '/db/update/:tableName/:id',
       async ({ params, userContext, isSystem, json }) => {
         try {
           // eslint-disable-next-line prefer-const
@@ -352,8 +353,52 @@ export class IttyWebHandler {
       }
     );
 
-    this.router.delete(
-      '/db/:tableName/:id',
+    this.router.post(
+      '/db/update/:tableName',
+      async ({ params, userContext, isSystem, json }) => {
+        try {
+          // eslint-disable-next-line prefer-const
+          let { tableName } = params as {
+            tableName: string;
+          };
+
+          const { data, query } = await json();
+
+          if (
+            !data ||
+            typeof data !== 'object' ||
+            !query ||
+            typeof query !== 'object'
+          ) {
+            return new Response(
+              JSON.stringify({ error: 'Invalid data format' }),
+              {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            );
+          }
+
+          const param: AdvanceDataMutationParams = {
+            tableName: tableName,
+            data: data,
+            query,
+          };
+
+          const result = this.db.advanceUpdate(param, userContext, isSystem);
+
+          return new Response(JSON.stringify(result), {
+            status: 204,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (e) {
+          return this.handleError(e);
+        }
+      }
+    );
+
+    this.router.post(
+      '/db/del/:tableName/:id',
       async ({ params, userContext, isSystem }) => {
         try {
           // eslint-disable-next-line prefer-const
@@ -365,9 +410,44 @@ export class IttyWebHandler {
             id = Number(id);
           }
 
-          await this.db.delete(tableName, id, userContext, isSystem);
+          const data = await this.db.delete(
+            tableName,
+            id,
+            userContext,
+            isSystem
+          );
 
-          return new Response(null, {
+          return new Response(data, {
+            status: 204,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (e) {
+          return this.handleError(e);
+        }
+      }
+    );
+
+    this.router.post(
+      '/db/del/:tableName',
+      async ({ params, userContext, isSystem, json }) => {
+        try {
+          // eslint-disable-next-line prefer-const
+          let { tableName } = params as {
+            tableName: string;
+          };
+
+          const { query } = await json();
+
+          const data = await this.db.advanceDelete(
+            {
+              tableName,
+              query,
+            },
+            userContext,
+            isSystem
+          );
+
+          return new Response(data, {
             status: 204,
             headers: { 'Content-Type': 'application/json' },
           });

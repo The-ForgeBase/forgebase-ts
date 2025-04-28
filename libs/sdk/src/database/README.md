@@ -140,7 +140,7 @@ import { DatabaseSDK } from '@forgebase/sdk';
 const db = new DatabaseSDK('https://api.example.com');
 
 // Build a complex query
-const results = await db.table('users').where('role', 'admin').where('status', 'active').whereIn('department', ['IT', 'HR']).orderBy('last_login', 'desc').limit(20).offset(0).execute();
+const results = await db.table('users').where('role', 'admin').where('status', 'active').whereIn('department', ['IT', 'HR']).orderBy('last_login', 'desc').limit(20).offset(0).query();
 
 // Create a record
 await db.table('posts').create({
@@ -250,7 +250,7 @@ const users = await db.getRecords(
 );
 
 // Custom config with the query builder
-const posts = await db.table('posts').where('status', 'published').execute({
+const posts = await db.table('posts').where('status', 'published').query({
   timeout: 3000,
 });
 ```
