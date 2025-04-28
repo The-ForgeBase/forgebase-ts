@@ -82,6 +82,8 @@
     "express": "^4.21.2",
     "hono": "^4.6.19",
     "@nestjs/common": "^10.0.2",
+    "@forgebase-ts/database": "0.0.1",
+    "@forgebase-ts/storage": "0.0.1",
     "rou3": "^0.5.1",
     "knex": "^3.1.0",
     "@nestjs/core": "^10.0.2",
