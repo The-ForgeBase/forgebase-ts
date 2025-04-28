@@ -1,31 +1,23 @@
-#!/bin/bash
+# List of the libs you want to process
+libs=(
+  api
+  auth
+  common
+  database
+  real-time
+  storage
+  sdk
+  web-auth
+  react-native-auth
+)
 
-NEW_VERSION="${NEW_VERSION:-0.0.0}"  # fallback if NEW_VERSION not set
-
-echo "Updating internal forgebase-ts dependencies to version $NEW_VERSION..."
-
-# Find all package.json files inside ./libs
-find ./libs -name "package.json" -type f | while read pkg; do
-  echo "Processing $pkg"
-
-  # Use jq to update dependencies and peerDependencies
-  tmpfile=$(mktemp)
-
-  jq --arg newVersion "$NEW_VERSION" '
-    .dependencies |= with_entries(
-      if (.key | startswith("@forgebase-ts/")) then
-        .value = $newVersion
-      else
-        .
-      end
-    ) |
-    .peerDependencies |= with_entries(
-      if (.key | startswith("@forgebase-ts/")) then
-        .value = $newVersion
-      else
-        .
-      end
-    )
-  ' "$pkg" > "$tmpfile" && mv "$tmpfile" "$pkg"
-
+for lib in "${libs[@]}"; do
+  pkg_path="./libs/$lib/package.json"
+  if [ -f "$pkg_path" ]; then
+    echo "Processing $pkg_path"
+    jq '(.dependencies // {}) |= with_entries(if .key | startswith("@forgebase-ts/") then .value = env.NEW_VERSION else . end) |
+        (.peerDependencies // {}) |= with_entries(if .key | startswith("@forgebase-ts/") then .value = env.NEW_VERSION else . end)' "$pkg_path" > "$pkg_path.tmp" && mv "$pkg_path.tmp" "$pkg_path"
+  else
+    echo "Warning: $pkg_path does not exist"
+  fi
 done
