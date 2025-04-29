@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
-* Merge pull request #85 from The-ForgeBase/real-time (f3859ac)
-* refactor(scripts): simplify internal deps update script (633ea7a)
+* Merge pull request #86 from The-ForgeBase/real-time (f8fd374)
+* refactor(ci): migrate internal dependency update script to TypeScript (949d427)
 
 For changes in previous releases, please check the Git history.
