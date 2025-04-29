@@ -33,6 +33,7 @@ function updatePkgName(obj: Record<string, any> | undefined) {
 
   for (const [key, value] of Object.entries(obj)) {
     if (key.startsWith('@forgebase-ts')) {
+      // if PKG_NAME is "@the-forgebase" then remove the quotes from the key
       const newKey = key.replace('@forgebase-ts', `${PKG_NAME}`);
       updates[newKey] = value;
       delete obj[key];
@@ -54,6 +55,10 @@ function processPackageJson(filePath: string) {
   updatePkgName(json.peerDependencies);
 
   writeFileSync(filePath, JSON.stringify(json, null, 2) + '\n');
+
+  console.log('Done updating internal dependencies.');
+  console.log('pkg name: ', PKG_NAME);
+  console.log('new version: ', NEW_VERSION);
 }
 
 function findPackageJsons(dir: string) {
@@ -70,6 +75,3 @@ function findPackageJsons(dir: string) {
 
 // Start
 findPackageJsons('./libs');
-console.log('Done updating internal dependencies.');
-console.log('pkg name: ', PKG_NAME);
-console.log('new version: ', NEW_VERSION);
