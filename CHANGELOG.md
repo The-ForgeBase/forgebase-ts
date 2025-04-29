@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
-* Merge pull request #87 from The-ForgeBase/real-time (116cfba)
-* ci(release): update package names to use GitHub Packages scope (968f670)
+* Merge pull request #88 from The-ForgeBase/real-time (3e30f1e)
+* ci(release): add PKG_NAME env variable to release workflow (39df56f)
 
 For changes in previous releases, please check the Git history.
