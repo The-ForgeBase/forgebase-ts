@@ -123,6 +123,17 @@ jobs:
           # Update package versions
           find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
 
+          # Change Package Name
+          for pkg in dist/libs/*; do
+            if [ -d "$pkg" ]; then
+              cd "$pkg"
+              echo "Publishing $(basename $pkg)..."
+              # Update package name to use GitHub Packages scope
+              sed -i 's/"name": "@forgebase-ts\/\(.*\)"/"name": "@the-forgebase\/\1"/' package.json
+              cd -
+            fi
+          done
+
           # Publish packages
           find ./dist/libs -type d -maxdepth 1 -exec pnpm publish --access public --no-git-checks {} \;
 
