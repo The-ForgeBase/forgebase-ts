@@ -2,7 +2,6 @@ import type { DatabaseService } from './core/database';
 import type { StorageService } from './core/storage';
 
 import { ForgeDatabaseConfig, UserContext } from '@forgebase-ts/database';
-import { SupportedFramework } from './frameworks/index';
 import {
   LocalStorageConfig,
   S3StorageConfig,
@@ -92,7 +91,5 @@ export interface ServerAdapter {
 }
 
 export interface AdapterFactory {
-  createAdapter(
-    framework: SupportedFramework
-  ): (req: any, res: any) => ServerAdapter;
+  createAdapter(framework: string): (req: any, res: any) => ServerAdapter;
 }
