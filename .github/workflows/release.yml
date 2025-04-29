@@ -100,11 +100,11 @@ jobs:
         run: |
           find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
 
-      - name: Update package versions
+      - name: Update internal forgebase-ts dependencies
         run: |
-          find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
-          chmod +x ./scripts/update-internal-deps.sh
-          ./scripts/update-internal-deps.sh
+          pnpm exec tsx scripts/update-internal-deps.ts
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
 
       - name: Build all libraries
         run: pnpm exec nx run-many -t build --projects=api,auth,common,database,real-time,storage,sdk,web-auth,react-native-auth
