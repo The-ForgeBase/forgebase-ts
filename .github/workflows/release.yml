@@ -64,6 +64,7 @@ jobs:
           fi
 
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "PKG_NAME=\"@the-forgebase\"" >> $GITHUB_ENV
 
       - name: Generate Release Notes
         id: release_notes
@@ -105,6 +106,7 @@ jobs:
           pnpm exec tsx scripts/update-internal-deps.ts
         env:
           NEW_VERSION: ${{ env.NEW_VERSION }}
+          PKG_NAME: ${{ env.PKG_NAME }}
 
       - name: Build all libraries
         run: pnpm exec nx run-many -t build --projects=api,auth,common,database,real-time,storage,sdk,web-auth,react-native-auth
