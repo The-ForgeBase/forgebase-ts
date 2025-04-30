@@ -9,15 +9,13 @@ import { AdminApiKeyController } from './controllers/admin-api-key.controller';
 import { AdminGuard } from './guards/admin.guard';
 import { AdminService } from './services/admin.service';
 import { InternalAdminManager } from '../../admin';
-import { JwksController, JwksService, NestAuthConfig } from '.';
-import { JoseJwtSessionManager } from '../../session/jose-jwt';
+import { NestAuthConfig } from '.';
 
 export interface NestAuthModuleOptions {
   authManager: DynamicAuthManager;
   config?: NestAuthConfig;
   adminManager?: InternalAdminManager;
   adminConfig?: NestAuthConfig;
-  joseJwtManager?: JoseJwtSessionManager; // Optional, if you want to use JoseJwtManager
 }
 
 export interface NestAuthModuleAsyncOptions {
@@ -110,72 +108,13 @@ export class NestAuthModule {
         AdminGuard,
         AdminService,
       ],
-      exports: [AuthService, AdminService, AuthGuard, AdminGuard],
-    };
-  }
-}
-
-@Module({})
-export class NestAuthModuleWithJWKS {
-  static forRootAsync(options: NestAuthModuleAsyncOptions): DynamicModule {
-    return {
-      module: NestAuthModuleWithJWKS,
-      imports: options.imports || [],
-      providers: [
-        {
-          provide: 'AUTH_OPTIONS',
-          useFactory: options.useFactory,
-          inject: options.inject || [],
-        },
-        {
-          provide: 'AUTH_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions) => {
-            return authOptions.authManager;
-          },
-          inject: ['AUTH_OPTIONS'],
-        },
-        {
-          provide: 'JOSE_JWT_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions) => {
-            return authOptions.joseJwtManager;
-          },
-          inject: ['AUTH_OPTIONS'],
-        },
-        {
-          provide: 'AUTH_CONFIG',
-          useFactory: async (authOptions: NestAuthModuleOptions) => {
-            return authOptions.config || {};
-          },
-          inject: ['AUTH_OPTIONS'],
-        },
-        {
-          provide: 'ADMIN_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions) => {
-            return authOptions.adminManager;
-          },
-          inject: ['AUTH_OPTIONS'],
-        },
-        {
-          provide: 'ADMIN_CONFIG',
-          useFactory: async (authOptions: NestAuthModuleOptions) => {
-            return authOptions.adminConfig || {};
-          },
-          inject: ['AUTH_OPTIONS'],
-        },
-        AuthService,
-        AuthGuard,
-        AdminGuard,
-        AdminService,
-        JwksService,
-      ],
       controllers: options.controllers || [
         AuthController,
         AdminController,
         AdminApiKeyController,
-        JwksController,
       ],
-      exports: [AuthService, AdminService, JwksService, AuthGuard, AdminGuard],
-      global: true, // Make the module global to help avoid dependency issues
+      exports: [AuthService, AdminService, AuthGuard, AdminGuard],
+      global: true,
     };
   }
 }

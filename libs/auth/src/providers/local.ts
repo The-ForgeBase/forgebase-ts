@@ -4,14 +4,14 @@ import {
   AuthProvider,
   UserNotFoundError,
   InvalidCredentialsError,
-  AuthConfig,
+  ConfigStore,
 } from '../types';
 import { KnexUserService } from '../userService';
 
 export class LocalAuthProvider implements AuthProvider {
   constructor(
     private userService: KnexUserService,
-    private config: AuthConfig // private hashCompare?: (plain: string, hash: string) => Promise<boolean>
+    private configStore: ConfigStore // private hashCompare?: (plain: string, hash: string) => Promise<boolean>
   ) {}
 
   async authenticate(credentials: { email: string; password: string }) {
@@ -28,7 +28,8 @@ export class LocalAuthProvider implements AuthProvider {
   }
 
   async register(user: Partial<User>, password: string): Promise<User> {
-    if (password.length < this.config.passwordPolicy.minLength) {
+    const config = await this.configStore.getConfig();
+    if (password.length < config.passwordPolicy.minLength) {
       throw new Error('Password too short');
     }
 
@@ -36,27 +37,21 @@ export class LocalAuthProvider implements AuthProvider {
       throw new Error('Password too long');
     }
 
-    if (
-      !/[A-Z]/.test(password) &&
-      this.config.passwordPolicy.requireUppercase
-    ) {
+    if (!/[A-Z]/.test(password) && config.passwordPolicy.requireUppercase) {
       throw new Error('Password must contain at least one uppercase letter');
     }
 
-    if (
-      !/[a-z]/.test(password) &&
-      this.config.passwordPolicy.requireLowercase
-    ) {
+    if (!/[a-z]/.test(password) && config.passwordPolicy.requireLowercase) {
       throw new Error('Password must contain at least one lowercase letter');
     }
 
-    if (!/[0-9]/.test(password) && this.config.passwordPolicy.requireNumber) {
+    if (!/[0-9]/.test(password) && config.passwordPolicy.requireNumber) {
       throw new Error('Password must contain at least one number');
     }
 
     if (
       !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) &&
-      this.config.passwordPolicy.requireSpecialChar
+      config.passwordPolicy.requireSpecialChar
     ) {
       throw new Error('Password must contain at least one special character');
     }

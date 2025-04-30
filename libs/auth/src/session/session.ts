@@ -1,18 +1,19 @@
-import { AuthConfig, AuthToken, SessionManager, User } from '../types';
+import { AuthToken, ConfigStore, SessionManager, User } from '../types';
 import { Knex } from 'knex';
 import { timeStringToDate } from '@forgebase-ts/common';
 import { generateSessionId, generateSessionToken } from '../lib/osolo';
 import { AuthSessionsTable } from '../config';
 
 export class BasicSessionManager implements SessionManager {
-  private config: AuthConfig;
+  private configStore: ConfigStore;
   private knex: Knex;
-  constructor(private secret: string, config: AuthConfig, knex: Knex) {
-    this.config = config;
+  constructor(private secret: string, configStore: ConfigStore, knex: Knex) {
+    this.configStore = configStore;
     this.knex = knex;
   }
 
   async createSession(user: User) {
+    const config = await this.configStore.getConfig();
     const token = generateSessionToken();
 
     const sessionToken = generateSessionId(token);
@@ -22,14 +23,14 @@ export class BasicSessionManager implements SessionManager {
       .where('expires_at', '>', this.knex.fn.now())
       .first();
 
-    if (exixting && !this.config.sessionSettings.multipleSessions) {
+    if (exixting && !config.sessionSettings.multipleSessions) {
       await this.knex(AuthSessionsTable).where({ user_id: user.id }).delete();
     }
 
     await this.knex(AuthSessionsTable).insert({
       token: sessionToken,
       user_id: user.id,
-      expires_at: timeStringToDate(this.config.sessionSettings.refreshTokenTTL),
+      expires_at: timeStringToDate(config.sessionSettings.refreshTokenTTL),
     });
 
     await this.knex('users')

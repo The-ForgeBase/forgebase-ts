@@ -13,7 +13,6 @@ import { KnexAdminService } from '../services/admin.knex.service';
 import { AdminApiKeyService } from '../services/admin-api-key.service';
 import { ConfigStore } from '../types';
 import { AuthConfig } from '../types';
-import { initializeAdminTables } from '../config/schema';
 import { AuthAdminAuditLogsTable } from '../config';
 
 /**
@@ -40,7 +39,13 @@ export class InternalAdminManager {
     private knex: Knex,
     private authProvider: AdminAuthProvider,
     private sessionManager: AdminSessionManager,
-    private configStore: ConfigStore
+    private configStore: ConfigStore,
+    private config: {
+      initialAdminEmail: string;
+      initialAdminPassword: string;
+      enabled?: boolean;
+      createInitialApiKey: boolean;
+    }
   ) {
     this.adminService = new KnexAdminService(knex);
     this.apiKeyService = new AdminApiKeyService(knex);
@@ -51,25 +56,20 @@ export class InternalAdminManager {
    * This must be called before using any other methods
    */
   async initialize(): Promise<void> {
-    const config = await this.configStore.getConfig();
-
     // Check if admin feature is enabled
-    this.isEnabled = config.adminFeature?.enabled || false;
+    this.isEnabled = this.config.enabled || true;
 
     if (!this.isEnabled) {
       return;
     }
 
-    await initializeAdminTables(this.knex);
-
     // Create initial admin if not exists
-    if (config.adminFeature?.createInitialAdmin) {
-      console.log('Initializing admin manager...');
-      await this.ensureInitialAdmin(
-        config.adminFeature.initialAdminEmail,
-        config.adminFeature.initialAdminPassword
-      );
-    }
+    console.log('Initializing admin manager...');
+    this.ensureInitialAdmin(
+      this.config.initialAdminEmail,
+      this.config.initialAdminEmail,
+      this.config.createInitialApiKey
+    );
 
     console.log('InternalAdminManager initialized successfully.');
   }
@@ -79,7 +79,8 @@ export class InternalAdminManager {
    */
   private async ensureInitialAdmin(
     email: string,
-    password: string
+    password: string,
+    createInitialApiKey: boolean
   ): Promise<void> {
     // Check if any admin exists
     const { total } = await this.adminService.listAdmins(1, 1);
@@ -101,7 +102,7 @@ export class InternalAdminManager {
       this.hasInitialAdmin = true;
 
       // Create initial API key if configured
-      if (config.adminFeature?.createInitialApiKey) {
+      if (createInitialApiKey) {
         try {
           const result = await this.createApiKey(admin.id, {
             name:

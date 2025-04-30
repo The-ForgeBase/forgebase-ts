@@ -1,16 +1,14 @@
 import { AuthUsersTable } from './config';
 import { hashPassword } from './lib/password';
-import { AuthConfig, AuthInternalConfig, User, UserService } from './types';
+import { AuthInternalConfig, User, UserService } from './types';
 
 export class KnexUserService implements UserService {
   private table: string;
   private columns: Record<string, string>;
 
-  private config: AuthConfig;
   private internalConfig: AuthInternalConfig;
 
-  constructor(config: AuthConfig, internalConfig: AuthInternalConfig) {
-    this.config = config;
+  constructor(internalConfig: AuthInternalConfig) {
     this.internalConfig = internalConfig;
     this.table = AuthUsersTable;
     this.columns = {
@@ -20,10 +18,6 @@ export class KnexUserService implements UserService {
       createdAt: 'created_at',
       updatedAt: 'updated_at',
     };
-  }
-
-  getConfig() {
-    return this.config;
   }
 
   getInternalConfig() {

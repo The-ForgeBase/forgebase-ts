@@ -1,5 +1,4 @@
 import {
-  AuthConfig,
   AuthProvider,
   ConfigStore,
   EmailVerificationService,
@@ -12,13 +11,9 @@ import {
   LocalAuthProvider,
   PasswordlessProvider,
 } from '../../providers';
-import {
-  JoseJwtSessionManager,
-  KeyStorageOptions,
-} from '../../session/jose-jwt';
 import { Knex } from 'knex';
 import { DynamicAuthManager } from '../../authManager';
-import { initializeAuthSchema, KnexConfigStore } from '../../config';
+import { KnexConfigStore } from '../../config';
 import { BasicSessionManager, JwtSessionManager } from '../../session';
 import { SignOptions } from 'jsonwebtoken';
 import { KnexUserService } from '../../userService';
@@ -46,17 +41,15 @@ export type WebAuthConfig = {
 
 export type AuthClientConfig = {
   db: Knex;
-  useJWKS?: boolean;
   useJWT?: {
     secret: string;
     options?: SignOptions;
   };
   sessionSecret?: string;
-  keyOptions?: KeyStorageOptions;
   local?: {
     enabled: boolean;
     userService?: UserService;
-    configStore?: AuthConfig;
+    configStore?: ConfigStore;
   };
   passwordless?: {
     enabled: boolean;
@@ -77,10 +70,9 @@ export type AuthClientConfig = {
     configStore?: ConfigStore;
     initialAdminEmail?: string;
     initialAdminPassword?: string;
-    createInitialAdmin?: boolean;
-    createInitialApiKey?: boolean;
     initialApiKeyScopes?: string[];
     initialApiKeyName?: string;
+    createInitialApiKey?: boolean;
   };
   email: {
     enabled: boolean;
@@ -104,9 +96,9 @@ export type AuthClientConfig = {
   };
 };
 
-export const createWebAuthClient = async (
+export const createWebAuthClient = (
   options: AuthClientConfig
-): Promise<{
+): {
   authManager: DynamicAuthManager;
   adminManager: InternalAdminManager;
   sessionManager: SessionManager;
@@ -115,43 +107,31 @@ export const createWebAuthClient = async (
   providers: Record<string, BaseOAuthProvider | AuthProvider>;
   names_of_providers: string[];
   config: WebAuthConfig;
-}> => {
-  await initializeAuthSchema(options.db);
-
+} => {
   const configStore = options.configStore || new KnexConfigStore(options.db);
-  await configStore.initialize();
 
-  const config = await configStore.getConfig();
-  const keyOptions = options.keyOptions || {
-    keyDirectory: './keys', // Directory to store keys
-    algorithm: 'RS256', // Use RS256 algorithm
-    rotationDays: 90, // Key rotation interval
-  };
   let sessionManager: SessionManager;
 
   if (options.sessionManager) {
     sessionManager = options.sessionManager;
   }
 
-  if (options.useJWKS) {
-    sessionManager = new JoseJwtSessionManager(config, options.db, keyOptions);
-    await sessionManager.initialize();
-  } else if (options.useJWT) {
+  if (options.useJWT) {
     sessionManager = new JwtSessionManager(
       options.useJWT.secret,
       options.useJWT.options,
-      config,
+      configStore,
       options.db
     );
   } else if (options.sessionSecret) {
     sessionManager = new BasicSessionManager(
       options.sessionSecret,
-      config,
+      configStore,
       options.db
     );
   } else {
     throw new Error(
-      'No session manager provided, you must choose between useJWKS, useJWT or sessionSecret'
+      'No session manager provided, you must choose between useJWT or sessionSecret'
     );
   }
 
@@ -163,13 +143,16 @@ export const createWebAuthClient = async (
 
   const userService =
     options.userService ||
-    new KnexUserService(config, {
+    new KnexUserService({
       knex: options.db,
     });
 
   const providers = {
     local: options.local?.enabled
-      ? new LocalAuthProvider(userService, options.local?.configStore || config)
+      ? new LocalAuthProvider(
+          userService,
+          options.local?.configStore || configStore
+        )
       : undefined,
     passwordless: options.passwordless?.enabled
       ? new PasswordlessProvider({
@@ -220,24 +203,25 @@ export const createWebAuthClient = async (
       options.db,
       options.admin.configStore || configStore,
       {
+        enabled: options.admin.enabled,
+        initialAdminEmail: options.admin.initialAdminEmail,
+        initialAdminPassword: options.admin.initialAdminPassword,
+        createInitialApiKey: options.admin.createInitialApiKey,
+      },
+      {
         jwtSecret: options.admin.jwtSecret,
         tokenExpiry: options.admin.tokenExpiry,
       }
     );
-    await adminManager.initialize();
+    adminManager.initialize();
   }
 
   const names_of_providers = Object.keys(providers);
 
-  await configStore.updateConfig({
+  configStore.updateConfig({
     enabledProviders: names_of_providers,
     adminFeature: {
       enabled: options.admin.enabled,
-      initialAdminEmail:
-        options.admin.initialAdminEmail || 'admin@yourdomain.com',
-      initialAdminPassword:
-        options.admin.initialAdminPassword || 'secure-password',
-      createInitialAdmin: options.admin.createInitialAdmin || true,
       createInitialApiKey: options.admin.createInitialApiKey || true,
       initialApiKeyName:
         options.admin.initialApiKeyName || 'Initial Admin API Key',
@@ -274,43 +258,6 @@ export const webAuthApi = (options: {
   const api = new AuthApi(options);
 
   return api;
-};
-
-export const initializeAuthClient = (options: AuthClientConfig) => {
-  // Start the initialization process
-  const authClientPromise = createWebAuthClient(options).catch((err) => {
-    console.error('Error initializing auth client:', err);
-    throw err;
-  });
-
-  // This will be set when initialization completes
-  let authClient: Awaited<ReturnType<typeof createWebAuthClient>> | null = null;
-
-  // Cache the client when the promise resolves
-  authClientPromise.then((client) => {
-    authClient = client;
-    return client;
-  });
-
-  return {
-    // Get the client when needed - returns the cached instance or waits for initialization
-    getClient: async () => {
-      if (authClient) return authClient;
-      return await authClientPromise;
-    },
-
-    // Check if the client is ready
-    isReady: () => authClient !== null,
-
-    // Get specific parts of the client (will wait for initialization if needed)
-    getAuthManager: async () => (await authClientPromise).authManager,
-    getAdminManager: async () => (await authClientPromise).adminManager,
-    getSessionManager: async () => (await authClientPromise).sessionManager,
-    getUserService: async () => (await authClientPromise).userService,
-    getConfigStore: async () => (await authClientPromise).configStore,
-    getProviders: async () => (await authClientPromise).providers,
-    getConfig: async () => (await authClientPromise).config,
-  };
 };
 
 export * from './endpoints';

@@ -10,15 +10,29 @@ export interface NestAdminFactoryOptions {
   configStore: ConfigStore;
   jwtSecret?: string;
   tokenExpiry?: string;
+  initialAdminEmail?: string;
+  initialAdminPassword?: string;
+  createInitialApiKey: boolean;
+  enabled?: boolean;
 }
 
 export function createNestAdminManager(
   options: NestAdminFactoryOptions
 ): InternalAdminManager {
-  return createInternalAdminManager(options.knex, options.configStore, {
-    jwtSecret: options.jwtSecret,
-    tokenExpiry: options.tokenExpiry,
-  });
+  return createInternalAdminManager(
+    options.knex,
+    options.configStore,
+    {
+      initialAdminEmail: options.initialAdminEmail,
+      initialAdminPassword: options.initialAdminPassword,
+      createInitialApiKey: options.createInitialApiKey,
+      enabled: options.enabled || true,
+    },
+    {
+      jwtSecret: options.jwtSecret,
+      tokenExpiry: options.tokenExpiry,
+    }
+  );
 }
 
 export async function initializeNestAdminManager(

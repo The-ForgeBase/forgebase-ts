@@ -11,6 +11,12 @@ import { KnexAdminSessionManager } from '../services/admin-session.service';
 export function createInternalAdminManager(
   knex: Knex,
   configStore: ConfigStore,
+  config: {
+    initialAdminEmail: string;
+    initialAdminPassword: string;
+    createInitialApiKey: boolean;
+    enabled?: boolean;
+  },
   options?: {
     jwtSecret?: string;
     tokenExpiry?: string;
@@ -28,7 +34,8 @@ export function createInternalAdminManager(
     knex,
     adminAuthProvider,
     sessionManager,
-    configStore
+    configStore,
+    config
   );
 
   return adminManager;

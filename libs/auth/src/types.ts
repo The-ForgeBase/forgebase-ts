@@ -34,18 +34,12 @@ export const AuthConfigSchema = z.object({
   adminFeature: z
     .object({
       enabled: z.boolean().default(false),
-      createInitialAdmin: z.boolean().default(true),
-      initialAdminEmail: z.string().email().default('admin@example.com'),
-      initialAdminPassword: z.string().min(8).default('changeme123'),
       createInitialApiKey: z.boolean().default(false),
       initialApiKeyName: z.string().default('Initial Admin API Key'),
       initialApiKeyScopes: z.array(z.string()).default(['*']),
     })
     .default({
       enabled: false,
-      createInitialAdmin: true,
-      initialAdminEmail: 'admin@example.com',
-      initialAdminPassword: 'changeme123',
       createInitialApiKey: false,
       initialApiKeyName: 'Initial Admin API Key',
       initialApiKeyScopes: ['*'],
@@ -85,7 +79,6 @@ export interface UserService {
   findUserById(userId: string): Promise<User | null>;
   findUserByEmail(email: string): Promise<User | null>;
   findUserByPhone(phone: string): Promise<User | null>;
-  getConfig(): AuthConfig;
   setRole(userId: string, role: string): Promise<void>;
   removeRTP(
     userId: string,
@@ -175,7 +168,7 @@ export interface TokenStore {
 }
 
 export interface ConfigStore {
-  initialize(): Promise<void>;
+  initialize?(): Promise<void | boolean>;
   getConfig(): Promise<AuthConfig>;
   updateConfig(update: Partial<AuthConfig>): Promise<AuthConfig>;
 }

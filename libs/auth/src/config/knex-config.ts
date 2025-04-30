@@ -10,21 +10,22 @@ export class KnexConfigStore implements ConfigStore {
     private cacheTTL = 30000 // 30 seconds cache
   ) {}
 
-  async initialize() {
-    console.log('Initializing config store...');
-    const hasTable = await this.knex.schema.hasTable(this.tableName);
-    if (!hasTable) {
-      console.log('Creating config table...');
-      await this.knex.schema.createTable(this.tableName, (table) => {
-        table.increments('id');
-        table.text('config').notNullable();
-        table.timestamp('created_at').defaultTo(this.knex.fn.now());
-        table.timestamp('updated_at').defaultTo(this.knex.fn.now());
-      });
-    }
+  // async initialize(): Promise<void> {
+  //   console.log('Initializing config store...');
+  //   const hasTable = await this.knex.schema.hasTable(this.tableName);
+  //   if (!hasTable) {
+  //     console.log('Creating config table...');
+  //     await this.knex.schema.createTable(this.tableName, (table) => {
+  //       table.increments('id');
+  //       table.text('config').notNullable();
+  //       table.timestamp('created_at').defaultTo(this.knex.fn.now());
+  //       table.timestamp('updated_at').defaultTo(this.knex.fn.now());
+  //     });
+  //   }
 
-    await this.getConfig();
-  }
+  //   await this.getConfig();
+  //   this.initialized = true;
+  // }
 
   private cache = {
     value: null as AuthConfig | null,

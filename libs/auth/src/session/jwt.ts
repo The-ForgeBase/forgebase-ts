@@ -1,4 +1,10 @@
-import { AuthConfig, AuthToken, SessionManager, User } from '../types';
+import {
+  AuthConfig,
+  AuthToken,
+  ConfigStore,
+  SessionManager,
+  User,
+} from '../types';
 import jwt from 'jsonwebtoken';
 import { Knex } from 'knex';
 import { timeStringToDate } from '@forgebase-ts/common';
@@ -10,25 +16,28 @@ import {
 } from '../config';
 
 export class JwtSessionManager implements SessionManager {
-  private config: AuthConfig;
+  private configStore: ConfigStore;
   private knex: Knex;
   private options: jwt.SignOptions;
   constructor(
     private secret: string,
     options: jwt.SignOptions = { expiresIn: '1h' },
-    config: AuthConfig,
+    configStore: ConfigStore,
     knex: Knex
   ) {
-    this.config = config;
+    this.configStore = configStore;
     this.knex = knex;
     this.options = {
       ...options,
-      expiresIn: config.sessionSettings.accessTokenTTL as any,
     };
   }
 
   async createSession(user: User) {
-    const accessToken = jwt.sign({ sub: user.id }, this.secret, this.options);
+    const config = await this.configStore.getConfig();
+    const accessToken = jwt.sign({ sub: user.id }, this.secret, {
+      ...this.options,
+      expiresIn: config.sessionSettings.accessTokenTTL as any,
+    });
     const token = generateSessionToken();
     const refreshToken = generateSessionId(token);
 
@@ -36,13 +45,13 @@ export class JwtSessionManager implements SessionManager {
       token: refreshToken,
       user_id: user.id,
       access_token: accessToken, // Store reference to the access token
-      expires_at: timeStringToDate(this.config.sessionSettings.refreshTokenTTL),
+      expires_at: timeStringToDate(config.sessionSettings.refreshTokenTTL),
     });
 
     await this.knex(AuthAccessTokensTable).insert({
       token: accessToken,
       user_id: user.id,
-      expires_at: timeStringToDate(this.config.sessionSettings.accessTokenTTL),
+      expires_at: timeStringToDate(config.sessionSettings.accessTokenTTL),
     });
 
     await this.knex('users')
