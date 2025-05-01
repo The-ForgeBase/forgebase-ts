@@ -1,31 +1,17 @@
-import {
-  AuthRequiredType,
-  AuthToken,
-  JwksResponse,
-  User,
-} from '../../../types';
-import { DynamicAuthManager } from '../../../authManager';
+import { AuthRequiredType, AuthToken, User } from '../../../types';
 import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
-import { JoseJwtSessionManager } from '../../../session/jose-jwt';
+import { AwilixContainer } from 'awilix';
+import { AuthCradle } from '../../../container';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager,
-    @Inject('JOSE_JWT_MANAGER')
-    @Optional()
-    private joseJwtManager: JoseJwtSessionManager
+    @Inject('AUTH_CONTAINER') private container: AwilixContainer<AuthCradle>
   ) {
     // Log initialization state for debugging
-    if (!joseJwtManager) {
-      this.logger.error(
-        'JwksService instantiated with undefined JoseJwtSessionManager'
-      );
-    } else {
-      this.logger.log('JwksService initialized successfully');
-    }
+    this.logger.log('AuthService initialized successfully');
   }
 
   async register(
@@ -37,7 +23,11 @@ export class AuthService {
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
-    return this.authManager.register(provider, credentials, password);
+    return this.container.cradle.authManager.register(
+      provider,
+      credentials,
+      password
+    );
   }
 
   async login(
@@ -48,14 +38,17 @@ export class AuthService {
     token: AuthToken | string | AuthRequiredType;
     url?: URL;
   }> {
-    return this.authManager.login(provider, credentials);
+    return this.container.cradle.authManager.login(provider, credentials);
   }
 
   async passwordlessLogin(code: string): Promise<{
     user: User;
     token: AuthToken | string | AuthRequiredType;
   }> {
-    const user = await this.authManager.validateToken(code, 'passwordless');
+    const user = await this.container.cradle.authManager.validateToken(
+      code,
+      'passwordless'
+    );
 
     if (!user) {
       throw new Error('Invalid code');
@@ -75,15 +68,18 @@ export class AuthService {
     user?: User;
     token: AuthToken | string | AuthRequiredType;
   }> {
-    return this.authManager.oauthCallback(provider, { code, state });
+    return this.container.cradle.authManager.oauthCallback(provider, {
+      code,
+      state,
+    });
   }
 
   async logout(token: string): Promise<void> {
-    return this.authManager.logout(token);
+    return this.container.cradle.authManager.logout(token);
   }
 
   async refreshToken(refreshToken: string) {
-    return this.authManager.refreshToken(refreshToken);
+    return this.container.cradle.authManager.refreshToken(refreshToken);
   }
 
   /**
@@ -93,7 +89,7 @@ export class AuthService {
    * @returns The user and token
    */
   async verifyEmail(userId: string, code: string) {
-    return this.authManager.verifyEmail(userId, code);
+    return this.container.cradle.authManager.verifyEmail(userId, code);
   }
 
   /**
@@ -106,7 +102,10 @@ export class AuthService {
     email: string,
     redirectUrl?: string
   ): Promise<string | void> {
-    return this.authManager.sendVerificationEmail(email, redirectUrl);
+    return this.container.cradle.authManager.sendVerificationEmail(
+      email,
+      redirectUrl
+    );
   }
 
   /**
@@ -119,7 +118,10 @@ export class AuthService {
     email: string,
     redirectUrl?: string
   ): Promise<string | void> {
-    return this.authManager.sendPasswordResetEmail(email, redirectUrl);
+    return this.container.cradle.authManager.sendPasswordResetEmail(
+      email,
+      redirectUrl
+    );
   }
 
   /**
@@ -132,7 +134,10 @@ export class AuthService {
     userId: string,
     token: string
   ): Promise<boolean> {
-    return this.authManager.verifyPasswordResetToken(userId, token);
+    return this.container.cradle.authManager.verifyPasswordResetToken(
+      userId,
+      token
+    );
   }
 
   /**
@@ -147,7 +152,11 @@ export class AuthService {
     newPassword: string,
     token?: string
   ): Promise<boolean> {
-    return this.authManager.resetPassword(userId, newPassword, token);
+    return this.container.cradle.authManager.resetPassword(
+      userId,
+      newPassword,
+      token
+    );
   }
 
   /**
@@ -162,165 +171,105 @@ export class AuthService {
     oldPassword: string,
     newPassword: string
   ): Promise<boolean> {
-    return this.authManager.changePassword(userId, oldPassword, newPassword);
+    return this.container.cradle.authManager.changePassword(
+      userId,
+      oldPassword,
+      newPassword
+    );
   }
 
   async verifySms(userId: string, code: string) {
-    return this.authManager.verifySms(userId, code);
+    return this.container.cradle.authManager.verifySms(userId, code);
   }
 
   async verifyMfa(userId: string, code: string) {
-    return this.authManager.verifyMfa(userId, code);
+    return this.container.cradle.authManager.verifyMfa(userId, code);
   }
 
   async enableMfa(userId: string, code?: string) {
-    return this.authManager.enableMfa(userId, code);
+    return this.container.cradle.authManager.enableMfa(userId, code);
   }
 
   async disableMfa(userId: string, code: string) {
-    return this.authManager.disableMfa(userId, code);
+    return this.container.cradle.authManager.disableMfa(userId, code);
   }
 
   async validateToken(
     token: string,
     provider: string
   ): Promise<{ user: User; token?: string | AuthToken }> {
-    return this.authManager.validateToken(token, provider);
+    return this.container.cradle.authManager.validateToken(token, provider);
   }
 
   async validateSessionToken(token: string): Promise<User> {
-    return this.authManager.validateSessionToken(token);
+    return this.container.cradle.authManager.validateSessionToken(token);
   }
 
   async setLabels(userId: string, labels: string[]): Promise<string[]> {
-    return this.authManager.setRTP(userId, labels, 'labels');
+    return this.container.cradle.authManager.setRTP(userId, labels, 'labels');
   }
   async setPermissions(
     userId: string,
     permissions: string[]
   ): Promise<string[]> {
-    return this.authManager.setRTP(userId, permissions, 'permissions');
+    return this.container.cradle.authManager.setRTP(
+      userId,
+      permissions,
+      'permissions'
+    );
   }
 
   async setTeams(userId: string, teams: string[]): Promise<string[]> {
-    return this.authManager.setRTP(userId, teams, 'teams');
+    return this.container.cradle.authManager.setRTP(userId, teams, 'teams');
   }
 
   async removeLabels(userId: string, labels: string[]): Promise<string[]> {
-    return this.authManager.removeRTP(userId, labels, 'labels');
+    return this.container.cradle.authManager.removeRTP(
+      userId,
+      labels,
+      'labels'
+    );
   }
 
   async removePermissions(
     userId: string,
     permissions: string[]
   ): Promise<string[]> {
-    return this.authManager.removeRTP(userId, permissions, 'permissions');
+    return this.container.cradle.authManager.removeRTP(
+      userId,
+      permissions,
+      'permissions'
+    );
   }
 
   async removeTeams(userId: string, teams: string[]): Promise<string[]> {
-    return this.authManager.removeRTP(userId, teams, 'teams');
+    return this.container.cradle.authManager.removeRTP(userId, teams, 'teams');
   }
 
   async addLabels(userId: string, labels: string[]): Promise<string[]> {
-    return this.authManager.addRTP(userId, labels, 'labels');
+    return this.container.cradle.authManager.addRTP(userId, labels, 'labels');
   }
 
   async addPermissions(
     userId: string,
     permissions: string[]
   ): Promise<string[]> {
-    return this.authManager.addRTP(userId, permissions, 'permissions');
+    return this.container.cradle.authManager.addRTP(
+      userId,
+      permissions,
+      'permissions'
+    );
   }
 
   async addTeams(userId: string, teams: string[]): Promise<string[]> {
-    return this.authManager.addRTP(userId, teams, 'teams');
+    return this.container.cradle.authManager.addRTP(userId, teams, 'teams');
   }
 
   async setRole(userId: string, role: string): Promise<void> {
-    return this.authManager.setRole(userId, role);
+    return this.container.cradle.authManager.setRole(userId, role);
   }
 
   getProviderConfig(provider: string) {
-    return this.authManager.getProviderConfig(provider);
-  }
-
-  /**
-   * Get the JSON Web Key Set containing the public key for token verification
-   *
-   * @returns {JwksResponse} JWKS response object
-   */
-  getJwks(): JwksResponse {
-    try {
-      // Add validation to handle potential initialization issues
-      if (!this.joseJwtManager) {
-        this.logger.error('JoseJwtSessionManager is not initialized');
-        return { keys: [] };
-      }
-
-      const publicJwk = this.joseJwtManager.getPublicJwk();
-
-      if (!publicJwk) {
-        this.logger.warn('Public JWK is null or undefined');
-      }
-
-      return {
-        keys: publicJwk ? [publicJwk] : [],
-      };
-    } catch (error) {
-      this.logger.error(
-        `Error getting JWKS: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      return { keys: [] };
-    }
-  }
-
-  /**
-   * Get the public key in PEM format
-   *
-   * @returns {Promise<string | null>} Public key in PEM format
-   */
-  async getPublicKeyPem(): Promise<string | null> {
-    try {
-      if (!this.joseJwtManager) {
-        this.logger.error('JoseJwtSessionManager is not initialized');
-        return null;
-      }
-
-      return await this.joseJwtManager.getPublicKeyPem();
-    } catch (error) {
-      this.logger.error(
-        `Error getting public key PEM: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      return null;
-    }
-  }
-
-  /**
-   * Rotate the keys manually
-   * Useful for admin operations or scheduled key rotation
-   *
-   * @returns {Promise<void>}
-   */
-  async rotateKeys(): Promise<void> {
-    try {
-      if (!this.joseJwtManager) {
-        this.logger.error('JoseJwtSessionManager is not initialized');
-        throw new Error('JoseJwtSessionManager is not initialized');
-      }
-
-      await this.joseJwtManager.rotateKeys();
-      this.logger.log('Key rotation completed successfully');
-    } catch (error) {
-      this.logger.error(
-        `Error rotating keys: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      throw error;
-    }
+    return this.container.cradle.authManager.getProviderConfig(provider);
   }
 }

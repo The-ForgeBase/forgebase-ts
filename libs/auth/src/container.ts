@@ -24,7 +24,11 @@ import { KnexUserService } from './userService';
 import { AuthPlugin } from './plugins';
 import { SignOptions } from 'jsonwebtoken';
 import { BasicSessionManager, JwtSessionManager } from './session';
-import { LocalAuthProvider, PasswordlessProvider } from './providers';
+import {
+  BaseOAuthProvider,
+  LocalAuthProvider,
+  PasswordlessProvider,
+} from './providers';
 
 export interface ContainerDependencies {
   knex: Knex;
@@ -37,7 +41,7 @@ export interface ContainerDependencies {
     secret: string;
     options?: SignOptions;
   };
-  local?: {
+  local: {
     enabled: boolean;
     userService?: UserService;
     configStore?: ConfigStore;
@@ -62,12 +66,13 @@ export interface ContainerDependencies {
   };
   providers?: Record<
     string,
+    | BaseOAuthProvider
     | AuthProvider
     | (new (config: {
         userService: UserService;
         knex: Knex;
         [key: string]: unknown;
-      }) => AuthProvider)
+      }) => BaseOAuthProvider | AuthProvider)
   >;
   refreshInterval?: number;
   enableConfigIntervalCheck?: boolean;
@@ -77,12 +82,59 @@ export interface ContainerDependencies {
     initialAdminPassword: string;
     enabled?: boolean;
     createInitialApiKey: boolean;
+    initialApiKeyName?: string;
+    initialApiKeyScopes?: string[];
   };
+  authPolicy: {
+    emailVerificationRequired?: boolean;
+    passwordReset?: boolean;
+    passwordChange?: boolean;
+    accountDeletion?: boolean;
+    smsVerificationRequired?: boolean;
+    loginAfterRegistration?: boolean;
+  };
+}
+
+export interface AuthCradle {
+  knex: Knex;
+  authPolicy: {
+    emailVerificationRequired?: boolean;
+    passwordReset?: boolean;
+    passwordChange?: boolean;
+    accountDeletion?: boolean;
+    smsVerificationRequired?: boolean;
+    loginAfterRegistration?: boolean;
+  };
+  authManager: DynamicAuthManager;
+  refreshInterval: number;
+  enableConfigIntervalCheck: boolean;
+  plugins: AuthPlugin[];
+  emailVerificationService?: EmailVerificationService;
+  smsVerificationService?: SmsVerificationService;
+  userService: UserService | KnexUserService;
+  configStore: ConfigStore;
+  sessionManager: SessionManager;
+  adminConfig: {
+    initialAdminEmail: string;
+    initialAdminPassword: string;
+    enabled?: boolean;
+    createInitialApiKey: boolean;
+    initialApiKeyName?: string;
+    initialApiKeyScopes?: string[];
+  };
+  adminAuthProvider: AdminAuthProvider;
+  adminSessionManager: AdminSessionManager;
+  adminService: KnexAdminService;
+  apiKeyService: AdminApiKeyService;
+  adminManager: InternalAdminManager;
+  localAuthProvider?: LocalAuthProvider;
+  passwordlessProvider?: PasswordlessProvider;
+  providers: Record<string, BaseOAuthProvider | AuthProvider>;
 }
 
 // Create the DI container without initialization
 export function createAuthContainer(deps: ContainerDependencies) {
-  const container = createContainer({
+  const container = createContainer<AuthCradle>({
     injectionMode: InjectionMode.CLASSIC,
     strict: true,
   });
@@ -91,72 +143,8 @@ export function createAuthContainer(deps: ContainerDependencies) {
   container.register({
     // External dependencies
     knex: asValue(deps.knex),
+    authPolicy: asValue(deps.authPolicy),
     authManager: asClass(DynamicAuthManager).singleton(),
-    localAuthProvider: deps.local?.enabled
-      ? asClass(LocalAuthProvider).singleton()
-      : undefined,
-    passwordlessProvider: deps.passwordless?.enabled
-      ? asClass(PasswordlessProvider)
-          .singleton()
-          .inject(() => ({
-            config: {
-              tokenStore: deps.passwordless?.tokenStore || deps.knex,
-              userService:
-                deps.passwordless?.userService ||
-                deps.userService ||
-                container.resolve('userService'),
-              sendToken: deps.passwordless.sendToken,
-            },
-          }))
-      : undefined,
-    // Register providers
-    providers: asValue({
-      // Built-in providers
-      local: deps.local?.enabled
-        ? container.resolve('localAuthProvider')
-        : undefined,
-      passwordless: deps.passwordless?.enabled
-        ? container.resolve('passwordlessProvider')
-        : undefined,
-      // Custom providers
-      ...(deps.providers
-        ? Object.fromEntries(
-            Object.entries(deps.providers)
-              .filter(([key]) => !['local', 'passwordless'].includes(key))
-              .map(([key, Provider]) => {
-                if (typeof Provider === 'function') {
-                  // If it's a class/constructor, instantiate with container deps
-                  const ProviderClass = Provider as new (config: {
-                    userService: UserService;
-                    knex: Knex;
-                    [key: string]: unknown;
-                  }) => AuthProvider;
-                  // Build config by resolving dependencies from container when possible
-                  const config = {
-                    userService: container.resolve('userService'),
-                    knex: container.resolve('knex'),
-                    // Try to resolve any additional dependencies from container
-                    ...(Provider.prototype.config || {}),
-                    ...Object.fromEntries(
-                      Object.keys(Provider.prototype.config || {}).map(
-                        (key) => [
-                          key,
-                          container.hasRegistration(key)
-                            ? container.resolve(key)
-                            : Provider.prototype.config[key],
-                        ]
-                      )
-                    ),
-                  };
-
-                  return [key, new ProviderClass(config)];
-                }
-                // If it's already an instance, use as is
-                return [key, Provider];
-              })
-          )
-        : {}),
-    }),
     refreshInterval: deps.refreshInterval
       ? asValue(deps.refreshInterval)
       : asValue(5000),
@@ -213,6 +201,73 @@ export function createAuthContainer(deps: ContainerDependencies) {
     adminService: asClass(KnexAdminService).singleton(),
     apiKeyService: asClass(AdminApiKeyService).singleton(),
     adminManager: asClass(InternalAdminManager).singleton(),
+
+    localAuthProvider: deps.local.enabled
+      ? asClass(LocalAuthProvider).singleton()
+      : undefined,
+    passwordlessProvider: deps.passwordless?.enabled
+      ? asClass(PasswordlessProvider)
+          .singleton()
+          .inject(() => ({
+            config: {
+              tokenStore: deps.passwordless?.tokenStore || deps.knex,
+              userService:
+                deps.passwordless?.userService ||
+                deps.userService ||
+                container.resolve('userService'),
+              sendToken: deps.passwordless.sendToken,
+            },
+          }))
+      : undefined,
+
+    // Register providers
+    providers: asValue({
+      // Built-in providers
+      local: deps.local.enabled
+        ? container.resolve('localAuthProvider')
+        : undefined,
+      passwordless: deps.passwordless?.enabled
+        ? container.resolve('passwordlessProvider')
+        : undefined,
+      // Custom providers
+      ...(deps.providers
+        ? Object.fromEntries(
+            Object.entries(deps.providers)
+              .filter(([key]) => !['local', 'passwordless'].includes(key))
+              .map(([key, Provider]) => {
+                if (typeof Provider === 'function') {
+                  // If it's a class/constructor, instantiate with container deps
+                  const ProviderClass = Provider as new (config: {
+                    userService: UserService;
+                    knex: Knex;
+                    [key: string]: unknown;
+                  }) => AuthProvider;
+                  // Build config by resolving dependencies from container when possible
+                  const config = {
+                    userService: container.resolve('userService'),
+                    knex: container.resolve('knex'),
+                    // Try to resolve any additional dependencies from container
+                    ...(Provider.prototype.config || {}),
+                    ...Object.fromEntries(
+                      Object.keys(Provider.prototype.config || {}).map(
+                        (key) => [
+                          key,
+                          container.hasRegistration(key)
+                            ? container.resolve(key)
+                            : Provider.prototype.config[key],
+                        ]
+                      )
+                    ),
+                  };
+
+                  return [key, new ProviderClass(config)];
+                }
+                // If it's already an instance, use as is
+                return [key, Provider];
+              })
+          )
+        : {}),
+    }),
   });
 
   return container;
@@ -222,20 +277,37 @@ export function createAuthContainer(deps: ContainerDependencies) {
 export async function initializeContainer(
   container: ReturnType<typeof createAuthContainer>
 ) {
-  const configStore = container.resolve<ConfigStore>('configStore');
+  const configStore = container.cradle.configStore;
   await configStore.initialize();
 
-  const adminManager = container.resolve<InternalAdminManager>('adminManager');
+  const adminManager = container.cradle.adminManager;
   await adminManager.initialize();
 
   // Initialize auth providers if they need initialization
-  const providers =
-    container.resolve<Record<string, AuthProvider>>('providers');
+  const providers = container.cradle.providers;
+  const names_of_providers = Object.keys(providers);
   for (const [name, provider] of Object.entries(providers)) {
-    if (typeof provider.initialize === 'function') {
+    if ('initialize' in provider && typeof provider.initialize === 'function') {
       await provider.initialize();
     }
   }
+
+  configStore.updateConfig({
+    enabledProviders: names_of_providers,
+    adminFeature: {
+      enabled: container.cradle.adminConfig.enabled,
+      createInitialApiKey: container.cradle.adminConfig.createInitialApiKey,
+      initialApiKeyName:
+        container.cradle.adminConfig.initialApiKeyName ||
+        'Initial Admin API Key',
+      initialApiKeyScopes: container.cradle.adminConfig.initialApiKeyScopes || [
+        '*',
+      ],
+    },
+    authPolicy: {
+      ...container.cradle.authPolicy,
+    },
+  });
 
   return container;
 }

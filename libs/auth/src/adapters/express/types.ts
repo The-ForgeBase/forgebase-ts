@@ -1,6 +1,7 @@
-import { Request, CookieOptions } from 'ultimate-express';
+import { Request } from 'express';
+import { CookieOptions } from 'express';
 
-export type UltimateExpressAuthConfig = {
+export type ExpressAuthConfig = {
   basePath?: string;
   cookieName?: string;
   cookieOptions?: CookieOptions;
@@ -8,7 +9,7 @@ export type UltimateExpressAuthConfig = {
   jwtSecret?: string;
 };
 
-export interface UltimateExpressAuthRequest extends Request {
+export interface ExpressAuthRequest extends Request {
   user?: any;
   userContext?: any;
   token?: any;

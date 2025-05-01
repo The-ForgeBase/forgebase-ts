@@ -1,7 +1,7 @@
 // Express-specific utility functions for auth
-import { Request, Response } from 'ultimate-express';
+import { Request, Response } from 'express';
 import { AuthToken, User } from '../../types';
-import { UltimateExpressAuthConfig, UltimateExpressAuthRequest } from './types';
+import { ExpressAuthConfig, ExpressAuthRequest } from './types';
 import { DynamicAuthManager } from '../../authManager';
 import { InternalAdminManager } from '../../admin/internal-admin-manager';
 import { InternalAdmin } from '../../types/admin';
@@ -22,7 +22,7 @@ export interface SessionData {
 
 export function extractTokenFromRequest(
   req: Request,
-  config: UltimateExpressAuthConfig
+  config: ExpressAuthConfig
 ): string | null {
   if (
     req.headers.authorization &&
@@ -65,7 +65,7 @@ export function redirect(res: Response, url: string) {
 export function setAuthCookies(
   res: Response,
   token: string | AuthToken,
-  config: UltimateExpressAuthConfig
+  config: ExpressAuthConfig
 ) {
   if (typeof token === 'object' && token !== null) {
     setCookie(res, config.cookieName, token.accessToken, {
@@ -104,7 +104,7 @@ export function isPublic(req: Request) {
 export async function processAuthTokens(
   req: Request,
   authManager: DynamicAuthManager,
-  config: UltimateExpressAuthConfig,
+  config: ExpressAuthConfig,
   adminManager?: InternalAdminManager
 ): Promise<SessionData | null> {
   // Extract tokens
@@ -213,7 +213,7 @@ export async function processAuthTokens(
  * Apply session data to a request object
  */
 export function applySessionToRequest(
-  req: UltimateExpressAuthRequest,
+  req: ExpressAuthRequest,
   session: SessionData
 ): void {
   if (!session) return;

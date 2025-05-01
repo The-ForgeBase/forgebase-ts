@@ -42,6 +42,8 @@ export class InternalAdminManager {
     initialAdminPassword: string;
     enabled?: boolean;
     createInitialApiKey: boolean;
+    initialApiKeyName?: string;
+    initialApiKeyScopes?: string[];
   };
   private adminService: KnexAdminService;
   private apiKeyService: AdminApiKeyService;
@@ -56,6 +58,8 @@ export class InternalAdminManager {
       initialAdminPassword: string;
       enabled?: boolean;
       createInitialApiKey: boolean;
+      initialApiKeyName?: string;
+      initialApiKeyScopes?: string[];
     },
     adminService: KnexAdminService,
     apiKeyService: AdminApiKeyService
@@ -86,7 +90,9 @@ export class InternalAdminManager {
     this.ensureInitialAdmin(
       this.adminConfig.initialAdminEmail,
       this.adminConfig.initialAdminEmail,
-      this.adminConfig.createInitialApiKey
+      this.adminConfig.createInitialApiKey,
+      this.adminConfig.initialApiKeyName,
+      this.adminConfig.initialApiKeyScopes
     );
 
     console.log('InternalAdminManager initialized successfully.');
@@ -98,11 +104,12 @@ export class InternalAdminManager {
   private async ensureInitialAdmin(
     email: string,
     password: string,
-    createInitialApiKey: boolean
+    createInitialApiKey: boolean,
+    initialApiKeyName?: string,
+    initialApiKeyScopes?: string[]
   ): Promise<void> {
     // Check if any admin exists
     const { total } = await this.adminService.listAdmins(1, 1);
-    const config = await this.configStore.getConfig();
 
     if (total === 0) {
       // Create initial admin with super admin privileges
@@ -123,9 +130,8 @@ export class InternalAdminManager {
       if (createInitialApiKey) {
         try {
           const result = await this.createApiKey(admin.id, {
-            name:
-              config.adminFeature.initialApiKeyName || 'Initial Admin API Key',
-            scopes: config.adminFeature.initialApiKeyScopes || ['*'],
+            name: initialApiKeyName || 'Initial Admin API Key',
+            scopes: initialApiKeyScopes || ['*'],
             expires_at: null, // Non-expiring key
           });
 

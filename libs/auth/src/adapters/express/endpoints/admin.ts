@@ -1,11 +1,8 @@
-import { Router } from 'ultimate-express';
+import { Router } from 'express';
 import { DynamicAuthManager } from '../../../authManager';
-import { UltimateExpressAuthConfig } from '../types';
+import { ExpressAuthConfig } from '../types';
 
-export function createAdminRouter(
-  authManager: DynamicAuthManager,
-  config: UltimateExpressAuthConfig
-): Router {
+export function createAdminRouter(authManager: DynamicAuthManager, config: ExpressAuthConfig): Router {
   const router = Router();
   // TODO: implement admin endpoints
   router.get('/providers', async (req, res) => {

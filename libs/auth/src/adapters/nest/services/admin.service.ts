@@ -1,14 +1,12 @@
 import { Injectable, Inject } from '@nestjs/common';
-import {
-  AdminApiKey,
-  InternalAdmin,
-  InternalAdminManager,
-} from '../../../admin';
+import { AdminApiKey, InternalAdmin } from '../../../admin';
+import { AwilixContainer } from 'awilix';
+import { AuthCradle } from '../../../container';
 
 @Injectable()
 export class AdminService {
   constructor(
-    @Inject('ADMIN_MANAGER') private adminManager: InternalAdminManager
+    @Inject('AUTH_CONTAINER') private container: AwilixContainer<AuthCradle>
   ) {}
 
   /**
@@ -18,28 +16,28 @@ export class AdminService {
     email: string,
     password: string
   ): Promise<{ admin: InternalAdmin; token: string }> {
-    return this.adminManager.login(email, password);
+    return this.container.cradle.adminManager.login(email, password);
   }
 
   /**
    * Validate an admin session token
    */
   async validateToken(token: string): Promise<{ admin: InternalAdmin }> {
-    return this.adminManager.validateToken(token);
+    return this.container.cradle.adminManager.validateToken(token);
   }
 
   /**
    * Logout an admin by destroying their session
    */
   async logout(token: string): Promise<void> {
-    return this.adminManager.logout(token);
+    return this.container.cradle.adminManager.logout(token);
   }
 
   /**
    * Get an admin by ID
    */
   async getAdmin(adminId: string): Promise<InternalAdmin> {
-    const admin = await this.adminManager.findAdminById(adminId);
+    const admin = await this.container.cradle.adminManager.findAdminById(adminId);
     if (!admin) {
       throw new Error(`Admin not found with ID: ${adminId}`);
     }
@@ -58,7 +56,7 @@ export class AdminService {
     page: number;
     limit: number;
   }> {
-    return this.adminManager.listAdmins(page, limit);
+    return this.container.cradle.adminManager.listAdmins(page, limit);
   }
 
   /**
@@ -69,7 +67,7 @@ export class AdminService {
     password: string,
     creatorId?: string
   ): Promise<InternalAdmin> {
-    return this.adminManager.createAdmin(adminData, password, creatorId);
+    return this.container.cradle.adminManager.createAdmin(adminData, password, creatorId);
   }
 
   /**
@@ -80,14 +78,14 @@ export class AdminService {
     adminData: Partial<InternalAdmin>,
     updaterId: string
   ): Promise<InternalAdmin> {
-    return this.adminManager.updateAdmin(adminId, adminData, updaterId);
+    return this.container.cradle.adminManager.updateAdmin(adminId, adminData, updaterId);
   }
 
   /**
    * Delete an admin
    */
   async deleteAdmin(adminId: string, deleterId: string): Promise<void> {
-    return this.adminManager.deleteAdmin(adminId, deleterId);
+    return this.container.cradle.adminManager.deleteAdmin(adminId, deleterId);
   }
 
   /**
@@ -103,7 +101,7 @@ export class AdminService {
     page: number;
     limit: number;
   }> {
-    return this.adminManager.getAuditLogs(adminId, page, limit);
+    return this.container.cradle.adminManager.getAuditLogs(adminId, page, limit);
   }
 
   /**
@@ -114,7 +112,7 @@ export class AdminService {
     permission: string,
     granterId: string
   ): Promise<void> {
-    return this.adminManager.grantPermission(adminId, permission, granterId);
+    return this.container.cradle.adminManager.grantPermission(adminId, permission, granterId);
   }
 
   /**
@@ -125,21 +123,21 @@ export class AdminService {
     permission: string,
     revokerId: string
   ): Promise<void> {
-    return this.adminManager.revokePermission(adminId, permission, revokerId);
+    return this.container.cradle.adminManager.revokePermission(adminId, permission, revokerId);
   }
 
   /**
    * Get the current auth configuration
    */
   async getAuthConfig() {
-    return this.adminManager.getAuthConfig();
+    return this.container.cradle.adminManager.getAuthConfig();
   }
 
   /**
    * Update the auth configuration
    */
   async updateAuthConfig(config: any, adminId: string) {
-    return this.adminManager.updateAuthConfig(config, adminId);
+    return this.container.cradle.adminManager.updateAuthConfig(config, adminId);
   }
 
   /**
@@ -153,21 +151,21 @@ export class AdminService {
       expires_at?: Date | null;
     }
   ): Promise<{ apiKey: AdminApiKey; fullKey: string }> {
-    return this.adminManager.createApiKey(adminId, options);
+    return this.container.cradle.adminManager.createApiKey(adminId, options);
   }
 
   /**
    * List all API keys for an admin
    */
   async listApiKeys(adminId: string): Promise<AdminApiKey[]> {
-    return this.adminManager.listApiKeys(adminId);
+    return this.container.cradle.adminManager.listApiKeys(adminId);
   }
 
   /**
    * Get an API key by ID
    */
   async getApiKey(keyId: string, adminId: string): Promise<AdminApiKey> {
-    return this.adminManager.getApiKey(keyId, adminId);
+    return this.container.cradle.adminManager.getApiKey(keyId, adminId);
   }
 
   /**
@@ -182,14 +180,14 @@ export class AdminService {
       expires_at?: Date | null;
     }
   ): Promise<AdminApiKey> {
-    return this.adminManager.updateApiKey(keyId, adminId, updates);
+    return this.container.cradle.adminManager.updateApiKey(keyId, adminId, updates);
   }
 
   /**
    * Delete an API key
    */
   async deleteApiKey(keyId: string, adminId: string): Promise<boolean> {
-    return this.adminManager.deleteApiKey(keyId, adminId);
+    return this.container.cradle.adminManager.deleteApiKey(keyId, adminId);
   }
 
   /**
@@ -198,6 +196,6 @@ export class AdminService {
   async validateApiKey(
     apiKey: string
   ): Promise<{ admin: InternalAdmin; scopes: string[] }> {
-    return this.adminManager.validateApiKey(apiKey);
+    return this.container.cradle.adminManager.validateApiKey(apiKey);
   }
 }

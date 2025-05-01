@@ -1,6 +1,10 @@
-import { DynamicModule, Module, ForwardReference, Type } from '@nestjs/common';
-import { DynamicAuthManager } from '../../authManager';
-import { User } from '../../types';
+import {
+  DynamicModule,
+  Module,
+  ForwardReference,
+  Type,
+  Abstract,
+} from '@nestjs/common';
 import { AuthController } from './controllers/auth.controller';
 import { AuthGuard } from './guards/auth.guard';
 import { AuthService } from './services/auth.service';
@@ -8,27 +12,32 @@ import { AdminController } from './controllers/admin.controller';
 import { AdminApiKeyController } from './controllers/admin-api-key.controller';
 import { AdminGuard } from './guards/admin.guard';
 import { AdminService } from './services/admin.service';
-import { InternalAdminManager } from '../../admin';
 import { NestAuthConfig } from '.';
+import { createAuthContainer, initializeContainer } from '../../container';
+import { AwilixContainer } from 'awilix';
+import { AuthCradle } from '../../container';
 
 export interface NestAuthModuleOptions {
-  authManager: DynamicAuthManager;
+  container: AwilixContainer<AuthCradle>;
   config?: NestAuthConfig;
-  adminManager?: InternalAdminManager;
   adminConfig?: NestAuthConfig;
 }
 
 export interface NestAuthModuleAsyncOptions {
   useFactory: (
-    ...args: any[]
+    ...args: unknown[]
   ) => Promise<NestAuthModuleOptions> | NestAuthModuleOptions;
-  inject?: any[];
-  imports?:
-    | any[]
-    | Array<
-        Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference
-      >;
-  controllers?: any[];
+  inject?: Array<
+    | Type<unknown>
+    | string
+    | symbol
+    | Abstract<unknown>
+    | Type<(...args: unknown[]) => unknown>
+  >;
+  imports?: Array<
+    Type<unknown> | DynamicModule | Promise<DynamicModule> | ForwardReference
+  >;
+  controllers?: Array<Type<unknown>>;
 }
 
 @Module({
@@ -36,34 +45,32 @@ export interface NestAuthModuleAsyncOptions {
   exports: [AuthService, AdminService, AuthGuard, AdminGuard],
 })
 export class NestAuthModule {
-  static forRoot(options: NestAuthModuleOptions): DynamicModule {
-    return {
-      module: NestAuthModule,
-      providers: [
-        {
-          provide: 'AUTH_MANAGER',
-          useValue: options.authManager,
-        },
-        {
-          provide: 'AUTH_CONFIG',
-          useValue: options.config || {},
-        },
-        {
-          provide: 'ADMIN_MANAGER',
-          useValue: options.adminManager,
-        },
-        {
-          provide: 'ADMIN_CONFIG',
-          useValue: options.adminConfig || {},
-        },
-        AuthService,
-        AuthGuard,
-        AdminGuard,
-        AdminService,
-      ],
-      exports: [AuthService, AdminService, AuthGuard, AdminGuard],
-    };
-  }
+  // static forRoot(options: NestAuthModuleOptions): DynamicModule {
+  //   const container = createAuthContainer(options.deps);
+
+  //   return {
+  //     module: NestAuthModule,
+  //     providers: [
+  //       {
+  //         provide: 'AUTH_CONTAINER',
+  //         useValue: container,
+  //       },
+  //       {
+  //         provide: 'AUTH_CONFIG',
+  //         useValue: options.config || {},
+  //       },
+  //       {
+  //         provide: 'ADMIN_CONFIG',
+  //         useValue: options.adminConfig || {},
+  //       },
+  //       AuthService,
+  //       AuthGuard,
+  //       AdminGuard,
+  //       AdminService,
+  //     ],
+  //     exports: [AuthService, AdminService, AuthGuard, AdminGuard],
+  //   };
+  // }
 
   static forRootAsync(options: NestAuthModuleAsyncOptions): DynamicModule {
     return {
@@ -76,9 +83,9 @@ export class NestAuthModule {
           inject: options.inject || [],
         },
         {
-          provide: 'AUTH_MANAGER',
+          provide: 'AUTH_CONTAINER',
           useFactory: async (authOptions: NestAuthModuleOptions) => {
-            return authOptions.authManager;
+            return authOptions.container;
           },
           inject: ['AUTH_OPTIONS'],
         },
@@ -86,13 +93,6 @@ export class NestAuthModule {
           provide: 'AUTH_CONFIG',
           useFactory: async (authOptions: NestAuthModuleOptions) => {
             return authOptions.config || {};
-          },
-          inject: ['AUTH_OPTIONS'],
-        },
-        {
-          provide: 'ADMIN_MANAGER',
-          useFactory: async (authOptions: NestAuthModuleOptions) => {
-            return authOptions.adminManager;
           },
           inject: ['AUTH_OPTIONS'],
         },

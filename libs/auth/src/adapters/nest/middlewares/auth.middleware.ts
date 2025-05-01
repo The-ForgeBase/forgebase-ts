@@ -1,12 +1,13 @@
 import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { DynamicAuthManager } from '../../../authManager';
+import { AwilixContainer } from 'awilix';
+import { AuthCradle } from '../../../container';
 import { User } from '../../../types';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   constructor(
-    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager
+    @Inject('AUTH_CONTAINER') private container: AwilixContainer<AuthCradle>
   ) {}
 
   private extractToken(request: Request): string | null {
@@ -41,8 +42,7 @@ export class AuthMiddleware implements NestMiddleware {
 
       if (token) {
         try {
-          const { user, token: newToken } =
-            await this.authManager.validateToken(token, 'local');
+          const { user, token: newToken } = await this.container.cradle.authManager.validateToken(token, 'local');
 
           if (user) {
             request['user'] = user;

@@ -1,5 +1,4 @@
-import { DynamicAuthManager } from '../../../authManager';
-import { MFARequiredError, User } from '../../../types';
+import { MFARequiredError } from '../../../types';
 import {
   Injectable,
   CanActivate,
@@ -10,11 +9,13 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request, Response } from 'express';
 import { NestAuthConfig } from '..';
+import { AwilixContainer } from 'awilix';
+import { AuthCradle } from '../../../container';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    @Inject('AUTH_MANAGER') private authManager: DynamicAuthManager,
+    @Inject('AUTH_CONTAINER') private container: AwilixContainer<AuthCradle>,
     @Inject('AUTH_CONFIG') private adminConfig: NestAuthConfig,
     private reflector: Reflector
   ) {}
@@ -48,7 +49,7 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const { user, token: newToken } = await this.authManager.validateToken(
+      const { user, token: newToken } = await this.container.cradle.authManager.validateToken(
         token,
         'local'
       );
@@ -77,8 +78,8 @@ export class AuthGuard implements CanActivate {
         }
       }
 
-      const config = this.authManager.getConfig();
-      const mfaStatus = this.authManager.getMfaStatus();
+      const config = this.container.cradle.authManager.getConfig();
+      const mfaStatus = this.container.cradle.authManager.getMfaStatus();
 
       if (
         config.mfaSettings.required &&
@@ -91,7 +92,7 @@ export class AuthGuard implements CanActivate {
 
       request['user'] = user;
       return true;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid token');
     }
   }

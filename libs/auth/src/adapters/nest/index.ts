@@ -2,8 +2,6 @@ export * from './nestjs.module';
 export * from './services/auth.service';
 export * from './controllers/auth.controller';
 export * from './guards/auth.guard';
-export * from './services/jwks.service';
-export * from './controllers/jwks.controller';
 
 // Export admin components
 export * from './services/admin.service';
@@ -13,7 +11,6 @@ export * from './guards/admin.guard';
 export * from './middlewares/admin.middleware';
 export * from './decorators/public.decorator';
 export * from './decorators/require-scopes.decorator';
-export * from './nestjs';
 
 export type NestAuthConfig = {
   basePath?: string;

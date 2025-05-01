@@ -20,6 +20,7 @@ export * from './adapters/web';
 export * from './adapters/nest';
 
 // Admin exports
-export { createInternalAdminManager, InternalAdminManager } from './admin';
+export { InternalAdminManager } from './admin';
 export * from './services';
 export * from './plugins';
+export * from './container';

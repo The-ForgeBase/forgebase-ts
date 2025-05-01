@@ -3,16 +3,18 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { AdminFeatureDisabledError } from '../../../types/admin';
-import { AdminService } from '../services/admin.service';
+import { AwilixContainer } from 'awilix';
+import { AuthCradle } from '../../../container';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
   constructor(
-    private adminService: AdminService,
+    @Inject('AUTH_CONTAINER') private container: AwilixContainer<AuthCradle>,
     private reflector: Reflector
   ) {}
 
@@ -90,7 +92,7 @@ export class AdminGuard implements CanActivate {
 
       if (type === 'session') {
         // Validate session token
-        const { admin } = await this.adminService.validateToken(token);
+        const { admin } = await this.container.cradle.adminManager.validateToken(token);
 
         // Add the admin to the request object for use in controllers
         request['admin'] = admin;
@@ -99,7 +101,7 @@ export class AdminGuard implements CanActivate {
         return true;
       } else {
         // Validate API key
-        const { admin, scopes } = await this.adminService.validateApiKey(token);
+        const { admin, scopes } = await this.container.cradle.adminManager.validateApiKey(token);
 
         // Check if the API key has the required scopes
         if (requiredScopes.length > 0) {

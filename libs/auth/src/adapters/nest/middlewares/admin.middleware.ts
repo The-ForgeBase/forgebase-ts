@@ -1,10 +1,11 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware, Inject } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { AdminService } from '../services/admin.service';
+import { AwilixContainer } from 'awilix';
+import { AuthCradle } from '../../../container';
 
 @Injectable()
 export class AdminMiddleware implements NestMiddleware {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(@Inject('AUTH_CONTAINER') private container: AwilixContainer<AuthCradle>) {}
 
   private extractToken(request: Request): {
     token: string | null;
@@ -54,16 +55,14 @@ export class AdminMiddleware implements NestMiddleware {
         try {
           if (type === 'session') {
             // Validate session token
-            const { admin } = await this.adminService.validateToken(token);
+            const { admin } = await this.container.cradle.adminManager.validateToken(token);
             // Inject admin info into request object if validation succeeds
             req['admin'] = admin;
             req['isApiKeyAuth'] = false;
             req['adminApiKeyScopes'] = [];
           } else {
             // Validate API key
-            const { admin, scopes } = await this.adminService.validateApiKey(
-              token
-            );
+            const { admin, scopes } = await this.container.cradle.adminManager.validateApiKey(token);
             // Inject admin info and scopes into request object
             req['admin'] = admin;
             req['isApiKeyAuth'] = true;

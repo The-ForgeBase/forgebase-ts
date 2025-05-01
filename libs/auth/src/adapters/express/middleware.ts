@@ -1,18 +1,19 @@
-import { Request, Response, NextFunction } from 'ultimate-express';
+import { Request, Response, NextFunction } from 'express';
 import {
   applySessionToRequest,
+  extractTokenFromRequest,
   processAuthTokens,
   setAuthCookies,
 } from './utils';
 import { DynamicAuthManager } from '../../authManager';
-import { UltimateExpressAuthConfig, UltimateExpressAuthRequest } from './types';
+import { ExpressAuthConfig, ExpressAuthRequest } from './types';
 
 export async function userContextMiddleware(
-  req: UltimateExpressAuthRequest,
+  req: ExpressAuthRequest,
   res: Response,
   next: NextFunction,
   authManager: DynamicAuthManager,
-  config: UltimateExpressAuthConfig,
+  config: ExpressAuthConfig,
   adminManager?: any
 ) {
   try {
@@ -34,10 +35,10 @@ export async function userContextMiddleware(
 }
 
 export function attachNewToken(
-  req: UltimateExpressAuthRequest,
+  req: ExpressAuthRequest,
   res: Response,
   next: NextFunction,
-  config: UltimateExpressAuthConfig
+  config: ExpressAuthConfig
 ) {
   if (req.newToken) {
     setAuthCookies(res, req.newToken, config);
@@ -46,7 +47,7 @@ export function attachNewToken(
 }
 
 export function authGuard(
-  req: UltimateExpressAuthRequest,
+  req: ExpressAuthRequest,
   res: Response,
   next: NextFunction
 ): any {

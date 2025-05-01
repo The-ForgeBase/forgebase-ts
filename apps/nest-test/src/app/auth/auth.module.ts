@@ -4,23 +4,22 @@ import { AuthConfigService } from './auth.config.service';
 import {
   AdminController,
   AuthController,
-  JwksController,
-  NestAuthModuleWithJWKS,
+  NestAuthModule,
+  NestAuthModuleOptions,
 } from '@forgebase-ts/auth/adapters/nest';
 import { db } from '../app.module';
-import { CustomJwksController } from './jwks/custom-jwks.controller';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 @Module({
   imports: [
-    NestAuthModuleWithJWKS.forRootAsync({
-      useFactory: async (authConfigService: AuthConfigService) => {
-        const { authManager, adminManager, joseJwtManager } =
-          await authConfigService.initialize(db);
+    NestAuthModule.forRootAsync({
+      useFactory: async (
+        authConfigService: AuthConfigService
+      ): Promise<NestAuthModuleOptions> => {
+        const container = await authConfigService.initialize(db);
         // console.log('AuthModule: Initialization complete');
         return {
-          authManager,
-          adminManager,
+          container,
           adminConfig: {
             basePath: '/admin',
             cookieName: 'admin_token',
@@ -41,12 +40,11 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
               sameSite: 'lax',
             },
           },
-          joseJwtManager,
         };
       },
       inject: [AuthConfigService],
       imports: [AuthModule],
-      controllers: [AuthController, AdminController, JwksController],
+      controllers: [AuthController, AdminController],
     }),
   ],
   providers: [
@@ -59,7 +57,6 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
       inject: [AuthConfigService],
     },
   ],
-  controllers: [CustomJwksController],
   exports: [AuthConfigService],
 })
 export class AuthModule {}
