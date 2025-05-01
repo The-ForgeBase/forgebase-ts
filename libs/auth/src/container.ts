@@ -242,14 +242,12 @@ export function createAuthContainer(deps: ContainerDependencies) {
 }
 
 // Initialize all services that require it
-export async function initializeContainer(
-  container: AwilixContainer<AuthCradle>
-) {
+export function initializeContainer(container: AwilixContainer<AuthCradle>) {
   const configStore = container.cradle.configStore;
-  await configStore.initialize();
+  configStore.initialize();
 
   const adminManager = container.cradle.adminManager;
-  await adminManager.initialize();
+  adminManager.initialize();
 
   configStore.updateConfig({
     adminFeature: {

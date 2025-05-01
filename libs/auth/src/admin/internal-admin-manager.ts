@@ -7,7 +7,6 @@ import {
   AdminSessionManager,
   AdminUnauthorizedError,
   InternalAdmin,
-  InitialAdminRequiredError,
 } from '../types/admin';
 import { KnexAdminService } from '../services/admin.knex.service';
 import { AdminApiKeyService } from '../services/admin-api-key.service';
@@ -71,6 +70,8 @@ export class InternalAdminManager {
     this.adminConfig = adminConfig;
     this.adminService = adminService;
     this.apiKeyService = apiKeyService;
+
+    this.isEnabled = this.adminConfig.enabled || true;
   }
 
   /**
@@ -79,7 +80,6 @@ export class InternalAdminManager {
    */
   async initialize(): Promise<void> {
     // Check if admin feature is enabled
-    this.isEnabled = this.adminConfig.enabled || true;
 
     if (!this.isEnabled) {
       return;
@@ -163,9 +163,9 @@ export class InternalAdminManager {
       throw new AdminFeatureDisabledError();
     }
 
-    if (!this.hasInitialAdmin) {
-      throw new InitialAdminRequiredError();
-    }
+    // if (!this.hasInitialAdmin) {
+    //   throw new InitialAdminRequiredError();
+    // }
   }
 
   /**

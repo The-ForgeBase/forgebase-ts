@@ -1,6 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
-  initializeAuthSchema,
   User,
   AuthCradle,
   createAuthContainer,
@@ -48,9 +47,6 @@ export class AuthConfigService implements OnModuleInit {
       }
 
       this.logger.log('AuthConfigService: Starting initialization');
-
-      // Create all table schemas
-      await initializeAuthSchema(db);
 
       this.container = createAuthContainer({
         knex: db,
@@ -117,7 +113,7 @@ export class AuthConfigService implements OnModuleInit {
         'AuthConfigService: All components initialized successfully'
       );
 
-      await initializeContainer(this.container);
+      initializeContainer(this.container);
 
       // Create Google provider with dependencies from container
       const googleProvider = new GoogleOAuthProvider({
