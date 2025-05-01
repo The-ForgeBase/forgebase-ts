@@ -5,6 +5,7 @@ import {
   AuthCradle,
   createAuthContainer,
   initializeContainer,
+  GoogleOAuthProvider,
 } from '@forgebase-ts/auth';
 import { Knex } from 'knex';
 import { db } from '../app.module';
@@ -58,7 +59,7 @@ export class AuthConfigService implements OnModuleInit {
         },
         adminConfig: {
           enabled: true,
-          initialAdminEmail: 'admin@yourdomain.com',
+          initialAdminEmail: 'admin@example.com',
           initialAdminPassword: 'secure-password',
           createInitialApiKey: true,
           initialApiKeyName: 'Initial Admin API Key',
@@ -128,6 +129,21 @@ export class AuthConfigService implements OnModuleInit {
       );
 
       await initializeContainer(this.container);
+
+      // Create Google provider with dependencies from container
+      const googleProvider = new GoogleOAuthProvider({
+        clientID: process.env.GOOGLE_CLIENT_ID || '',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        callbackURL: 'http://localhost:3000/auth/oauth/callback',
+        scopes: ['email', 'profile'],
+        name: 'google',
+        userService: this.container.cradle.userService,
+        knex: this.container.cradle.knex,
+      });
+
+      // Register the provider with the auth manager
+      const authManager = this.container.cradle.authManager;
+      // await authManager.registerProvider('google', googleProvider);
 
       this.isInitialized = true;
 

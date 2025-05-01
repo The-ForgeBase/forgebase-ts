@@ -1,9 +1,11 @@
 # ForgeBase Auth
 
-A flexible, comprehensive authentication library for Server side js applications, providing multiple authentication strategies, a framework-agnostic web standard adapter, and advanced session management with JWKS support.
+A flexible, comprehensive authentication library for Server side js applications, providing multiple authentication strategies, a framework-agnostic web standard adapter, and advanced session management with dependency injection support.
 
 ## Recent Updates
 
+- **Dependency Injection**: Added comprehensive dependency injection support using Awilix for better modularity and testability
+- **Removed JWKS Support**: Simplified the authentication flow by removing JWKS (JSON Web Key Set) support
 - **Web Standard Adapter**: Replaced framework-specific adapters (Express, Fastify, Hono) with a single, framework-agnostic Web Standard Adapter
 - **Restructured Types**: Improved TypeScript integration with a central `UserExtension` interface
 - **Improved User Extension**: Enhanced the type system to make extending the User type more flexible and type-safe
@@ -24,16 +26,15 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
 
 - **Advanced Session Management**:
 
-  - JWKS (JSON Web Key Set) support with auto-rotation
-  - Public key infrastructure for token verification
-  - Basic, JWT, and JoseJWT session managers
+  - Dependency Injection for flexible session management
+  - Basic and JWT session managers
   - Configurable token expiration and refresh
   - Secure cookie handling with customizable options
 
 - **Framework Integration**:
 
   - Web standard adapter with framework-agnostic design
-  - NestJS adapter with JWKS and admin features
+  - NestJS adapter with dependency injection and admin features
   - Cross-platform token validation
 
 - **Admin Management**:
@@ -81,9 +82,7 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
 
 - **API Security**:
 
-  - OpenID Connect discovery
   - OAuth 2.0 compliance
-  - Key rotation policies
   - Token revocation
   - Scope-based permissions
 
@@ -106,7 +105,7 @@ The ForgeBase Auth library simplifies the implementation of authentication in yo
 - [Framework Integration](#framework-integration)
   - [Web Standard Adapter](#web-standard-adapter)
   - [NestJS](#nestjs)
-  - [NestJS Integration with JWKS](#nestjs-integration-with-jwks)
+  - [NestJS Integration with DI](#nestjs-integration-with-di)
   - [Cross-Platform Token Validation](#cross-platform-token-validation)
 - [Admin Management](#admin-management)
 - [Multi-Factor Authentication](#multi-factor-authentication)
@@ -150,10 +149,10 @@ pnpm add jsx-email react nodemailer uuid
 
 There are several ways to integrate ForgeBase Auth into your application. Here are the most common patterns:
 
-### 1. Basic Setup with JWKS Support
+### 1. Basic Setup with Dependency Injection
 
 ```typescript
-import { DynamicAuthManager, KnexConfigStore, KnexUserService, JoseJwtSessionManager, LocalAuthProvider, initializeAuthSchema, KeyStorageOptions } from '@forgebase-ts/auth';
+import { createAuthContainer, initializeContainer, initializeAuthSchema } from '@forgebase-ts/auth';
 import { Knex } from 'knex';
 
 // Initialize your database connection
@@ -167,91 +166,107 @@ const db = knex({
 // Create necessary database tables
 await initializeAuthSchema(db);
 
-// Initialize config store
-const configStore = new KnexConfigStore(db);
-await configStore.initialize();
-
-// Get auth configuration
-const config = await configStore.getConfig();
-
-// Configure key options for JWKS
-const keyOptions: KeyStorageOptions = {
-  keyDirectory: './keys', // Directory to store keys
-  algorithm: 'RS256', // Use RS256 algorithm
-  rotationDays: 90, // Key rotation interval
-};
-
-// Initialize JoseJwtSessionManager for JWT key signing
-const joseJwtManager = new JoseJwtSessionManager(config, db, keyOptions);
-await joseJwtManager.initialize();
-
-// Initialize user service
-const userService = new KnexUserService(config, {
+// Define dependencies
+const deps = {
   knex: db,
-  tableName: 'users',
-});
-
-// Set up auth providers
-const providers = {
-  local: new LocalAuthProvider(userService, config),
-};
-
-// Initialize auth manager with JWKS support
-const authManager = new DynamicAuthManager(
-  configStore,
-  providers,
-  joseJwtManager, // Use JoseJwtManager for JWKS support
-  userService,
-  5000, // config refresh interval
-  true, // enable config interval check
-  { knex: db } // internal config
-);
-
-// Enable features in configuration
-await configStore.updateConfig({
-  enabledProviders: ['local'],
-  adminFeature: {
+  local: {
     enabled: true,
+  },
+  email: {
+    enabled: true,
+    usePlunk: {
+      enabled: true,
+      config: {
+        apiKey: process.env.PLUNK_API_KEY,
+        fromEmail: 'noreply@example.com',
+        fromName: 'Your App',
+      },
+    },
+  },
+  sms: {
+    enabled: false,
+  },
+  useJwt: {
+    secret: process.env.JWT_SECRET || 'your-jwt-secret',
+    options: {
+      expiresIn: '1h',
+    },
+  },
+  adminConfig: {
     initialAdminEmail: 'admin@example.com',
     initialAdminPassword: 'secure-password',
-    createInitialAdmin: true,
+    enabled: true,
+    createInitialApiKey: true,
   },
-});
+  authPolicy: {
+    emailVerificationRequired: true,
+    passwordReset: true,
+  },
+};
+
+// Create and initialize the container
+const container = createAuthContainer(deps);
+await initializeContainer(container);
+
+// Access services from the container
+const authManager = container.cradle.authManager;
+const userService = container.cradle.userService;
+const configStore = container.cradle.configStore;
 ```
 
-### 2. NestJS Integration with JWKS
+### 2. NestJS Integration with Dependency Injection
 
-For NestJS applications, use the built-in module with JWKS support:
+For NestJS applications, use the built-in module with dependency injection support:
 
 ```typescript
 // auth.config.service.ts
 @Injectable()
 export class AuthConfigService implements OnModuleInit {
-  private authManager: DynamicAuthManager<AppUser>;
-  private joseJwtManager: JoseJwtSessionManager;
-
   async initialize(db: Knex) {
-    // Initialize config store
-    const configStore = new KnexConfigStore(db);
-    await configStore.initialize();
-
-    // Configure JWKS
-    const keyOptions: KeyStorageOptions = {
-      keyDirectory: './keys',
-      algorithm: 'RS256',
-      rotationDays: 90,
+    // Define dependencies
+    const deps = {
+      knex: db,
+      local: {
+        enabled: true,
+      },
+      email: {
+        enabled: true,
+        usePlunk: {
+          enabled: true,
+          config: {
+            apiKey: process.env.PLUNK_API_KEY,
+            fromEmail: 'noreply@example.com',
+            fromName: 'Your App',
+          },
+        },
+      },
+      sms: {
+        enabled: false,
+      },
+      useJwt: {
+        secret: process.env.JWT_SECRET || 'your-jwt-secret',
+        options: {
+          expiresIn: '1h',
+        },
+      },
+      adminConfig: {
+        initialAdminEmail: 'admin@example.com',
+        initialAdminPassword: 'secure-password',
+        enabled: true,
+        createInitialApiKey: true,
+      },
+      authPolicy: {
+        emailVerificationRequired: true,
+        passwordReset: true,
+      },
     };
 
-    this.joseJwtManager = new JoseJwtSessionManager(config, db, keyOptions);
-    await this.joseJwtManager.initialize();
-
-    // Initialize other components
-    // ...
+    // Create and initialize the container
+    const container = createAuthContainer(deps);
+    await initializeContainer(container);
 
     return {
-      authManager: this.authManager,
-      adminManager,
-      joseJwtManager: this.joseJwtManager,
+      container
     };
   }
 }
@@ -259,13 +274,12 @@ export class AuthConfigService implements OnModuleInit {
 // auth.module.ts
 @Module({
   imports: [
-    NestAuthModuleWithJWKS.forRootAsync({
+    NestAuthModule.forRootAsync({
       useFactory: async (authConfigService: AuthConfigService) => {
-        const { authManager, adminManager, joseJwtManager } = await authConfigService.initialize(db);
+        const { container } = await authConfigService.initialize(db);
 
         return {
-          authManager,
-          adminManager,
+          container
           adminConfig: {
             basePath: '/admin',
             cookieName: 'admin_token',
@@ -274,11 +288,10 @@ export class AuthConfigService implements OnModuleInit {
             basePath: '/auth',
             cookieName: 'auth_token',
           },
-          joseJwtManager,
         };
       },
       inject: [AuthConfigService],
-      controllers: [AuthController, AdminController, JwksController],
+      controllers: [AuthController, AdminController],
     }),
   ],
   providers: [AuthConfigService],
@@ -563,7 +576,7 @@ class CustomAuthProvider implements AuthProvider {
 
 ## Framework Integration
 
-> **Note:** The Express, Fastify, and Hono adapters have been removed in favor of a more flexible, framework-agnostic Web Standard Adapter that works with any JavaScript framework or runtime that supports standard Web APIs.
+> **Note:** The Fastify, and Hono adapters have been removed in favor of a more flexible, framework-agnostic Web Standard Adapter that works with any JavaScript framework or runtime that supports standard Web APIs.
 
 ### Web Standard Adapter
 
@@ -572,29 +585,8 @@ The Web Standard Adapter provides a framework-agnostic approach to authenticatio
 ```typescript
 import { createWebAuthClient, webAuthApi } from '@forgebase-ts/auth';
 
-// Initialize the auth client
-const { authManager, adminManager, sessionManager } = await createWebAuthClient({
-  db: knexInstance,
-  keyOptions: {
-    keyDirectory: './keys',
-    algorithm: 'RS256',
-    rotationDays: 90,
-  },
-  local: {
-    enabled: true,
-  },
-  admin: {
-    enabled: true,
-    initialAdminEmail: 'admin@example.com',
-    initialAdminPassword: 'secure-password',
-    createInitialAdmin: true,
-  },
-});
-
-// Create the auth API
-const authApi = webAuthApi({
-  authManager,
-  adminManager,
+// Initialize the auth client with dependency injection
+const { container, config } = createWebAuthClient({
   config: {
     basePath: '/auth',
     cookieName: 'auth_token',
@@ -604,6 +596,39 @@ const authApi = webAuthApi({
       sameSite: 'strict',
     },
   },
+  deps: {
+    knex: knexInstance,
+    local: {
+      enabled: true,
+    },
+    email: {
+      enabled: true,
+    },
+    sms: {
+      enabled: false,
+    },
+    useJwt: {
+      secret: 'your-jwt-secret',
+      options: {
+        expiresIn: '1h',
+      },
+    },
+    adminConfig: {
+      initialAdminEmail: 'admin@example.com',
+      initialAdminPassword: 'secure-password',
+      enabled: true,
+      createInitialApiKey: true,
+    },
+    authPolicy: {
+      emailVerificationRequired: true,
+    },
+  },
+});
+
+// Create the auth API
+const authApi = webAuthApi({
+  container,
+  config,
   cors: {
     enabled: true,
     corsOptions: {
@@ -641,17 +666,16 @@ import { AuthConfigService } from './auth.config.service';
   imports: [
     NestAuthModule.forRootAsync({
       useFactory: async (authConfigService: AuthConfigService) => {
-        const { authManager, adminManager } = await authConfigService.initialize(db);
+        const { container, config } = await authConfigService.initialize(db);
         return {
-          authManager,
-          adminManager,
-          adminConfig: {
-            basePath: '/admin',
-            cookieName: 'admin_token',
-          },
+          container,
           config: {
             basePath: '/auth',
             cookieName: 'auth_token',
+          },
+          adminConfig: {
+            basePath: '/admin',
+            cookieName: 'admin_token',
           },
         };
       },
@@ -678,96 +702,90 @@ export class ProtectedController {
 }
 ```
 
-### NestJS Integration with JWKS
+### NestJS Integration with DI
 
-The library provides enhanced NestJS integration with JWKS support through `NestAuthModuleWithJWKS`:
+The library provides enhanced NestJS integration with dependency injection support through `NestAuthModule`:
 
 ```typescript
 @Module({
   imports: [
-    NestAuthModuleWithJWKS.forRootAsync({
+    NestAuthModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (authConfigService: AuthConfigService) => {
-        const { authManager, adminManager, joseJwtManager } = await authConfigService.initialize(db);
+        const { container, config } = await authConfigService.initialize(db);
 
         return {
-          authManager,
-          adminManager,
-          adminConfig: {
-            basePath: '/admin',
-            cookieName: 'admin_token',
-          },
+          container,
           config: {
             basePath: '/auth',
             cookieName: 'auth_token',
           },
-          joseJwtManager, // Required for JWKS functionality
+          adminConfig: {
+            basePath: '/admin',
+            cookieName: 'admin_token',
+          },
         };
       },
       inject: [AuthConfigService],
-      controllers: [AuthController, AdminController, JwksController],
+      controllers: [AuthController, AdminController],
     }),
   ],
 })
 export class AppModule {}
 ```
 
-### Setting up JoseJwtSessionManager
+### Setting up with Dependency Injection
 
-Initialize the JoseJwtSessionManager with proper key options:
+The auth library now uses Awilix for dependency injection, making it more modular and testable:
 
 ```typescript
-const keyOptions: KeyStorageOptions = {
-  keyDirectory: './keys', // Directory to store keys
-  algorithm: 'RS256', // Use RS256 algorithm
-  rotationDays: 90, // Key rotation interval
+import { createAuthContainer, ContainerDependencies } from '@forgebase-ts/auth';
+
+// Define your dependencies
+const deps: ContainerDependencies = {
+  knex: db,
+  local: {
+    enabled: true,
+  },
+  email: {
+    enabled: true,
+    usePlunk: {
+      enabled: true,
+      config: {
+        apiKey: process.env.PLUNK_API_KEY,
+        fromEmail: 'noreply@example.com',
+        fromName: 'Your App',
+      },
+    },
+  },
+  sms: {
+    enabled: false,
+  },
+  useJwt: {
+    secret: process.env.JWT_SECRET || 'your-jwt-secret',
+    options: {
+      expiresIn: '1h',
+    },
+  },
+  adminConfig: {
+    initialAdminEmail: 'admin@example.com',
+    initialAdminPassword: 'secure-password',
+    enabled: true,
+    createInitialApiKey: true,
+  },
+  authPolicy: {
+    emailVerificationRequired: true,
+    passwordReset: true,
+  },
 };
 
-const joseJwtManager = new JoseJwtSessionManager(config, db, keyOptions);
-await joseJwtManager.initialize();
+// Create the container
+const container = createAuthContainer(deps);
 
-const authManager = new DynamicAuthManager(
-  configStore,
-  providers,
-  joseJwtManager, // Use JoseJwtManager instead of BasicSessionManager
-  userService,
-  5000,
-  true,
-  { knex: db }
-);
-```
-
-### JWKS Endpoints
-
-When using `NestAuthModuleWithJWKS` or the Web Standard Adapter, the following endpoints are automatically exposed:
-
-- `GET /.well-known/jwks.json` - Returns the JWKS (JSON Web Key Set)
-
-```json
-{
-  "keys": [
-    {
-      "kty": "RSA",
-      "kid": "current-key-id",
-      "n": "public-key-modulus",
-      "e": "AQAB",
-      "alg": "RS256",
-      "use": "sig"
-    }
-  ]
-}
-```
-
-- `GET /.well-known/openid-configuration` - Returns OpenID configuration
-
-```json
-{
-  "issuer": "https://your-domain.com",
-  "jwks_uri": "https://your-domain.com/.well-known/jwks.json",
-  "response_types_supported": ["code"],
-  "subject_types_supported": ["public"],
-  "id_token_signing_alg_values_supported": ["RS256"]
-}
+// Access services from the container
+const authManager = container.cradle.authManager;
+const userService = container.cradle.userService;
+const sessionManager = container.cradle.sessionManager;
 ```
 
 ### Admin Middleware
@@ -791,13 +809,13 @@ export class AppModule implements NestModule {
 
 The AdminMiddleware provides:
 
-- JWT token validation using JWKS
+- JWT token validation
 - Request context enrichment with admin data
 
 Configure admin settings in your module:
 
 ```typescript
-NestAuthModuleWithJWKS.forRootAsync({
+NestAuthModule.forRootAsync({
   // ...other config
   adminConfig: {
     basePath: '/admin',
@@ -815,18 +833,19 @@ The library supports cross-platform token validation, allowing tokens to be used
 
 ```typescript
 // Web app validating a token from a mobile app
-import { TokenVerifier } from '@forgebase-ts/auth';
+import { JwtSessionManager } from '@forgebase-ts/auth';
 
-const verifier = new TokenVerifier({
-  jwksUrl: 'https://your-auth-server.com/.well-known/jwks.json',
-  cacheTimeMs: 3600000, // Cache for 1 hour
+// Create a JWT session manager with the same secret
+const jwtManager = new JwtSessionManager('your-jwt-secret', config, db, {
+  tokenExpiry: '1h',
+  refreshTokenExpiry: '7d',
 });
 
 // Validate a token
-const result = await verifier.validateToken(token);
-if (result.valid) {
-  // Token is valid, user data is in result.payload
-  const userData = result.payload;
+const result = await jwtManager.validateToken(token);
+if (result) {
+  // Token is valid, user data is available
+  const userData = result.user;
 }
 ```
 
@@ -835,15 +854,25 @@ if (result.valid) {
 ForgeBase Auth includes a built-in admin management system with role-based access control and audit logging:
 
 ```typescript
-import { initializeNestAdminManager, createInternalAdminManager } from '@forgebase-ts/auth';
+import { createAuthContainer } from '@forgebase-ts/auth';
 
-// Create admin manager
-const adminManager = await initializeNestAdminManager({
+// Create container with admin configuration
+const container = createAuthContainer({
   knex: db,
-  configStore,
-  jwtSecret: 'your-admin-jwt-secret',
-  tokenExpiry: '24h',
+  local: { enabled: true },
+  email: { enabled: false },
+  sms: { enabled: false },
+  adminConfig: {
+    initialAdminEmail: 'admin@example.com',
+    initialAdminPassword: 'secure-password',
+    enabled: true,
+    createInitialApiKey: true,
+  },
+  authPolicy: {},
 });
+
+// Get the admin manager from the container
+const adminManager = container.cradle.adminManager;
 
 // Enable admin feature in config
 await configStore.updateConfig({
@@ -943,16 +972,21 @@ const plunkVerificationService = new PlunkEmailVerificationService(db, {
 });
 
 // Register the service with the auth manager
-const authManager = new DynamicAuthManager(
+// With dependency injection
+const container = createAuthContainer({
+  knex: db,
+  local: { enabled: true },
+  email: {
+    enabled: true,
+    emailVerificationService: plunkVerificationService,
+  },
+  sms: { enabled: false },
   configStore,
-  providers,
   sessionManager,
-  userService,
-  5000,
-  true,
-  { knex: db },
-  plunkVerificationService // Pass the verification service
-);
+  authPolicy: {},
+});
+
+const authManager = container.cradle.authManager;
 ```
 
 ### JSX-Email Templates
@@ -1089,15 +1123,18 @@ const sessionManager = new BasicSessionManager('your-secret-key', config, db, {
   },
 });
 
-const authManager = new DynamicAuthManager(
+// With dependency injection
+const container = createAuthContainer({
+  knex: db,
+  local: { enabled: true },
+  email: { enabled: true },
+  sms: { enabled: false },
   configStore,
-  providers,
-  sessionManager, // Use BasicSessionManager
-  userService,
-  5000,
-  true,
-  { knex: db }
-);
+  sessionManager,
+  authPolicy: {},
+});
+
+const authManager = container.cradle.authManager;
 ```
 
 Features:
@@ -1129,15 +1166,18 @@ const jwtManager = new JwtSessionManager('your-jwt-secret', config, db, {
   },
 });
 
-const authManager = new DynamicAuthManager(
+// With dependency injection
+const container = createAuthContainer({
+  knex: db,
+  local: { enabled: true },
+  email: { enabled: true },
+  sms: { enabled: false },
   configStore,
-  providers,
-  jwtManager, // Use JwtSessionManager
-  userService,
-  5000,
-  true,
-  { knex: db }
-);
+  sessionManager: jwtManager,
+  authPolicy: {},
+});
+
+const authManager = container.cradle.authManager;
 ```
 
 Features:
@@ -1149,71 +1189,16 @@ Features:
 - Claims-based authorization
 - Encrypted payload
 
-### 3. Jose JWT Session Manager (with JWKS)
-
-Advanced session management using asymmetric key signing and JWKS:
-
-```typescript
-import { JoseJwtSessionManager, KeyStorageOptions } from '@forgebase-ts/auth';
-
-const keyOptions: KeyStorageOptions = {
-  keyDirectory: './keys', // Directory to store keys
-  algorithm: 'RS256', // Signing algorithm
-  rotationDays: 90, // Key rotation interval
-  keySize: 2048, // RSA key size
-};
-
-const joseJwtManager = new JoseJwtSessionManager(config, db, keyOptions, {
-  issuer: 'your-app',
-  audience: 'your-api',
-  tokenExpiry: '1h',
-  refreshTokenExpiry: '7d',
-  cookieName: 'jwt_token',
-  cookieOptions: {
-    secure: true,
-    httpOnly: true,
-    sameSite: 'strict',
-  },
-});
-
-// Initialize the manager (required for key setup)
-await joseJwtManager.initialize();
-
-const authManager = new DynamicAuthManager(
-  configStore,
-  providers,
-  joseJwtManager, // Use JoseJwtSessionManager
-  userService,
-  5000,
-  true,
-  { knex: db }
-);
-```
-
-Features:
-
-- Public/private key infrastructure
-- Automatic key rotation
-- JWKS endpoint for public key distribution
-- OpenID Connect discovery
-- Forward secrecy
-- Multiple key support
-- Key rollover periods
-
 ### Session Features Comparison
 
-| Feature                   | BasicSessionManager | JwtSessionManager | JoseJwtSessionManager |
-| ------------------------- | :-----------------: | :---------------: | :-------------------: |
-| Server-side Storage       |          ✓          |         ✓         |           ✓           |
-| Stateless                 |          ✗          |         ✓         |           ✓           |
-| Refresh Tokens            |          ✓          |         ✓         |           ✓           |
-| Token Revocation          |          ✓          |         ✓         |           ✓           |
-| Multiple Sessions         |          ✓          |         ✓         |           ✓           |
-| Claims-based Auth         |          ✗          |         ✓         |           ✓           |
-| Key Rotation              |          ✗          |         ✗         |           ✓           |
-| JWKS Support              |          ✗          |         ✗         |           ✓           |
-| Public Key Infrastructure |          ✗          |         ✗         |           ✓           |
-| OpenID Connect            |          ✗          |         ✗         |           ✓           |
+| Feature             | BasicSessionManager | JwtSessionManager |
+| ------------------- | :-----------------: | :---------------: |
+| Server-side Storage |          ✓          |         ✓         |
+| Stateless           |          ✗          |         ✓         |
+| Refresh Tokens      |          ✓          |         ✓         |
+| Token Revocation    |          ✓          |         ✓         |
+| Multiple Sessions   |          ✓          |         ✓         |
+| Claims-based Auth   |          ✗          |         ✓         |
 
 ### Common Operations
 
@@ -1597,7 +1582,7 @@ function sanitizeUsers(users: User[]): User[];
 
 ```typescript
 class DynamicAuthManager {
-  constructor(configStore: ConfigStore, providers: Record<string, AuthProvider>, sessionManager: SessionManager, userService: KnexUserService, refreshInterval?: number, enableConfigIntervalCheck?: boolean, internalConfig: AuthInternalConfig, EmailVerificationService?: EmailVerificationService, plugins?: AuthPlugin[]);
+  constructor(knex: Knex, configStore: ConfigStore, providers: Record<string, AuthProvider>, sessionManager: SessionManager, userService: KnexUserService, refreshInterval?: number, enableConfigIntervalCheck?: boolean, emailVerificationService?: EmailVerificationService, smsVerificationService?: SmsVerificationService, mfaService?: MfaService, rateLimiter?: RateLimiter, plugins?: AuthPlugin[]);
 
   // Core authentication methods
   async register(provider: string, credentials: Partial<User>, password: string);
