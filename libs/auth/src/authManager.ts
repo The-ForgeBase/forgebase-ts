@@ -4,7 +4,6 @@ import { sanitizeUser } from './lib/sanitize';
 import { BaseOAuthProvider } from './providers';
 import {
   AuthConfig,
-  AuthInternalConfig,
   AuthProvider,
   AuthRequiredType,
   AuthToken,
@@ -33,25 +32,48 @@ import { KnexUserService } from './userService';
 import crypto from 'crypto';
 import { PluginRegistry } from './plugins/registry';
 import { AuthPlugin } from './plugins/types';
+import { Knex } from 'knex';
 
 export class DynamicAuthManager {
   private config: AuthConfig;
-  private mfa?: MfaService;
-  private rateLimiter?: RateLimiter;
   private pluginRegistry: PluginRegistry;
+  private knex: Knex;
+  private configStore: ConfigStore;
+  private providers: Record<string, AuthProvider>;
+  private sessionManager: SessionManager;
+  private userService: KnexUserService;
+  private refreshInterval = 5000;
+  private enableConfigIntervalCheck = false;
+  private emailVerificationService?: EmailVerificationService;
+  private smsVerificationService?: SmsVerificationService;
+  private mfaService?: MfaService;
+  private rateLimiter?: RateLimiter;
 
   constructor(
-    private configStore: ConfigStore,
-    private providers: Record<string, AuthProvider>,
-    private sessionManager: SessionManager,
-    private userService: KnexUserService,
-    private refreshInterval = 5000,
-    private enableConfigIntervalCheck = false,
-    private internalConfig: AuthInternalConfig,
-    private emailVerificationService?: EmailVerificationService,
-    private smsVerificationService?: SmsVerificationService,
+    knex: Knex,
+    configStore: ConfigStore,
+    providers: Record<string, AuthProvider>,
+    sessionManager: SessionManager,
+    userService: KnexUserService,
+    refreshInterval = 5000,
+    enableConfigIntervalCheck = false,
+    emailVerificationService?: EmailVerificationService,
+    smsVerificationService?: SmsVerificationService,
+    mfaService?: MfaService,
+    rateLimiter?: RateLimiter,
     plugins: AuthPlugin[] = []
   ) {
+    this.knex = knex;
+    this.configStore = configStore;
+    this.providers = providers;
+    this.sessionManager = sessionManager;
+    this.userService = userService;
+    this.refreshInterval = refreshInterval;
+    this.enableConfigIntervalCheck = enableConfigIntervalCheck;
+    this.emailVerificationService = emailVerificationService;
+    this.smsVerificationService = smsVerificationService;
+    this.mfaService = mfaService;
+    this.rateLimiter = rateLimiter;
     this.watchConfig();
 
     // Then initialize plugins (needs to be done asynchronously after construction)
@@ -339,7 +361,7 @@ export class DynamicAuthManager {
   }
 
   getMfaStatus() {
-    if (!this.mfa) {
+    if (!this.mfaService) {
       return false;
     }
     return true;
@@ -541,14 +563,11 @@ export class DynamicAuthManager {
     const hash = await hashPassword(newPassword);
 
     // Update the user's password
-    await this.internalConfig
-      .knex(this.userService.getTable())
+    await this.knex(this.userService.getTable())
       .where(this.userService.getColumns().id, userId)
       .update({
         [this.userService.getColumns().passwordHash]: hash,
-        [this.userService.getColumns().updatedAt]: this.userService
-          .getInternalConfig()
-          .knex.fn.now(),
+        [this.userService.getColumns().updatedAt]: this.knex.fn.now(),
       });
 
     // If a token was used, consume it
@@ -580,7 +599,7 @@ export class DynamicAuthManager {
       if (!limit.allowed) throw new RateLimitExceededError();
     }
 
-    const isValid = this.mfa.verifyCode(user.mfa_secret, code);
+    const isValid = this.mfaService.verifyCode(user.mfa_secret, code);
 
     if (!isValid) {
       // Check recovery codes
@@ -614,7 +633,7 @@ export class DynamicAuthManager {
 
     // Initial setup
     if (!user.mfa_secret) {
-      const { secret, uri } = await this.mfa.generateSecret(user.email);
+      const { secret, uri } = await this.mfaService.generateSecret(user.email);
       await this.userService.updateUser(user.id, {
         ...user,
         mfa_secret: secret,
@@ -623,7 +642,7 @@ export class DynamicAuthManager {
     }
 
     // Final verification
-    if (!code || !this.mfa.verifyCode(user.mfa_secret, code)) {
+    if (!code || !this.mfaService.verifyCode(user.mfa_secret, code)) {
       throw new MfaRecoveryCodeInvalid();
     }
 
@@ -648,7 +667,7 @@ export class DynamicAuthManager {
     const user = await this.userService.findUser(userId);
     if (!user) throw new UserNotFoundError(userId);
     if (!user.mfa_enabled) throw new MfaNotEnabledError();
-    const isValid = this.mfa.verifyCode(user.mfa_secret, code);
+    const isValid = this.mfaService.verifyCode(user.mfa_secret, code);
 
     if (!isValid) {
       const validRecovery = user.mfa_recovery_codes.includes(code);
@@ -692,14 +711,11 @@ export class DynamicAuthManager {
     const hash = await hashPassword(newPassword);
 
     // Update the user's password
-    await this.internalConfig
-      .knex(this.userService.getTable())
+    await this.knex(this.userService.getTable())
       .where(this.userService.getColumns().id, userId)
       .update({
         [this.userService.getColumns().passwordHash]: hash,
-        [this.userService.getColumns().updatedAt]: this.userService
-          .getInternalConfig()
-          .knex.fn.now(),
+        [this.userService.getColumns().updatedAt]: this.knex.fn.now(),
       });
 
     // Execute post-password-change hooks

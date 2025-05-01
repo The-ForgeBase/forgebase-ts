@@ -8,17 +8,28 @@ export abstract class BaseOAuthProvider implements AuthProvider {
   abstract clientSecret: string;
   abstract callbackURL: string;
   abstract scopes: string[];
-  constructor(
-    public config: {
-      clientID?: string;
-      clientSecret?: string;
-      callbackURL: string;
-      scopes?: string[];
-      userService: UserService;
-      knex: Knex;
-      name: string;
-    }
-  ) {}
+
+  public config: {
+    clientID?: string;
+    clientSecret?: string;
+    callbackURL: string;
+    scopes?: string[];
+    userService: UserService;
+    knex: Knex;
+    name: string;
+  };
+
+  constructor(config: {
+    clientID?: string;
+    clientSecret?: string;
+    callbackURL: string;
+    scopes?: string[];
+    userService: UserService;
+    knex: Knex;
+    name: string;
+  }) {
+    this.config = config;
+  }
 
   async getConfig() {
     const result = await this.config

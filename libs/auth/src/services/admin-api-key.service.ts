@@ -7,7 +7,10 @@ import { AdminApiKey, AdminApiKeyCreateOptions } from '../types/admin';
  * Service for managing admin API keys
  */
 export class AdminApiKeyService {
-  constructor(private knex: Knex) {}
+  private knex: Knex;
+  constructor(knex: Knex) {
+    this.knex = knex;
+  }
 
   /**
    * Generate a new API key
@@ -102,12 +105,10 @@ export class AdminApiKeyService {
     }
 
     // Update last_used_at
-    await this.knex(AuthAdminApiKeysTable)
-      .where('id', result.id)
-      .update({
-        last_used_at: new Date(),
-        updated_at: new Date(),
-      });
+    await this.knex(AuthAdminApiKeysTable).where('id', result.id).update({
+      last_used_at: new Date(),
+      updated_at: new Date(),
+    });
 
     // Parse scopes if they exist
     if (result.scopes && typeof result.scopes === 'string') {
@@ -142,7 +143,9 @@ export class AdminApiKeyService {
    * @returns The API key if found, null otherwise
    */
   async getApiKeyById(id: string): Promise<AdminApiKey | null> {
-    const apiKey = await this.knex(AuthAdminApiKeysTable).where('id', id).first();
+    const apiKey = await this.knex(AuthAdminApiKeysTable)
+      .where('id', id)
+      .first();
 
     if (!apiKey) {
       return null;
@@ -209,7 +212,9 @@ export class AdminApiKeyService {
    * @returns True if the key was deleted, false otherwise
    */
   async deleteApiKey(id: string): Promise<boolean> {
-    const deleted = await this.knex(AuthAdminApiKeysTable).where('id', id).delete();
+    const deleted = await this.knex(AuthAdminApiKeysTable)
+      .where('id', id)
+      .delete();
     return deleted > 0;
   }
 
@@ -219,7 +224,9 @@ export class AdminApiKeyService {
    * @returns The number of keys deleted
    */
   async deleteAllApiKeys(adminId: string): Promise<number> {
-    return await this.knex(AuthAdminApiKeysTable).where('admin_id', adminId).delete();
+    return await this.knex(AuthAdminApiKeysTable)
+      .where('admin_id', adminId)
+      .delete();
   }
 
   /**

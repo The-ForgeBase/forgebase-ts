@@ -5,13 +5,19 @@ import crypto from 'crypto';
 import { AuthPasswordlessTokensTable } from '../config';
 
 export class PasswordlessProvider implements AuthProvider {
-  constructor(
-    private config: {
-      tokenStore: Knex;
-      userService: KnexUserService;
-      sendToken: (email: string, token: string) => Promise<void>;
-    }
-  ) {}
+  private config: {
+    tokenStore: Knex;
+    userService: KnexUserService;
+    sendToken: (email: string, token: string) => Promise<void>;
+  };
+
+  constructor(config: {
+    tokenStore: Knex;
+    userService: KnexUserService;
+    sendToken: (email: string, token: string) => Promise<void>;
+  }) {
+    this.config = config;
+  }
 
   async authenticate({ email }: { email: string }): Promise<null> {
     const token = crypto.randomBytes(32).toString('hex');

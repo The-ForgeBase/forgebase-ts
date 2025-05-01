@@ -19,12 +19,14 @@ export class JwtSessionManager implements SessionManager {
   private configStore: ConfigStore;
   private knex: Knex;
   private options: jwt.SignOptions;
+  private secret: string;
   constructor(
-    private secret: string,
+    secret: string,
     options: jwt.SignOptions = { expiresIn: '1h' },
     configStore: ConfigStore,
     knex: Knex
   ) {
+    this.secret = secret;
     this.configStore = configStore;
     this.knex = knex;
     this.options = {

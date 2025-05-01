@@ -1,15 +1,15 @@
+import { Knex } from 'knex';
 import { AuthUsersTable } from './config';
 import { hashPassword } from './lib/password';
-import { AuthInternalConfig, User, UserService } from './types';
+import { User, UserService } from './types';
 
 export class KnexUserService implements UserService {
   private table: string;
   private columns: Record<string, string>;
+  private knex: Knex;
 
-  private internalConfig: AuthInternalConfig;
-
-  constructor(internalConfig: AuthInternalConfig) {
-    this.internalConfig = internalConfig;
+  constructor(knex: Knex) {
+    this.knex = knex;
     this.table = AuthUsersTable;
     this.columns = {
       id: 'id',
@@ -18,10 +18,6 @@ export class KnexUserService implements UserService {
       createdAt: 'created_at',
       updatedAt: 'updated_at',
     };
-  }
-
-  getInternalConfig() {
-    return this.internalConfig;
   }
 
   getTable() {
@@ -33,37 +29,29 @@ export class KnexUserService implements UserService {
   }
 
   async findUser(identifier: string): Promise<User | null> {
-    return this.internalConfig
-      .knex(this.table)
+    return this.knex(this.table)
       .where(this.columns.email, identifier)
       .orWhere(this.columns.id, identifier)
       .first();
   }
 
   async findUserById(userId: string): Promise<User | null> {
-    return this.internalConfig
-      .knex(this.table)
-      .where(this.columns.id, userId)
-      .first();
+    return this.knex(this.table).where(this.columns.id, userId).first();
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
-    return this.internalConfig
-      .knex(this.table)
-      .where(this.columns.email, email)
-      .first();
+    return this.knex(this.table).where(this.columns.email, email).first();
   }
 
   async findUserByPhone(phone: string): Promise<User | null> {
-    return this.internalConfig.knex(this.table).where('phone', phone).first();
+    return this.knex(this.table).where('phone', phone).first();
   }
 
   async createUser(userData: Partial<User>, password?: string): Promise<User> {
     const { ...rest } = userData;
 
     // check if email is already taken
-    const existingUser = await this.internalConfig
-      .knex(this.table)
+    const existingUser = await this.knex(this.table)
       .where(this.columns.email, userData.email)
       .first();
 
@@ -77,13 +65,12 @@ export class KnexUserService implements UserService {
       throw new Error('Email is required');
     }
 
-    const user = await this.internalConfig
-      .knex(this.table)
+    const user = await this.knex(this.table)
       .insert({
         ...rest,
         [this.columns.passwordHash]: hash,
-        [this.columns.createdAt]: this.internalConfig.knex.fn.now(),
-        [this.columns.updatedAt]: this.internalConfig.knex.fn.now(),
+        [this.columns.createdAt]: this.knex.fn.now(),
+        [this.columns.updatedAt]: this.knex.fn.now(),
       })
       .returning('*');
 
@@ -93,12 +80,11 @@ export class KnexUserService implements UserService {
   }
 
   async updateUser(userId: string, userData: Partial<User>): Promise<User> {
-    const user = await this.internalConfig
-      .knex(this.table)
+    const user = await this.knex(this.table)
       .where(this.columns.id, userId)
       .update({
         ...userData,
-        [this.columns.updatedAt]: this.internalConfig.knex.fn.now(),
+        [this.columns.updatedAt]: this.knex.fn.now(),
       })
       .returning('*');
 
@@ -106,10 +92,7 @@ export class KnexUserService implements UserService {
   }
 
   async deleteUser(userId: string): Promise<void> {
-    await this.internalConfig
-      .knex(this.table)
-      .where(this.columns.id, userId)
-      .delete();
+    await this.knex(this.table).where(this.columns.id, userId).delete();
   }
 
   async removeRTP(
@@ -117,8 +100,7 @@ export class KnexUserService implements UserService {
     list: string[],
     type: 'teams' | 'permissions' | 'labels'
   ) {
-    const [user] = await this.internalConfig
-      .knex(this.table)
+    const [user] = await this.knex(this.table)
       .where(this.columns.id, userId)
       .first();
 
@@ -130,8 +112,7 @@ export class KnexUserService implements UserService {
         : user.teams.split(',');
     const newList = existingList.filter((el) => !list.includes(el));
 
-    await this.internalConfig
-      .knex(this.table)
+    await this.knex(this.table)
       .where(this.columns.id, userId)
       .update({
         [type]: newList.join(','),
@@ -145,8 +126,7 @@ export class KnexUserService implements UserService {
     list: string[],
     type: 'teams' | 'permissions' | 'labels'
   ) {
-    const [user] = await this.internalConfig
-      .knex(this.table)
+    const [user] = await this.knex(this.table)
       .where(this.columns.id, userId)
       .first();
 
@@ -158,8 +138,7 @@ export class KnexUserService implements UserService {
         : user.teams.split(',');
     const newList = [...existingList, ...list];
 
-    await this.internalConfig
-      .knex(this.table)
+    await this.knex(this.table)
       .where(this.columns.id, userId)
       .update({
         [type]: newList.join(','),
@@ -173,8 +152,7 @@ export class KnexUserService implements UserService {
     list: string[],
     type: 'teams' | 'permissions' | 'labels'
   ) {
-    await this.internalConfig
-      .knex(this.table)
+    await this.knex(this.table)
       .where(this.columns.id, userId)
       .update({
         [type]: list.join(','),
@@ -184,11 +162,8 @@ export class KnexUserService implements UserService {
   }
 
   async setRole(userId: string, role: string): Promise<void> {
-    await this.internalConfig
-      .knex(this.table)
-      .where(this.columns.id, userId)
-      .update({
-        role,
-      });
+    await this.knex(this.table).where(this.columns.id, userId).update({
+      role,
+    });
   }
 }

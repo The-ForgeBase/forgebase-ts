@@ -185,13 +185,13 @@ export const createWebAuthClient = (
   }
 
   const authManager = new DynamicAuthManager(
+    options.db,
     configStore,
     providers,
     sessionManager,
     userService,
     5000, // config refresh interval
     true, // enable config interval check
-    { knex: options.db, emailVerificationService, smsVerificationService }, // internal config
     emailVerificationService,
     smsVerificationService
   );

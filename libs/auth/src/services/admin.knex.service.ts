@@ -12,8 +12,11 @@ import { AuthAdminsTable } from '../config';
  */
 export class KnexAdminService implements AdminService {
   private readonly tableName = AuthAdminsTable;
+  private knex: Knex;
 
-  constructor(private knex: Knex) {}
+  constructor(knex: Knex) {
+    this.knex = knex;
+  }
 
   /**
    * Find an admin by email

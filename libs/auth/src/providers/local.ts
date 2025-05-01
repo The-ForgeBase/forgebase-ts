@@ -9,10 +9,16 @@ import {
 import { KnexUserService } from '../userService';
 
 export class LocalAuthProvider implements AuthProvider {
+  private configStore: ConfigStore;
+  private userService: KnexUserService;
+
   constructor(
-    private userService: KnexUserService,
-    private configStore: ConfigStore // private hashCompare?: (plain: string, hash: string) => Promise<boolean>
-  ) {}
+    userService: KnexUserService,
+    configStore: ConfigStore // private hashCompare?: (plain: string, hash: string) => Promise<boolean>
+  ) {
+    this.userService = userService;
+    this.configStore = configStore;
+  }
 
   async authenticate(credentials: { email: string; password: string }) {
     const user = await this.userService.findUser(credentials.email);

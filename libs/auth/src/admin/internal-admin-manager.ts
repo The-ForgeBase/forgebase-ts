@@ -30,25 +30,43 @@ interface AuditLogEntry {
  * Manager for internal admin functionality
  */
 export class InternalAdminManager {
-  private adminService: KnexAdminService;
-  private apiKeyService: AdminApiKeyService;
   private isEnabled = false;
   private hasInitialAdmin = false;
 
+  private knex: Knex;
+  private adminAuthProvider: AdminAuthProvider;
+  private adminSessionManager: AdminSessionManager;
+  private configStore: ConfigStore;
+  private adminConfig: {
+    initialAdminEmail: string;
+    initialAdminPassword: string;
+    enabled?: boolean;
+    createInitialApiKey: boolean;
+  };
+  private adminService: KnexAdminService;
+  private apiKeyService: AdminApiKeyService;
+
   constructor(
-    private knex: Knex,
-    private authProvider: AdminAuthProvider,
-    private sessionManager: AdminSessionManager,
-    private configStore: ConfigStore,
-    private config: {
+    knex: Knex,
+    adminAuthProvider: AdminAuthProvider,
+    adminSessionManager: AdminSessionManager,
+    configStore: ConfigStore,
+    adminConfig: {
       initialAdminEmail: string;
       initialAdminPassword: string;
       enabled?: boolean;
       createInitialApiKey: boolean;
-    }
+    },
+    adminService: KnexAdminService,
+    apiKeyService: AdminApiKeyService
   ) {
-    this.adminService = new KnexAdminService(knex);
-    this.apiKeyService = new AdminApiKeyService(knex);
+    this.knex = knex;
+    this.adminAuthProvider = adminAuthProvider;
+    this.adminSessionManager = adminSessionManager;
+    this.configStore = configStore;
+    this.adminConfig = adminConfig;
+    this.adminService = adminService;
+    this.apiKeyService = apiKeyService;
   }
 
   /**
@@ -57,7 +75,7 @@ export class InternalAdminManager {
    */
   async initialize(): Promise<void> {
     // Check if admin feature is enabled
-    this.isEnabled = this.config.enabled || true;
+    this.isEnabled = this.adminConfig.enabled || true;
 
     if (!this.isEnabled) {
       return;
@@ -66,9 +84,9 @@ export class InternalAdminManager {
     // Create initial admin if not exists
     console.log('Initializing admin manager...');
     this.ensureInitialAdmin(
-      this.config.initialAdminEmail,
-      this.config.initialAdminEmail,
-      this.config.createInitialApiKey
+      this.adminConfig.initialAdminEmail,
+      this.adminConfig.initialAdminEmail,
+      this.adminConfig.createInitialApiKey
     );
 
     console.log('InternalAdminManager initialized successfully.');
@@ -156,12 +174,15 @@ export class InternalAdminManager {
   ): Promise<{ admin: InternalAdmin; token: string }> {
     this.checkEnabled();
 
-    const admin = await this.authProvider.authenticate({ email, password });
+    const admin = await this.adminAuthProvider.authenticate({
+      email,
+      password,
+    });
     if (!admin) {
       throw new Error('Invalid email or password');
     }
 
-    const token = await this.sessionManager.createSession(admin);
+    const token = await this.adminSessionManager.createSession(admin);
 
     await this.createAuditLog({
       admin_id: admin.id,
@@ -179,7 +200,7 @@ export class InternalAdminManager {
    */
   async validateToken(token: string): Promise<{ admin: InternalAdmin }> {
     this.checkEnabled();
-    return this.sessionManager.verifySession(token);
+    return this.adminSessionManager.verifySession(token);
   }
 
   /**
@@ -190,7 +211,7 @@ export class InternalAdminManager {
     this.checkEnabled();
     const { admin } = await this.validateToken(token);
 
-    await this.sessionManager.destroySession(token);
+    await this.adminSessionManager.destroySession(token);
 
     await this.createAuditLog({
       admin_id: admin.id,

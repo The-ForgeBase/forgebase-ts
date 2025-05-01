@@ -7,7 +7,7 @@ import { AuthSessionsTable } from '../config';
 export class BasicSessionManager implements SessionManager {
   private configStore: ConfigStore;
   private knex: Knex;
-  constructor(private secret: string, configStore: ConfigStore, knex: Knex) {
+  constructor(configStore: ConfigStore, knex: Knex) {
     this.configStore = configStore;
     this.knex = knex;
   }

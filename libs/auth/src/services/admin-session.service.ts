@@ -22,15 +22,19 @@ export class KnexAdminSessionManager implements AdminSessionManager {
   private readonly tableName = AuthAdminSessionsTable;
   private readonly jwtSecret: string;
   private readonly tokenExpiry: string;
+  private knex: Knex;
+  private adminService: KnexAdminService;
 
   constructor(
-    private knex: Knex,
-    private adminService: KnexAdminService,
+    knex: Knex,
+    adminService: KnexAdminService,
     options: {
       jwtSecret?: string;
       tokenExpiry?: string;
     } = {}
   ) {
+    this.knex = knex;
+    this.adminService = adminService;
     this.jwtSecret =
       options.jwtSecret || crypto.randomBytes(32).toString('hex');
     this.tokenExpiry = options.tokenExpiry || '24h';

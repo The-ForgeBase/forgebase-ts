@@ -99,8 +99,12 @@ export class PlunkEmailVerificationService implements EmailVerificationService {
   private readonly tableName = AuthVerificationTokensTable;
   private readonly tokenExpiryMinutes: number;
   private transporter: Transporter | null = null;
+  private knex: Knex;
+  private config: PlunkVerificationConfig;
 
-  constructor(private knex: Knex, private config: PlunkVerificationConfig) {
+  constructor(knex: Knex, config: PlunkVerificationConfig) {
+    this.knex = knex;
+    this.config = config;
     this.tokenExpiryMinutes = config.tokenExpiryMinutes || 15; // Default 15 minutes
 
     // Initialize nodemailer transporter if configured

@@ -5,7 +5,10 @@ import { KnexAdminService } from './admin.knex.service';
  * Authentication provider for admin login
  */
 export class BasicAdminAuthProvider implements AdminAuthProvider {
-  constructor(private adminService: KnexAdminService) {}
+  private adminService: KnexAdminService;
+  constructor(adminService: KnexAdminService) {
+    this.adminService = adminService;
+  }
 
   /**
    * Authenticate an admin using email and password

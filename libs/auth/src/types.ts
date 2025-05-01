@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { Knex } from 'knex';
 import { z } from 'zod';
 
 export const AuthConfigSchema = z.object({
@@ -58,18 +57,6 @@ export const AuthConfigSchema = z.object({
 });
 
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;
-
-export interface AuthInternalConfig {
-  knex: Knex;
-  mfaService?: MfaService;
-  rateLimiter?: RateLimiter;
-  emailVerificationService?: EmailVerificationService;
-  smsVerificationService?: SmsVerificationService;
-}
-
-export interface JwksResponse {
-  keys: Array<Record<string, any>>;
-}
 
 export interface UserService {
   findUser(identifier: string): Promise<User | null>;
@@ -206,6 +193,7 @@ export interface AuthProvider {
   validate?(token: string): Promise<User>;
   register?(user: Partial<User>, password: string): Promise<User>;
   getConfig?(): Promise<Record<string, string>>;
+  initialize?(): Promise<void>;
   //   verifyEmail?(token: string): Promise<void>;
   //   sendVerificationEmail?(email: string): Promise<void>;
   //   verifyPhone?(token: string): Promise<void>;
