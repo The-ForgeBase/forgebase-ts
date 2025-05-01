@@ -1,5 +1,6 @@
 import { AuthPlugin } from './types';
 import { AuthProvider } from '../types';
+import { BaseOAuthProvider } from '../providers/oauth';
 
 export class PluginRegistry {
   private plugins: Map<string, AuthPlugin> = new Map();
@@ -19,8 +20,8 @@ export class PluginRegistry {
     return Array.from(this.plugins.values());
   }
 
-  getAllProviders(): Record<string, AuthProvider> {
-    const providers: Record<string, AuthProvider> = {};
+  getAllProviders(): Record<string, AuthProvider | BaseOAuthProvider> {
+    const providers: Record<string, AuthProvider | BaseOAuthProvider> = {};
 
     for (const plugin of this.plugins.values()) {
       const pluginProviders = plugin.getProviders();

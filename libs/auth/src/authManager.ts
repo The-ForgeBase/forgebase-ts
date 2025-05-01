@@ -18,8 +18,6 @@ import {
   OAuthProviderNotExist,
   ProviderDoesNotSupportReg,
   ProviderNotEnabled,
-  RateLimiter,
-  RateLimitExceededError,
   SessionManager,
   User,
   UserNotFoundError,
@@ -47,7 +45,6 @@ export class DynamicAuthManager {
   private emailVerificationService?: EmailVerificationService;
   private smsVerificationService?: SmsVerificationService;
   private mfaService?: MfaService;
-  private rateLimiter?: RateLimiter;
 
   constructor(
     knex: Knex,
@@ -59,7 +56,6 @@ export class DynamicAuthManager {
     emailVerificationService?: EmailVerificationService,
     smsVerificationService?: SmsVerificationService,
     mfaService?: MfaService,
-    rateLimiter?: RateLimiter,
     plugins: AuthPlugin[] = []
   ) {
     this.knex = knex;
@@ -72,7 +68,6 @@ export class DynamicAuthManager {
     this.emailVerificationService = emailVerificationService;
     this.smsVerificationService = smsVerificationService;
     this.mfaService = mfaService;
-    this.rateLimiter = rateLimiter;
     this.watchConfig();
 
     // Then initialize plugins (needs to be done asynchronously after construction)
@@ -159,11 +154,6 @@ export class DynamicAuthManager {
   }> {
     if (!this.config.enabledProviders.includes(provider)) {
       throw new ProviderNotEnabled(provider);
-    }
-
-    if (this.rateLimiter) {
-      const limit = await this.rateLimiter.checkLimit(credentials.email);
-      if (!limit.allowed) throw new RateLimitExceededError();
     }
 
     const authProvider = this.providers[provider];
@@ -309,11 +299,6 @@ export class DynamicAuthManager {
     }
 
     await this.executeHooks('beforeLogin', { provider, credentials });
-
-    if (this.rateLimiter) {
-      const limit = await this.rateLimiter.checkLimit(credentials.email);
-      if (!limit.allowed) throw new RateLimitExceededError();
-    }
 
     const authProvider = this.providers[provider];
     if (!authProvider) throw new InvalidProvider();
@@ -603,11 +588,6 @@ export class DynamicAuthManager {
 
     const user = await this.userService.findUser(userId);
     if (!user) throw new UserNotFoundError(userId);
-
-    if (this.rateLimiter) {
-      const limit = await this.rateLimiter.checkLimit(user.id);
-      if (!limit.allowed) throw new RateLimitExceededError();
-    }
 
     const isValid = this.mfaService.verifyCode(user.mfa_secret, code);
 

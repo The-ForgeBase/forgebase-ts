@@ -1,4 +1,10 @@
-import { createContainer, asClass, asValue, InjectionMode } from 'awilix';
+import {
+  createContainer,
+  asClass,
+  asValue,
+  InjectionMode,
+  AwilixContainer,
+} from 'awilix';
 import { Knex } from 'knex';
 import { InternalAdminManager } from './admin/internal-admin-manager';
 import { KnexAdminService } from './services/admin.knex.service';
@@ -237,7 +243,7 @@ export function createAuthContainer(deps: ContainerDependencies) {
 
 // Initialize all services that require it
 export async function initializeContainer(
-  container: ReturnType<typeof createAuthContainer>
+  container: AwilixContainer<AuthCradle>
 ) {
   const configStore = container.cradle.configStore;
   await configStore.initialize();
@@ -263,21 +269,3 @@ export async function initializeContainer(
 
   return container;
 }
-
-// Usage example:
-/*
-const container = createAuthContainer({
-  knex: knexInstance,
-  authProvider: new MyAuthProvider(),
-  sessionManager: new MySessionManager(),
-  configStore: new MyConfigStore(),
-  adminConfig: {
-    initialAdminEmail: 'admin@example.com',
-    initialAdminPassword: 'password',
-    enabled: true,
-    createInitialApiKey: true
-  }
-});
-
-const adminManager = container.resolve<InternalAdminManager>('adminManager');
-*/
