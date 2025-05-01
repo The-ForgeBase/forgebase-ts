@@ -219,56 +219,18 @@ export function createAuthContainer(deps: ContainerDependencies) {
             },
           }))
       : undefined,
-
-    // Register providers
-    providers: asValue({
-      // Built-in providers
-      local: deps.local.enabled
-        ? container.resolve('localAuthProvider')
-        : undefined,
-      passwordless: deps.passwordless?.enabled
-        ? container.resolve('passwordlessProvider')
-        : undefined,
-      // Custom providers
-      ...(deps.providers
-        ? Object.fromEntries(
-            Object.entries(deps.providers)
-              .filter(([key]) => !['local', 'passwordless'].includes(key))
-              .map(([key, Provider]) => {
-                if (typeof Provider === 'function') {
-                  // If it's a class/constructor, instantiate with container deps
-                  const ProviderClass = Provider as new (config: {
-                    userService: UserService;
-                    knex: Knex;
-                    [key: string]: unknown;
-                  }) => AuthProvider;
-                  // Build config by resolving dependencies from container when possible
-                  const config = {
-                    userService: container.resolve('userService'),
-                    knex: container.resolve('knex'),
-                    // Try to resolve any additional dependencies from container
-                    ...(Provider.prototype.config || {}),
-                    ...Object.fromEntries(
-                      Object.keys(Provider.prototype.config || {}).map(
-                        (key) => [
-                          key,
-                          container.hasRegistration(key)
-                            ? container.resolve(key)
-                            : Provider.prototype.config[key],
-                        ]
-                      )
-                    ),
-                  };
-
-                  return [key, new ProviderClass(config)];
-                }
-                // If it's already an instance, use as is
-                return [key, Provider];
-              })
-          )
-        : {}),
-    }),
   });
+
+  const local = container.cradle.localAuthProvider;
+  const passwordless = container.cradle.passwordlessProvider;
+
+  if (local) {
+    container.cradle.authManager.registerProvider('local', local);
+  }
+
+  if (passwordless) {
+    container.cradle.authManager.registerProvider('passwordless', passwordless);
+  }
 
   return container;
 }
@@ -283,17 +245,7 @@ export async function initializeContainer(
   const adminManager = container.cradle.adminManager;
   await adminManager.initialize();
 
-  // Initialize auth providers if they need initialization
-  const providers = container.cradle.providers;
-  const names_of_providers = Object.keys(providers);
-  for (const [name, provider] of Object.entries(providers)) {
-    if ('initialize' in provider && typeof provider.initialize === 'function') {
-      await provider.initialize();
-    }
-  }
-
   configStore.updateConfig({
-    enabledProviders: names_of_providers,
     adminFeature: {
       enabled: container.cradle.adminConfig.enabled,
       createInitialApiKey: container.cradle.adminConfig.createInitialApiKey,

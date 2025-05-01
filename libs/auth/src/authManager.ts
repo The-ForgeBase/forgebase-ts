@@ -39,7 +39,7 @@ export class DynamicAuthManager {
   private pluginRegistry: PluginRegistry;
   private knex: Knex;
   private configStore: ConfigStore;
-  private providers: Record<string, AuthProvider>;
+  providers: Record<string, AuthProvider>;
   private sessionManager: SessionManager;
   private userService: KnexUserService;
   private refreshInterval = 5000;
@@ -52,7 +52,6 @@ export class DynamicAuthManager {
   constructor(
     knex: Knex,
     configStore: ConfigStore,
-    providers: Record<string, AuthProvider>,
     sessionManager: SessionManager,
     userService: KnexUserService,
     refreshInterval = 5000,
@@ -65,7 +64,7 @@ export class DynamicAuthManager {
   ) {
     this.knex = knex;
     this.configStore = configStore;
-    this.providers = providers;
+    this.providers = {};
     this.sessionManager = sessionManager;
     this.userService = userService;
     this.refreshInterval = refreshInterval;
@@ -84,6 +83,17 @@ export class DynamicAuthManager {
 
   getUserService() {
     return this.userService;
+  }
+
+  registerProvider(
+    provider: string,
+    authProvider: AuthProvider | BaseOAuthProvider
+  ) {
+    this.providers[provider] = authProvider;
+    // update config
+    this.configStore.updateConfig({
+      enabledProviders: Object.keys(this.providers),
+    });
   }
 
   private async watchConfig() {

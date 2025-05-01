@@ -143,7 +143,7 @@ export class AuthConfigService implements OnModuleInit {
 
       // Register the provider with the auth manager
       const authManager = this.container.cradle.authManager;
-      // await authManager.registerProvider('google', googleProvider);
+      authManager.registerProvider('google', googleProvider);
 
       this.isInitialized = true;
 
