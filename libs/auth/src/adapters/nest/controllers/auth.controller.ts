@@ -203,7 +203,7 @@ export class AuthController {
       }
 
       const providerConfig = await this.authService.getProviderConfig(provider);
-      const redirectUrl = providerConfig.redirect_url || '/';
+      const redirectUrl = providerConfig.callbackURL || '/';
 
       if (typeof token === 'object' && token !== null) {
         res.cookie('token', token.accessToken, {

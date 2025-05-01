@@ -1,3 +1,6 @@
+import { InternalAdmin } from '../../types/admin';
+import { AuthToken, User } from '../../types';
+import { UserContext } from '@forgebase-ts/database';
 import { Request } from 'express';
 import { CookieOptions } from 'express';
 
@@ -10,15 +13,15 @@ export type ExpressAuthConfig = {
 };
 
 export interface ExpressAuthRequest extends Request {
-  user?: any;
-  userContext?: any;
-  token?: any;
-  newToken?: any;
+  user?: User;
+  userContext?: UserContext;
+  token?: string | AuthToken;
+  newToken?: string | AuthToken;
   isPublic?: boolean;
   isSystem?: boolean;
   isAdmin?: boolean;
   isApiKeyAuth?: boolean;
   scopes?: string[];
   adminApiKeyScopes?: string[];
-  admin?: any;
+  admin?: InternalAdmin;
 }

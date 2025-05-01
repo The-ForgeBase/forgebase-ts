@@ -4,6 +4,7 @@ import { MagicLinkProvider } from './magic-link-provider';
 import { EmailService, DefaultEmailService } from './email-service';
 import { AuthPlugin } from '../../types';
 import { DynamicAuthManager } from '../../../authManager';
+import { BaseOAuthProvider } from '../../../providers';
 
 /**
  * Plugin for magic link authentication (passwordless email login)
@@ -43,7 +44,7 @@ export class MagicLinkPlugin implements AuthPlugin {
     setInterval(() => this.cleanupExpiredTokens(), 60000); // Every minute
   }
 
-  getProviders(): Record<string, AuthProvider> {
+  getProvider(): Record<string, AuthProvider | BaseOAuthProvider> {
     return {
       magicLink: this.provider,
     };

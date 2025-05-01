@@ -37,7 +37,7 @@ export class DynamicAuthManager {
   private pluginRegistry: PluginRegistry;
   private knex: Knex;
   private configStore: ConfigStore;
-  providers: Record<string, AuthProvider>;
+  providers: Record<string, AuthProvider | BaseOAuthProvider>;
   private sessionManager: SessionManager;
   private userService: KnexUserService;
   private refreshInterval = 5000;
@@ -55,8 +55,7 @@ export class DynamicAuthManager {
     enableConfigIntervalCheck = false,
     emailVerificationService?: EmailVerificationService,
     smsVerificationService?: SmsVerificationService,
-    mfaService?: MfaService,
-    plugins: AuthPlugin[] = []
+    mfaService?: MfaService
   ) {
     this.knex = knex;
     this.configStore = configStore;
@@ -69,11 +68,6 @@ export class DynamicAuthManager {
     this.smsVerificationService = smsVerificationService;
     this.mfaService = mfaService;
     this.watchConfig();
-
-    // Then initialize plugins (needs to be done asynchronously after construction)
-    this.initializePlugins(plugins).catch((err) => {
-      console.error('Error initializing plugins:', err);
-    });
   }
 
   getUserService() {
@@ -104,18 +98,6 @@ export class DynamicAuthManager {
     }
   }
 
-  private async initializePlugins(plugins: AuthPlugin[]) {
-    this.pluginRegistry = new PluginRegistry();
-    for (const plugin of plugins) {
-      await this.pluginRegistry.register(plugin);
-      await plugin.initialize(this);
-    }
-
-    // Add providers from plugins to the existing providers
-    const pluginProviders = this.pluginRegistry.getAllProviders();
-    this.providers = { ...this.providers, ...pluginProviders };
-  }
-
   // Add proper error handling for hooks
   private async executeHooks(event: string, data: any): Promise<void> {
     try {
@@ -134,12 +116,46 @@ export class DynamicAuthManager {
     await plugin.initialize(this);
 
     // Add new providers from this plugin
-    const pluginProviders = plugin.getProviders();
+    const pluginProviders = plugin.getProvider();
     this.providers = { ...this.providers, ...pluginProviders };
+    await this.configStore.updateConfig({
+      enabledProviders: Object.keys(this.providers),
+    });
   }
 
   getPlugins(): AuthPlugin[] {
     return this.pluginRegistry.getAllPlugins();
+  }
+
+  getPlugin(name: string): AuthPlugin {
+    return this.pluginRegistry.getPlugin(name);
+  }
+
+  getEmailVerificationService() {
+    return this.emailVerificationService;
+  }
+
+  getProviders() {
+    return this.providers;
+  }
+
+  getProvider(provider: string) {
+    return this.providers[provider];
+  }
+
+  getProviderConfig(provider: string) {
+    return this.providers[provider].getConfig();
+  }
+
+  getConfig() {
+    return this.config;
+  }
+
+  getMfaStatus() {
+    if (!this.mfaService) {
+      return false;
+    }
+    return true;
   }
 
   async register(
@@ -158,7 +174,6 @@ export class DynamicAuthManager {
 
     const authProvider = this.providers[provider];
     if (!authProvider) throw new InvalidProvider();
-    if (!authProvider.register) throw new ProviderDoesNotSupportReg(provider);
 
     if (authProvider instanceof BaseOAuthProvider) {
       const url = await authProvider.getAuthorizationUrl();
@@ -172,6 +187,8 @@ export class DynamicAuthManager {
 
       return { user: undefined, token: provider, url };
     }
+
+    if (!authProvider.register) throw new ProviderDoesNotSupportReg(provider);
 
     const user = await authProvider.register(credentials, password);
 
@@ -222,22 +239,6 @@ export class DynamicAuthManager {
       token: '',
       verificationToken: verificationToken || undefined,
     };
-  }
-
-  getEmailVerificationService() {
-    return this.emailVerificationService;
-  }
-
-  getProviders() {
-    return this.providers;
-  }
-
-  getProvider(provider: string) {
-    return this.providers[provider];
-  }
-
-  getProviderConfig(provider: string) {
-    return this.providers[provider].getConfig();
   }
 
   async oauthCallback(
@@ -351,17 +352,6 @@ export class DynamicAuthManager {
     return { user: sanitizeUser(user), token };
   }
 
-  getConfig() {
-    return this.config;
-  }
-
-  getMfaStatus() {
-    if (!this.mfaService) {
-      return false;
-    }
-    return true;
-  }
-
   async refreshToken(refreshToken: string) {
     return this.sessionManager.refreshSession(refreshToken);
   }
@@ -382,6 +372,10 @@ export class DynamicAuthManager {
       const authProvider = this.providers[provider];
 
       if (!authProvider) throw new InvalidProvider();
+
+      if (authProvider instanceof BaseOAuthProvider) {
+        throw new InvalidProvider();
+      }
 
       const user = await authProvider.validate(token);
       if (!user) {
@@ -763,5 +757,6 @@ export class AuthConfigAPI {
 
   private async auditLog(userId: string, action: string, details: object) {
     //TODO: Implement audit logging
+    console.log(userId, action, details);
   }
 }

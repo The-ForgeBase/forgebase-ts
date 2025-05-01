@@ -6,7 +6,7 @@ export interface AuthPlugin {
   name: string;
   version: string;
   initialize(authManager: DynamicAuthManager): Promise<void>;
-  getProviders(): Record<string, AuthProvider | BaseOAuthProvider>;
+  getProvider(): Record<string, AuthProvider | BaseOAuthProvider>;
 
   // Optional extension points
   getMiddlewares?(): Record<string, any>;

@@ -46,5 +46,5 @@ export function initializeUltimateExpressAuth(
   };
 }
 
-export { createAuthRouter, createAdminRouter, middleware, utils };
+export { middleware, utils };
 export type { UltimateExpressAuthConfig };

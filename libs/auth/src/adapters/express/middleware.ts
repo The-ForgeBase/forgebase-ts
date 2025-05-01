@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import {
   applySessionToRequest,
-  extractTokenFromRequest,
   processAuthTokens,
   setAuthCookies,
 } from './utils';
 import { DynamicAuthManager } from '../../authManager';
 import { ExpressAuthConfig, ExpressAuthRequest } from './types';
+import { InternalAdminManager } from '../../admin/internal-admin-manager';
 
 export async function userContextMiddleware(
   req: ExpressAuthRequest,
@@ -14,7 +14,7 @@ export async function userContextMiddleware(
   next: NextFunction,
   authManager: DynamicAuthManager,
   config: ExpressAuthConfig,
-  adminManager?: any
+  adminManager?: InternalAdminManager
 ) {
   try {
     const sessionData = await processAuthTokens(

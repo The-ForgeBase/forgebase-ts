@@ -21,27 +21,27 @@ import axios from 'axios';
 // In your component
 const MobileComponent = () => {
   const { getAccessToken, getRefreshToken } = useAuth();
-  
+
   // Function to call your web app's API with the token
   const callWebAppApi = async () => {
     try {
       // Get the current access token
       const accessToken = getAccessToken();
-      
+
       // Make a request to your web app's API with the token
       const response = await axios.get('https://your-web-app.com/api/data', {
         headers: {
           Authorization: `Bearer ${accessToken}`
         }
       });
-      
+
       return response.data;
     } catch (error) {
       console.error('API call failed:', error);
       throw error;
     }
   };
-  
+
   return (
     // Your component UI
   );
@@ -62,9 +62,9 @@ export async function validateMobileToken(token: string) {
   try {
     // Call the auth server to validate the token
     const response = await axios.post('https://your-auth-server.com/auth/verify-token', {
-      token
+      token,
     });
-    
+
     // If the token is valid, the response will contain the user data
     return response.data;
   } catch (error) {
@@ -81,58 +81,24 @@ export async function handler(req, res) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Missing or invalid token' });
     }
-    
+
     const token = authHeader.substring(7);
-    
+
     // Validate the token
     const validation = await validateMobileToken(token);
-    
+
     if (validation.valid) {
       // Token is valid, proceed with the request
       // You can use validation.user to access the user data
       return res.json({
         message: 'Authenticated successfully',
-        user: validation.user
+        user: validation.user,
       });
     } else {
       return res.status(401).json({ error: 'Invalid token' });
     }
   } catch (error) {
     return res.status(401).json({ error: 'Authentication failed' });
-  }
-}
-```
-
-## Using JWKS Verification (Alternative Approach)
-
-For a more decentralized approach, you can use JWKS verification to validate tokens without contacting the auth server:
-
-```typescript
-import { TokenVerifier } from '@forgebase-ts/auth';
-
-// Create a token verifier instance
-const verifier = new TokenVerifier({
-  jwksUrl: 'https://your-auth-server.com/.well-known/jwks.json',
-  cacheTimeMs: 3600000 // Cache for 1 hour
-});
-
-// Validate a token
-async function validateTokenWithJwks(token: string) {
-  try {
-    const { payload } = await verifier.verifyToken(token);
-    
-    return {
-      valid: true,
-      userId: payload.sub,
-      email: payload.email,
-      // Other claims from the token
-    };
-  } catch (error) {
-    console.error('Token validation failed:', error);
-    return {
-      valid: false,
-      error: error.message
-    };
   }
 }
 ```

@@ -24,11 +24,17 @@ export class PluginRegistry {
     const providers: Record<string, AuthProvider | BaseOAuthProvider> = {};
 
     for (const plugin of this.plugins.values()) {
-      const pluginProviders = plugin.getProviders();
+      const pluginProviders = plugin.getProvider();
       Object.assign(providers, pluginProviders);
     }
 
     return providers;
+  }
+
+  getProvider(name: string): Record<string, AuthProvider | BaseOAuthProvider> {
+    const plugin = this.plugins.get(name);
+
+    return plugin.getProvider();
   }
 
   getHooks(event: string): Array<(data: any) => Promise<void>> {

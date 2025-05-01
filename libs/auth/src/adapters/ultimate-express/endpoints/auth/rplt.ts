@@ -15,7 +15,7 @@ function adminGuard(
 ): any {
   // Implement your admin check logic here
   // For now, assume req.user.isAdmin or similar
-  if (req.user && req.user.isAdmin) {
+  if (req.user && req.isAdmin) {
     return next();
   }
   return res.status(403).json({ error: 'Admin access required' });

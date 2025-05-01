@@ -13,7 +13,6 @@ import { AdminApiKeyController } from './controllers/admin-api-key.controller';
 import { AdminGuard } from './guards/admin.guard';
 import { AdminService } from './services/admin.service';
 import { NestAuthConfig } from '.';
-import { createAuthContainer, initializeContainer } from '../../container';
 import { AwilixContainer } from 'awilix';
 import { AuthCradle } from '../../container';
 

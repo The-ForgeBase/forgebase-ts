@@ -1,10 +1,4 @@
-import {
-  createContainer,
-  asClass,
-  asValue,
-  InjectionMode,
-  AwilixContainer,
-} from 'awilix';
+import { createContainer, asClass, asValue, InjectionMode } from 'awilix';
 import { Knex } from 'knex';
 import { InternalAdminManager } from './admin/internal-admin-manager';
 import { KnexAdminService } from './services/admin.knex.service';
@@ -114,7 +108,6 @@ export interface AuthCradle {
   authManager: DynamicAuthManager;
   refreshInterval: number;
   enableConfigIntervalCheck: boolean;
-  plugins: AuthPlugin[];
   emailVerificationService?: EmailVerificationService;
   smsVerificationService?: SmsVerificationService;
   userService: UserService | KnexUserService;
@@ -157,7 +150,6 @@ export function createAuthContainer(deps: ContainerDependencies) {
     enableConfigIntervalCheck: deps.enableConfigIntervalCheck
       ? asValue(deps.enableConfigIntervalCheck)
       : asValue(true),
-    plugins: deps.plugins ? asValue(deps.plugins) : asValue([]),
     emailVerificationService: deps.email.usePlunk
       ? asClass(PlunkEmailVerificationService)
           .singleton()
@@ -229,6 +221,7 @@ export function createAuthContainer(deps: ContainerDependencies) {
 
   const local = container.cradle.localAuthProvider;
   const passwordless = container.cradle.passwordlessProvider;
+  const plugins = deps.plugins;
 
   if (local) {
     container.cradle.authManager.registerProvider('local', local);
@@ -238,11 +231,13 @@ export function createAuthContainer(deps: ContainerDependencies) {
     container.cradle.authManager.registerProvider('passwordless', passwordless);
   }
 
-  return container;
-}
+  if (plugins) {
+    plugins.forEach((p) => {
+      p.initialize(container.cradle.authManager);
+      container.cradle.authManager.registerPlugin(p);
+    });
+  }
 
-// Initialize all services that require it
-export function initializeContainer(container: AwilixContainer<AuthCradle>) {
   const configStore = container.cradle.configStore;
   configStore.initialize();
 

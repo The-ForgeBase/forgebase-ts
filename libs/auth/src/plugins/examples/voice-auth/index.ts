@@ -1,3 +1,4 @@
+import { BaseOAuthProvider } from '../../../providers';
 import { DynamicAuthManager } from '../../../authManager';
 import { AuthProvider, User } from '../../../types';
 import { AuthPlugin } from '../../types';
@@ -35,7 +36,7 @@ export class VoiceAuthPlugin implements AuthPlugin {
     // Any initialization logic - perhaps set up database tables or connections
   }
 
-  getProviders(): Record<string, AuthProvider> {
+  getProvider(): Record<string, AuthProvider | BaseOAuthProvider> {
     return {
       voice: this.provider,
     };

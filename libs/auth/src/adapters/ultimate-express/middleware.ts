@@ -6,6 +6,7 @@ import {
 } from './utils';
 import { DynamicAuthManager } from '../../authManager';
 import { UltimateExpressAuthConfig, UltimateExpressAuthRequest } from './types';
+import { InternalAdminManager } from '../../admin/internal-admin-manager';
 
 export async function userContextMiddleware(
   req: UltimateExpressAuthRequest,
@@ -13,7 +14,7 @@ export async function userContextMiddleware(
   next: NextFunction,
   authManager: DynamicAuthManager,
   config: UltimateExpressAuthConfig,
-  adminManager?: any
+  adminManager?: InternalAdminManager
 ) {
   try {
     const sessionData = await processAuthTokens(

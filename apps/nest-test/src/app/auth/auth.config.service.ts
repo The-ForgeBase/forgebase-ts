@@ -3,7 +3,6 @@ import {
   User,
   AuthCradle,
   createAuthContainer,
-  initializeContainer,
   GoogleOAuthProvider,
 } from '@forgebase-ts/auth';
 import { Knex } from 'knex';
@@ -112,8 +111,6 @@ export class AuthConfigService implements OnModuleInit {
       this.logger.log(
         'AuthConfigService: All components initialized successfully'
       );
-
-      initializeContainer(this.container);
 
       // Create Google provider with dependencies from container
       const googleProvider = new GoogleOAuthProvider({

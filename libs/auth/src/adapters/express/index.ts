@@ -16,7 +16,7 @@ export type AuthClientConfig = {
   deps: ContainerDependencies;
 };
 
-export const createWebAuthClient = (
+export const createExpressAuthClient = (
   options: AuthClientConfig
 ): {
   container: AwilixContainer<AuthCradle>;
@@ -46,5 +46,5 @@ export function initializeExpressAuth(
   };
 }
 
-export { createAuthRouter, createAdminRouter, middleware, utils };
+export { middleware, utils };
 export type { ExpressAuthConfig };
