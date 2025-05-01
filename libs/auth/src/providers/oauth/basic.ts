@@ -17,6 +17,7 @@ export abstract class BaseOAuthProvider implements AuthProvider {
     userService: UserService;
     knex: Knex;
     name: string;
+    redirect_url: string;
   };
 
   constructor(config: {
@@ -27,6 +28,7 @@ export abstract class BaseOAuthProvider implements AuthProvider {
     userService: UserService;
     knex: Knex;
     name: string;
+    redirect_url: string;
   }) {
     this.config = config;
   }
@@ -54,6 +56,7 @@ export abstract class BaseOAuthProvider implements AuthProvider {
       clientSecret: result?.client_secret || this.config.clientSecret,
       callbackURL: this.config.callbackURL,
       scopes: result?.scopes?.split(',') || this.config.scopes,
+      redirect_url: this.config.redirect_url,
     };
 
     return config;

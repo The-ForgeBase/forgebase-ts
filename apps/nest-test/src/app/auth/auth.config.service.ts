@@ -112,6 +112,7 @@ export class AuthConfigService implements OnModuleInit {
         'AuthConfigService: All components initialized successfully'
       );
 
+      //FIXME: redirect_url is having a bug
       // Create Google provider with dependencies from container
       const googleProvider = new GoogleOAuthProvider({
         clientID: process.env.GOOGLE_CLIENT_ID || '',
@@ -121,6 +122,7 @@ export class AuthConfigService implements OnModuleInit {
         name: 'google',
         userService: this.container.cradle.userService,
         knex: this.container.cradle.knex,
+        redirect_url: '',
       });
 
       // Register the provider with the auth manager

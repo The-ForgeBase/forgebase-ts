@@ -22,6 +22,7 @@ export class GoogleOAuthProvider extends BaseOAuthProvider {
   clientSecret: string;
   callbackURL: string;
   scopes: string[];
+  redirect_url: string;
   constructor(config: {
     clientID?: string;
     clientSecret?: string;
@@ -30,6 +31,7 @@ export class GoogleOAuthProvider extends BaseOAuthProvider {
     userService: UserService;
     knex: Knex;
     name: string;
+    redirect_url: string;
   }) {
     super(config);
   }
