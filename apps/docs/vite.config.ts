@@ -31,6 +31,16 @@ export default defineConfig(({ mode }) => {
         prerender: {
           routes: ['/'],
         },
+        content: {
+          prismOptions: {
+            additionalLangs: ['prism-diff', 'mermaid'],
+          },
+        },
+        vite: {
+          experimental: {
+            supportAnalogFormat: true,
+          },
+        },
       }),
       nxViteTsPaths(),
     ],

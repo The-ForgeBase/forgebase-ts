@@ -27,6 +27,8 @@ import { HlmCardImports } from '@spartan-ng/ui-card-helm';
 import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
 import { metaWith } from '../shared/meta/meta.util';
 import { NgClass } from '@angular/common';
+import { HeaderComponent } from '../shared/header/header.component';
+import { FooterComponent } from '../shared/footer/footer.component';
 // import { ThreeHundredComponent } from './(home)/components/three-hundred.component';
 
 export const routeMeta: RouteMeta = {
@@ -47,7 +49,8 @@ export const routeMeta: RouteMeta = {
     NgIcon,
     HlmIconDirective,
     NgClass,
-    // ThreeHundredComponent,
+    HeaderComponent,
+    FooterComponent,
   ],
   host: {
     class: 'block p-4 pb-12 pt-6 sm:pb-24 sm:pt-12',

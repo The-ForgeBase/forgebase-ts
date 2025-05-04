@@ -61,10 +61,10 @@ export class AuthConfigService implements OnModuleInit {
           initialApiKeyScopes: ['*'],
         },
         authPolicy: {
-          emailVerificationRequired: true,
+          emailVerificationRequired: false,
         },
         email: {
-          enabled: true,
+          enabled: false,
           usePlunk: {
             enabled: true,
             config: {

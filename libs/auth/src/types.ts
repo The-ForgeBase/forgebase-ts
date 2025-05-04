@@ -329,15 +329,3 @@ export interface MfaService {
   verifyCode(secret: string, code: string): boolean;
   generateRecoveryCodes(): string[];
 }
-
-export interface RateLimiter {
-  recordAttempt(identifier: string): Promise<void>;
-  checkLimit(
-    identifier: string
-  ): Promise<{ allowed: boolean; retryAfter?: number }>;
-}
-
-export interface RBACService {
-  assignRole(userId: string, role: string): Promise<void>;
-  hasPermission(userId: string, permission: string): Promise<boolean>;
-}

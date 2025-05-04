@@ -1,0 +1,71 @@
+---
+title: Hello World
+slug: 'index'
+description: 'Hello World'
+order: 1
+---
+
+<script lang="ts">
+  const name = 'Analog';
+</script>
+
+<template lang="md"> 
+## My First Post on {{ name }}
+
+```diff
+- This is a sentence.
++ This is a longer sentence.
+```
+
+```diff-typescript
+- const foo = 'bar';
++ const foo = 'baz';
+```
+
+```ts
+const name = 'Analog';
+```
+
+```mermaid
+graph TD
+    A[Before] -->|Playing with AnalogJS| B(Now Yes !)
+    
+```
+
+# Docs CLI
+
+The Docs CLI is a powerful command-line tool for automating documentation tasks and managing your documentation workflow.
+
+## Features
+
+- 🔄 Content validation
+- 📦 Build optimization
+- 🚀 Deployment automation
+- 📊 Analytics integration
+- 🔍 Dead link checking
+
+## Installation
+
+```bash
+npm install -g @docs/cli
+```
+
+## Basic Commands
+
+```bash
+# Create a new docs site
+docs new my-docs
+
+# Start development server
+docs dev
+
+# Build for production
+docs build
+
+# Deploy to production
+docs deploy
+```
+
+Learn more about the CLI in our [command reference](/docs/cli/commands).
+
+ </template>

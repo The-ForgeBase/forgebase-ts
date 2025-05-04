@@ -29,21 +29,10 @@ interface AuditLogEntry {
  * Manager for internal admin functionality
  */
 export class InternalAdminManager {
-  private isEnabled = false;
-  private hasInitialAdmin = false;
-
   private knex: Knex;
   private adminAuthProvider: AdminAuthProvider;
   private adminSessionManager: AdminSessionManager;
   private configStore: ConfigStore;
-  private adminConfig: {
-    initialAdminEmail: string;
-    initialAdminPassword: string;
-    enabled?: boolean;
-    createInitialApiKey: boolean;
-    initialApiKeyName?: string;
-    initialApiKeyScopes?: string[];
-  };
   private adminService: KnexAdminService;
   private apiKeyService: AdminApiKeyService;
 
@@ -52,14 +41,6 @@ export class InternalAdminManager {
     adminAuthProvider: AdminAuthProvider,
     adminSessionManager: AdminSessionManager,
     configStore: ConfigStore,
-    adminConfig: {
-      initialAdminEmail: string;
-      initialAdminPassword: string;
-      enabled?: boolean;
-      createInitialApiKey: boolean;
-      initialApiKeyName?: string;
-      initialApiKeyScopes?: string[];
-    },
     adminService: KnexAdminService,
     apiKeyService: AdminApiKeyService
   ) {
@@ -67,41 +48,14 @@ export class InternalAdminManager {
     this.adminAuthProvider = adminAuthProvider;
     this.adminSessionManager = adminSessionManager;
     this.configStore = configStore;
-    this.adminConfig = adminConfig;
     this.adminService = adminService;
     this.apiKeyService = apiKeyService;
-
-    this.isEnabled = this.adminConfig.enabled || true;
-  }
-
-  /**
-   * Initialize the admin manager
-   * This must be called before using any other methods
-   */
-  async initialize(): Promise<void> {
-    // Check if admin feature is enabled
-
-    if (!this.isEnabled) {
-      return;
-    }
-
-    // Create initial admin if not exists
-    console.log('Initializing admin manager...');
-    this.ensureInitialAdmin(
-      this.adminConfig.initialAdminEmail,
-      this.adminConfig.initialAdminEmail,
-      this.adminConfig.createInitialApiKey,
-      this.adminConfig.initialApiKeyName,
-      this.adminConfig.initialApiKeyScopes
-    );
-
-    console.log('InternalAdminManager initialized successfully.');
   }
 
   /**
    * Create initial super admin if no admins exist
    */
-  private async ensureInitialAdmin(
+  async ensureInitialAdmin(
     email: string,
     password: string,
     createInitialApiKey: boolean,
@@ -123,8 +77,6 @@ export class InternalAdminManager {
         },
         password
       );
-
-      this.hasInitialAdmin = true;
 
       // Create initial API key if configured
       if (createInitialApiKey) {
@@ -149,8 +101,6 @@ export class InternalAdminManager {
           console.error('Failed to create initial admin API key:', error);
         }
       }
-    } else {
-      this.hasInitialAdmin = true;
     }
   }
 
@@ -158,14 +108,11 @@ export class InternalAdminManager {
    * Check if admin feature is enabled
    * @throws AdminFeatureDisabledError if admin feature is disabled
    */
-  private checkEnabled(): void {
-    if (!this.isEnabled) {
+  private async checkEnabled(): Promise<void> {
+    const conf = await this.configStore.getConfig();
+    if (!conf.adminFeature.enabled) {
       throw new AdminFeatureDisabledError();
     }
-
-    // if (!this.hasInitialAdmin) {
-    //   throw new InitialAdminRequiredError();
-    // }
   }
 
   /**
@@ -178,7 +125,7 @@ export class InternalAdminManager {
     email: string,
     password: string
   ): Promise<{ admin: InternalAdmin; token: string }> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     const admin = await this.adminAuthProvider.authenticate({
       email,
@@ -205,7 +152,7 @@ export class InternalAdminManager {
    * @returns Admin associated with the token
    */
   async validateToken(token: string): Promise<{ admin: InternalAdmin }> {
-    this.checkEnabled();
+    await this.checkEnabled();
     return this.adminSessionManager.verifySession(token);
   }
 
@@ -214,7 +161,7 @@ export class InternalAdminManager {
    * @param token Session token
    */
   async logout(token: string): Promise<void> {
-    this.checkEnabled();
+    await this.checkEnabled();
     const { admin } = await this.validateToken(token);
 
     await this.adminSessionManager.destroySession(token);
@@ -231,7 +178,7 @@ export class InternalAdminManager {
    * @returns Admin or null if not found
    */
   async findAdminById(adminId: string): Promise<InternalAdmin | null> {
-    this.checkEnabled();
+    await this.checkEnabled();
     return this.adminService.findAdminById(adminId);
   }
 
@@ -241,7 +188,7 @@ export class InternalAdminManager {
    * @returns Admin or null if not found
    */
   async findAdminByEmail(email: string): Promise<InternalAdmin | null> {
-    this.checkEnabled();
+    await this.checkEnabled();
     return this.adminService.findAdminByEmail(email);
   }
 
@@ -257,7 +204,7 @@ export class InternalAdminManager {
     password: string,
     creatorId?: string
   ): Promise<InternalAdmin> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // If creatorId is provided, verify they have permission
     if (creatorId) {
@@ -295,7 +242,7 @@ export class InternalAdminManager {
     adminData: Partial<InternalAdmin>,
     updaterId: string
   ): Promise<InternalAdmin> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify updater has permission
     const hasPermission = await this.adminService.hasPermission(
@@ -335,7 +282,7 @@ export class InternalAdminManager {
    * @param deleterId ID of admin performing the delete
    */
   async deleteAdmin(adminId: string, deleterId: string): Promise<void> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify deleter has permission
     const hasPermission = await this.adminService.hasPermission(
@@ -388,7 +335,7 @@ export class InternalAdminManager {
     page: number;
     limit: number;
   }> {
-    this.checkEnabled();
+    await this.checkEnabled();
     return this.adminService.listAdmins(page, limit);
   }
 
@@ -403,7 +350,7 @@ export class InternalAdminManager {
     permission: string,
     granterId: string
   ): Promise<void> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify granter has permission
     const hasPermission = await this.adminService.hasPermission(
@@ -434,7 +381,7 @@ export class InternalAdminManager {
     permission: string,
     revokerId: string
   ): Promise<void> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify revoker has permission
     const hasPermission = await this.adminService.hasPermission(
@@ -460,7 +407,7 @@ export class InternalAdminManager {
    * @returns True if the admin is a super admin
    */
   async isSuperAdmin(adminId: string): Promise<boolean> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     const admin = await this.adminService.findAdminById(adminId);
     if (!admin) {
@@ -480,7 +427,7 @@ export class InternalAdminManager {
     updates: Partial<AuthConfig>,
     adminId: string
   ): Promise<AuthConfig> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify admin has permission to update config
     const hasPermission = await this.adminService.hasPermission(
@@ -492,11 +439,6 @@ export class InternalAdminManager {
     }
 
     const updatedConfig = await this.configStore.updateConfig(updates);
-
-    // Update internal state if admin feature setting changed
-    if (updates.adminFeature?.enabled !== undefined) {
-      this.isEnabled = updates.adminFeature.enabled;
-    }
 
     await this.createAuditLog({
       admin_id: adminId,
@@ -512,7 +454,7 @@ export class InternalAdminManager {
    * @returns Current auth config
    */
   async getAuthConfig(): Promise<AuthConfig> {
-    this.checkEnabled();
+    await this.checkEnabled();
     return this.configStore.getConfig();
   }
 
@@ -549,7 +491,7 @@ export class InternalAdminManager {
     page: number;
     limit: number;
   }> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     const offset = (page - 1) * limit;
 
@@ -595,7 +537,7 @@ export class InternalAdminManager {
       expires_at?: Date | null; // null means non-expiring key
     }
   ): Promise<{ apiKey: AdminApiKey; fullKey: string }> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify admin exists
     const admin = await this.adminService.findAdminById(adminId);
@@ -632,7 +574,7 @@ export class InternalAdminManager {
    * @returns Array of API keys
    */
   async listApiKeys(adminId: string): Promise<AdminApiKey[]> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify admin exists
     const admin = await this.adminService.findAdminById(adminId);
@@ -650,7 +592,7 @@ export class InternalAdminManager {
    * @returns The API key if found and owned by the admin
    */
   async getApiKey(keyId: string, adminId: string): Promise<AdminApiKey> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     const apiKey = await this.apiKeyService.getApiKeyById(keyId);
     if (!apiKey) {
@@ -681,7 +623,7 @@ export class InternalAdminManager {
       expires_at?: Date | null;
     }
   ): Promise<AdminApiKey> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify the API key exists and belongs to the admin
     await this.getApiKey(keyId, adminId);
@@ -712,7 +654,7 @@ export class InternalAdminManager {
    * @returns True if the key was deleted
    */
   async deleteApiKey(keyId: string, adminId: string): Promise<boolean> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Verify the API key exists and belongs to the admin
     const apiKey = await this.getApiKey(keyId, adminId);
@@ -743,7 +685,7 @@ export class InternalAdminManager {
   async validateApiKey(
     apiKey: string
   ): Promise<{ admin: InternalAdmin; scopes: string[] }> {
-    this.checkEnabled();
+    await this.checkEnabled();
 
     // Validate the API key
     const key = await this.apiKeyService.validateApiKey(apiKey);

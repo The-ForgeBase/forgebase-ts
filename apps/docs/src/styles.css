@@ -1,4 +1,6 @@
 @import '@angular/cdk/overlay-prebuilt.css';
+@import 'prismjs/themes/prism.css';
+@import 'prismjs/plugins/diff-highlight/prism-diff-highlight.css';
 
 @tailwind base;
 @tailwind components;
@@ -74,4 +76,95 @@ select {
 
 * {
   @apply border-border;
+}
+
+html,
+body {
+  display: block;
+  height: 100%;
+  font-feature-settings: 'liga', 'calt', 'tnum', 'ss01', 'cv11';
+}
+
+pre[class*='language-'],
+code[class*='language-'] {
+  font-family: 'Geist Mono';
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 0.75rem;
+}
+
+pre[class*='language-'] {
+  padding-block: 1rem;
+  padding-inline: 1.25rem;
+}
+
+[lang='md'] h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol,
+li,
+table,
+thead,
+tbody,
+tfoot,
+th,
+td,
+blockquote {
+  all: revert;
+}
+
+[lang='md'] .code-toolbar {
+  position: relative;
+}
+
+[lang='md'] .code-toolbar .toolbar {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.5rem;
+  z-index: 999;
+  opacity: 0;
+  cursor: pointer;
+  min-width: 2rem;
+}
+
+[lang='md'] .code-toolbar .toolbar:hover {
+  opacity: 1;
+}
+
+[lang='md'] .code-toolbar .toolbar .toolbar-item button {
+  background-color: #ffffff;
+  color: #111011;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+}
+
+[lang='md'] h1,
+[lang='md'] h2,
+[lang='md'] h3,
+[lang='md'] h4,
+[lang='md'] h5,
+[lang='md'] h6 {
+  color: var(--primary-color);
+}
+
+[lang='md'] p {
+  color: var(--text-color);
+}
+
+[lang='md'] a {
+  color: var(--primary-color);
+}
+
+[lang='md'] blockquote {
+  color: var(--primary-color);
+}
+
+[lang='md'] table {
+  color: var(--primary-color);
 }

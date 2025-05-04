@@ -53,9 +53,9 @@ export class DynamicAuthManager {
     userService: KnexUserService,
     refreshInterval = 5000,
     enableConfigIntervalCheck = false,
-    emailVerificationService?: EmailVerificationService,
-    smsVerificationService?: SmsVerificationService,
-    mfaService?: MfaService
+    emailVerificationService: EmailVerificationService | null = null,
+    smsVerificationService: SmsVerificationService | null = null,
+    mfaService: MfaService | null = null
   ) {
     this.knex = knex;
     this.configStore = configStore;
@@ -64,9 +64,15 @@ export class DynamicAuthManager {
     this.userService = userService;
     this.refreshInterval = refreshInterval;
     this.enableConfigIntervalCheck = enableConfigIntervalCheck;
-    this.emailVerificationService = emailVerificationService;
-    this.smsVerificationService = smsVerificationService;
-    this.mfaService = mfaService;
+    if (emailVerificationService) {
+      this.emailVerificationService = emailVerificationService;
+    }
+    if (smsVerificationService) {
+      this.smsVerificationService = smsVerificationService;
+    }
+    if (mfaService) {
+      this.mfaService = mfaService;
+    }
     this.watchConfig();
   }
 

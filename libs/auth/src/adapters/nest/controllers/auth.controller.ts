@@ -15,7 +15,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { User } from '../../../types';
+import { AuthToken } from '../../../types';
 import { AuthGuard } from '../guards/auth.guard';
 import { AdminGuard } from '../guards/admin.guard';
 import { AuthService } from '../services/auth.service';
@@ -49,6 +49,35 @@ export class AuthController {
     return null;
   }
 
+  private setCookie(res: Response, token: string | AuthToken): Response {
+    if (typeof token === 'object' && token !== null) {
+      res.cookie('token', token.accessToken, {
+        httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+        sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+        path: this.adminConfig.cookieOptions?.path,
+      });
+      res.cookie('refreshToken', token.refreshToken, {
+        httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: this.adminConfig.cookieOptions?.maxAge * 7 || 3600000 * 7,
+        sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+        path: this.adminConfig.cookieOptions?.path,
+      });
+    } else {
+      res.cookie('token', token, {
+        httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
+        sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
+        path: this.adminConfig.cookieOptions?.path,
+      });
+    }
+
+    return res;
+  }
+
   @Post('register')
   async register(@Body() body: any, @Res() res: Response) {
     try {
@@ -64,30 +93,7 @@ export class AuthController {
 
       if (result.token) {
         // Set the token in the response headers
-        if (typeof result.token === 'object' && result.token !== null) {
-          res.cookie('token', result.token.accessToken, {
-            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
-            path: this.adminConfig.cookieOptions?.path,
-          });
-          res.cookie('refreshToken', result.token.refreshToken, {
-            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
-            path: this.adminConfig.cookieOptions?.path,
-          });
-        } else {
-          res.cookie('token', result.token, {
-            httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-            sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
-            path: this.adminConfig.cookieOptions?.path,
-          });
-        }
+        this.setCookie(res, result.token);
       }
 
       // Include verification token in the response if available
@@ -122,21 +128,7 @@ export class AuthController {
       }
 
       // Set the token in the response headers
-      if (typeof result.token === 'object' && result.token !== null) {
-        res.cookie('token', result.token.accessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-        });
-        res.cookie('refreshToken', result.token.refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-        });
-      } else {
-        res.cookie('token', result.token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-        });
-      }
+      this.setCookie(res, result.token);
 
       return res.json({ user: result.user, token: result.token });
     } catch (error) {
@@ -156,21 +148,7 @@ export class AuthController {
       }
 
       // Set the token in the response headers
-      if (typeof result.token === 'object' && result.token !== null) {
-        res.cookie('token', result.token.accessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-        });
-        res.cookie('refreshToken', result.token.refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-        });
-      } else {
-        res.cookie('token', result.token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-        });
-      }
+      this.setCookie(res, result.token);
 
       return res.json({ user: result.user });
     } catch (error) {
@@ -205,24 +183,8 @@ export class AuthController {
       const providerConfig = await this.authService.getProviderConfig(provider);
       const redirectUrl = providerConfig.redirect_url || '/';
 
-      if (typeof token === 'object' && token !== null) {
-        res.cookie('token', token.accessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-        });
-        res.cookie('refreshToken', token.refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-        });
-      } else {
-        res.cookie('token', token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-        });
-      }
+      this.setCookie(res, token);
+
       return res.redirect(redirectUrl);
     } catch (error) {
       return res.status(400).json({ error: error.message });
@@ -259,30 +221,7 @@ export class AuthController {
       const token = await this.authService.refreshToken(refreshToken);
 
       // Set secure cookies for the new tokens
-      if (typeof token === 'object' && token !== null) {
-        res.cookie('token', token.accessToken, {
-          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
-          path: this.adminConfig.cookieOptions?.path || '/',
-        });
-        res.cookie('refreshToken', token.refreshToken, {
-          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
-          path: this.adminConfig.cookieOptions?.path || '/',
-        });
-      } else {
-        res.cookie('token', token, {
-          httpOnly: this.adminConfig.cookieOptions?.httpOnly || true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: this.adminConfig.cookieOptions?.maxAge || 3600000,
-          sameSite: this.adminConfig.cookieOptions?.sameSite || 'lax',
-          path: this.adminConfig.cookieOptions?.path || '/',
-        });
-      }
+      this.setCookie(res, token);
 
       return res.json({ success: true, token });
     } catch (error) {

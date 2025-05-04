@@ -150,18 +150,6 @@ export function createAuthContainer(deps: ContainerDependencies) {
     enableConfigIntervalCheck: deps.enableConfigIntervalCheck
       ? asValue(deps.enableConfigIntervalCheck)
       : asValue(true),
-    emailVerificationService: deps.email.usePlunk
-      ? asClass(PlunkEmailVerificationService)
-          .singleton()
-          .inject(() => ({
-            config: deps.email.usePlunk.config,
-          }))
-      : deps.email.emailVerificationService
-      ? asValue(deps.email.emailVerificationService)
-      : undefined,
-    smsVerificationService: deps.sms.smsVerificationService
-      ? asValue(deps.sms.smsVerificationService)
-      : undefined,
     userService: deps.userService
       ? asValue(deps.userService)
       : asClass(KnexUserService).singleton(),
@@ -182,7 +170,6 @@ export function createAuthContainer(deps: ContainerDependencies) {
         : asClass(BasicSessionManager).singleton(),
 
     // Admin settings
-    adminConfig: asValue(deps.adminConfig),
     adminAuthProvider: deps.adminAuthProvider
       ? asValue(deps.adminAuthProvider)
       : asClass(BasicAdminAuthProvider).singleton(),
@@ -199,37 +186,62 @@ export function createAuthContainer(deps: ContainerDependencies) {
     adminService: asClass(KnexAdminService).singleton(),
     apiKeyService: asClass(AdminApiKeyService).singleton(),
     adminManager: asClass(InternalAdminManager).singleton(),
-
-    localAuthProvider: deps.local.enabled
-      ? asClass(LocalAuthProvider).singleton()
-      : undefined,
-    passwordlessProvider: deps.passwordless?.enabled
-      ? asClass(PasswordlessProvider)
-          .singleton()
-          .inject(() => ({
-            config: {
-              tokenStore: deps.passwordless?.tokenStore || deps.knex,
-              userService:
-                deps.passwordless?.userService ||
-                deps.userService ||
-                container.resolve('userService'),
-              sendToken: deps.passwordless.sendToken,
-            },
-          }))
-      : undefined,
   });
 
-  const local = container.cradle.localAuthProvider;
-  const passwordless = container.cradle.passwordlessProvider;
+  if (deps.email.enabled && deps.email.usePlunk) {
+    container.register({
+      emailVerificationService: asClass(PlunkEmailVerificationService)
+        .singleton()
+        .inject(() => ({
+          config: deps.email.usePlunk.config,
+        })),
+    });
+  }
+
+  if (deps.email.emailVerificationService && !deps.email.usePlunk) {
+    container.register({
+      emailVerificationService: asValue(deps.email.emailVerificationService),
+    });
+  }
+
+  if (deps.sms.smsVerificationService) {
+    container.register({
+      smsVerificationService: asValue(deps.sms.smsVerificationService),
+    });
+  }
+
+  if (deps.local.enabled) {
+    container.register({
+      localAuthProvider: asClass(LocalAuthProvider).singleton(),
+    });
+    container.cradle.authManager.registerProvider(
+      'local',
+      container.cradle.localAuthProvider
+    );
+  }
+
+  if (deps.passwordless?.enabled) {
+    container.register({
+      passwordlessProvider: asClass(PasswordlessProvider)
+        .singleton()
+        .inject(() => ({
+          config: {
+            tokenStore: deps.passwordless?.tokenStore || deps.knex,
+            userService:
+              deps.passwordless?.userService ||
+              deps.userService ||
+              container.resolve('userService'),
+            sendToken: deps.passwordless.sendToken,
+          },
+        })),
+    });
+    container.cradle.authManager.registerProvider(
+      'passwordless',
+      container.cradle.passwordlessProvider
+    );
+  }
+
   const plugins = deps.plugins;
-
-  if (local) {
-    container.cradle.authManager.registerProvider('local', local);
-  }
-
-  if (passwordless) {
-    container.cradle.authManager.registerProvider('passwordless', passwordless);
-  }
 
   if (plugins) {
     plugins.forEach((p) => {
@@ -239,10 +251,6 @@ export function createAuthContainer(deps: ContainerDependencies) {
   }
 
   const configStore = container.cradle.configStore;
-  configStore.initialize();
-
-  const adminManager = container.cradle.adminManager;
-  adminManager.initialize();
 
   configStore.updateConfig({
     adminFeature: {

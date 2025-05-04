@@ -10,6 +10,10 @@ import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeng/themes/aura';
 import { definePreset } from '@primeng/themes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideContent, withMarkdownRenderer } from '@analogjs/content';
+import { withPrismHighlighter } from '@analogjs/content/prism-highlighter';
+import 'prismjs/plugins/diff-highlight/prism-diff-highlight';
+import 'prismjs/components/prism-diff';
 
 const MyPreset = definePreset(Aura, {
   primitive: {
@@ -677,6 +681,12 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideFileRouter(),
+    provideContent(
+      withMarkdownRenderer({
+        loadMermaid: () => import('mermaid'),
+      }),
+      withPrismHighlighter()
+    ),
     provideClientHydration(),
     provideHttpClient(
       withFetch(),

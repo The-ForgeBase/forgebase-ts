@@ -1,11 +1,10 @@
-import { Injectable, NestMiddleware, Inject } from '@nestjs/common';
+import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { AwilixContainer } from 'awilix';
-import { AuthCradle } from '../../../container';
+import { AdminService } from '../services/admin.service';
 
 @Injectable()
 export class AdminMiddleware implements NestMiddleware {
-  constructor(@Inject('AUTH_CONTAINER') private container: AwilixContainer<AuthCradle>) {}
+  constructor(private readonly adminService: AdminService) {}
 
   private extractToken(request: Request): {
     token: string | null;
@@ -55,14 +54,16 @@ export class AdminMiddleware implements NestMiddleware {
         try {
           if (type === 'session') {
             // Validate session token
-            const { admin } = await this.container.cradle.adminManager.validateToken(token);
+            const { admin } = await this.adminService.validateToken(token);
             // Inject admin info into request object if validation succeeds
             req['admin'] = admin;
             req['isApiKeyAuth'] = false;
             req['adminApiKeyScopes'] = [];
           } else {
             // Validate API key
-            const { admin, scopes } = await this.container.cradle.adminManager.validateApiKey(token);
+            const { admin, scopes } = await this.adminService.validateApiKey(
+              token
+            );
             // Inject admin info and scopes into request object
             req['admin'] = admin;
             req['isApiKeyAuth'] = true;
@@ -83,11 +84,11 @@ export class AdminMiddleware implements NestMiddleware {
       }
 
       // For debugging
-      // console.debug('Admin info injected:', {
-      //   admin: req['admin'],
-      //   isApiKeyAuth: req['isApiKeyAuth'],
-      //   scopes: req['adminApiKeyScopes']
-      // });
+      console.debug('Admin info injected:', {
+        admin: req['admin'],
+        isApiKeyAuth: req['isApiKeyAuth'],
+        scopes: req['adminApiKeyScopes'],
+      });
 
       next();
     } catch (error) {
