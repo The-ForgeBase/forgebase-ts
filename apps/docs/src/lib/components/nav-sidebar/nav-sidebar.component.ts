@@ -216,7 +216,7 @@ export class NavSidebarComponent {
     this.organizeDocs();
     this.currentFramework$.subscribe((framework) => {
       const frameworkSlug = framework;
-      console.log(frameworkSlug);
+      // console.log(frameworkSlug);
       this.currentFramework.set(frameworkSlug?.toLowerCase() ?? null);
     });
     const nestedDocs = nestDocsAsSortedArrays(
@@ -226,7 +226,7 @@ export class NavSidebarComponent {
         slug: doc.attributes.slug,
       }))
     );
-    console.log(nestedDocs);
+    // console.log(nestedDocs);
     this.sections.set(nestedDocs);
   }
 
@@ -260,13 +260,13 @@ export class NavSidebarComponent {
 
     const section = this.sections().find((s) => s.name === currentFramework);
 
-    console.log('selectedSection', section);
+    // console.log('selectedSection', section);
 
     this.selectedSection.set(section);
   }
 
   selectFramework(framework: string) {
-    console.log('selectFramework', framework);
+    // console.log('selectFramework', framework);
     this.currentFramework.set(framework);
     // Navigation is now handled by routerLink
     this.organizeDocs();

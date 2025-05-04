@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
         },
         content: {
           prismOptions: {
-            additionalLangs: ['prism-diff', 'mermaid'],
+            additionalLangs: ['prism-diff', 'mermaid', 'scss'],
           },
         },
         vite: {

@@ -12,8 +12,6 @@ interface IndexAttributes {
   imports: [MarkdownComponent],
   template: `
     @if (content()) {
-    <h1>{{ content()!.attributes.title }}</h1>
-    <p>{{ content()!.attributes.description }}</p>
     <analog-markdown [content]="content()!.content"></analog-markdown>
     }
   `,
