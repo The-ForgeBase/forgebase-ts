@@ -1,36 +1,29 @@
-module.exports = {
-  extends: ['../../.eslint.config.cjs'],
-  ignorePatterns: ['!**/*'],
-  overrides: [
-    {
-      files: ['*.ts'],
-      extends: [
-        'plugin:@nx/angular',
-        'plugin:@angular-eslint/template/process-inline-templates',
-      ],
-      rules: {
-        '@angular-eslint/directive-selector': [
-          'error',
-          {
-            type: 'attribute',
-            prefix: 'Docs',
-            style: 'camelCase',
-          },
-        ],
-        '@angular-eslint/component-selector': [
-          'error',
-          {
-            type: 'element',
-            prefix: 'docs',
-            style: 'kebab-case',
-          },
-        ],
+const { FlatCompat } = require('@eslint/eslintrc');
+const js = require('@eslint/js');
+const baseConfig = require('../../eslint.config.cjs');
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+});
+
+module.exports = [
+  ...baseConfig,
+  {
+    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.vue'],
+    // Override or add rules here
+    rules: {},
+  },
+  ...compat.extends('@nuxt/eslint-config'),
+  {
+    files: ['**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        parser: require('@typescript-eslint/parser'),
       },
     },
-    {
-      files: ['*.html'],
-      extends: ['plugin:@nx/angular-template'],
-      rules: {},
-    },
-  ],
-};
+  },
+  {
+    ignores: ['.nuxt/**', '.output/**', 'node_modules'],
+  },
+];
