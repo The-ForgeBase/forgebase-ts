@@ -38,9 +38,6 @@ jobs:
           git config --local user.email "github-actions@github.com"
           git config --local user.name "GitHub Actions"
 
-      # - name: Generate Changeset from commit messages
-      #   run: pnpm changeset:autogenerate
-
       - name: Generate Release Notes
         id: release_notes
         run: |
@@ -89,7 +86,6 @@ jobs:
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
-        if: steps.changesets.outputs.published == 'true'
         with:
           tag_name: v${{ steps.changesets.outputs.version }}
           name: Release v${{ steps.changesets.outputs.version }}
