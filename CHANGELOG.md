@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Breaking Changes
 
 ### Other Changes
-* Merge pull request #29 from The-ForgeBase/nest (b01a335)
-* feat: Simplify DatabaseSDK initialization by removing unnecessary credentials option (06bf198)
+* Merge pull request #89 from The-ForgeBase/real-time (ed21e3d)
+* ci: remove unnecessary quotes from PKG_NAME in release workflow (2054027)
 
 For changes in previous releases, please check the Git history.
