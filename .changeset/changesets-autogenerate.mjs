@@ -112,17 +112,17 @@ if (packageName) {
   description = description?.trim() || 'No description provided.';
 
   const changesetContent = `---
-'@mindfiredigital/page-builder-${packageName}': ${changeType}
+'@the-forgebase/${packageName}': ${changeType}
 ---
 ${description}
 `;
 
   fs.writeFileSync(`.changeset/auto-${Date.now()}.md`, changesetContent);
   console.log(
-    `✅ Changeset file created for package: page-builder-${packageName}`,
+    `✅ Changeset file created for package: @the-forgebase/${packageName}`,
   );
 } else {
   console.log(
-    '⚠️ No valid package scope found in commit message. Valid scopes are: core, react, web-component',
+    '⚠️ No valid package scope found in commit message. Valid scopes are: auth, api, common, database, storage, sdk',
   );
 }
