@@ -96,7 +96,6 @@ jobs:
           pnpm turbo run build --filter=./packages/common
           pnpm turbo run build --filter=./packages/database
           pnpm turbo run build --filter=./packages/auth
-          pnpm turbo run build --filter=./packages/api
           pnpm turbo run build --filter=./packages/storage
           pnpm turbo run build --filter=./packages/sdk
 
@@ -109,7 +108,7 @@ jobs:
       # Publish packages in correct order
       - name: Publish packages
         run: |
-          for pkg in common database auth api storage sdk; do
+          for pkg in common database auth storage sdk; do
             echo "Publishing @the-forgebase/$pkg..."
             cd "packages/$pkg"
             if [ -f "package.json" ]; then
