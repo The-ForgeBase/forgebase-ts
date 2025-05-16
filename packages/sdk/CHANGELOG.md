@@ -1,5 +1,16 @@
 # @the-forgebase/sdk
 
+## 1.0.0-alpha.0
+
+### Minor Changes
+
+- [`235d622`](https://github.com/The-ForgeBase/forgebase-ts/commit/235d622f193467f15ac5ce21aa1c17cc02a4afc8) Thanks [@SOG-web](https://github.com/SOG-web)! - testing alpha
+
+### Patch Changes
+
+- Updated dependencies [[`235d622`](https://github.com/The-ForgeBase/forgebase-ts/commit/235d622f193467f15ac5ce21aa1c17cc02a4afc8)]:
+  - @the-forgebase/database@0.1.0-alpha.0
+
 ## 0.0.1
 
 ### Patch Changes
