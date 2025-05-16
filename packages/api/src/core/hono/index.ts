@@ -1,5 +1,5 @@
 import { SessionData } from '@the-forgebase/auth/adapters/web';
-import { UserContext } from '@the-forgebase/database/types';
+import { UserContext } from '@the-forgebase/database';
 
 export type FgAPiVariables = {
   userContext: UserContext | null;

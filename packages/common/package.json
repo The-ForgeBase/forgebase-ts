@@ -21,6 +21,13 @@
       "require": "./dist/cjs/index.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/esm/index.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist",
     "!**/*.tsbuildinfo",

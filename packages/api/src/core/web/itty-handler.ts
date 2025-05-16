@@ -26,8 +26,8 @@ import {
   userContextMiddleware,
   WebAuthConfig,
 } from '@the-forgebase/auth/adapters/web';
-import { DynamicAuthManager } from '@the-forgebase/auth/authManager';
-import { InternalAdminManager } from '@the-forgebase/auth/admin';
+import { DynamicAuthManager } from '@the-forgebase/auth';
+import { InternalAdminManager } from '@the-forgebase/auth';
 
 export type IttyWebRequest = {
   userContext?: UserContext;

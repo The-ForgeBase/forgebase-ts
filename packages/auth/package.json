@@ -2,9 +2,9 @@
   "name": "@the-forgebase/auth",
   "version": "0.0.0-alpha.22",
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/cjs/src/index.js",
+  "module": "./dist/esm/src/index.js",
+  "types": "./dist/esm/src/index.d.ts",
   "bin": {
     "forgebase-init-migrations": "./dist/esm/scripts/init-migrations.js"
   },
@@ -23,29 +23,48 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/esm/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "types": "./dist/esm/src/index.d.ts",
+      "import": "./dist/esm/src/index.js",
+      "require": "./dist/cjs/src/index.js"
     },
     "./adapters/nest": {
-      "types": "./dist/esm/adapters/nest/index.d.ts",
-      "import": "./dist/esm/adapters/nest/index.js",
-      "require": "./dist/cjs/adapters/nest/index.js"
+      "types": "./dist/esm/src/adapters/nest/index.d.ts",
+      "import": "./dist/esm/src/adapters/nest/index.js",
+      "require": "./dist/cjs/src/adapters/nest/index.js"
     },
     "./adapters/web": {
-      "types": "./dist/esm/adapters/web/index.d.ts",
-      "import": "./dist/esm/adapters/web/index.js",
-      "require": "./dist/cjs/adapters/web/index.js"
+      "types": "./dist/esm/src/adapters/web/index.d.ts",
+      "import": "./dist/esm/src/adapters/web/index.js",
+      "require": "./dist/cjs/src/adapters/web/index.js"
     },
     "./adapters/express": {
-      "types": "./dist/esm/adapters/express/index.d.ts",
-      "import": "./dist/esm/adapters/express/index.js",
-      "require": "./dist/cjs/adapters/express/index.js"
+      "types": "./dist/esm/src/adapters/express/index.d.ts",
+      "import": "./dist/esm/src/adapters/express/index.js",
+      "require": "./dist/cjs/src/adapters/express/index.js"
     },
     "./adapters/ultimate-express": {
-      "types": "./dist/esm/adapters/ultimate-express/index.d.ts",
-      "import": "./dist/esm/adapters/ultimate-express/index.js",
-      "require": "./dist/cjs/adapters/ultimate-express/index.js"
+      "types": "./dist/esm/src/adapters/ultimate-express/index.d.ts",
+      "import": "./dist/esm/src/adapters/ultimate-express/index.js",
+      "require": "./dist/cjs/src/adapters/ultimate-express/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/esm/src/index.d.ts"
+      ],
+      "adapters/nest": [
+        "./dist/esm/src/adapters/nest/index.d.ts"
+      ],
+      "adapters/web": [
+        "./dist/esm/src/adapters/web/index.d.ts"
+      ],
+      "adapters/express": [
+        "./dist/esm/src/adapters/express/index.d.ts"
+      ],
+      "adapters/ultimate-express": [
+        "./dist/esm/src/adapters/ultimate-express/index.d.ts"
+      ]
     }
   },
   "files": [

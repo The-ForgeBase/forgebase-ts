@@ -6,7 +6,8 @@
     "emitDecoratorMetadata": true,
     "noImplicitAny": false,
     "composite": true,
-    "types": ["node"]
+    "types": ["node"],
+    "strict": false
   },
   "include": ["src"],
   "exclude": [
