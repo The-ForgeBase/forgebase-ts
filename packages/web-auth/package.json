@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/web-auth",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Framework-agnostic web authentication SDK for ForgeBase with SSR support",
   "private": false,
   "type": "module",
