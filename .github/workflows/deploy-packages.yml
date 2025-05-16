@@ -66,13 +66,20 @@ jobs:
           echo "### Commits" >> RELEASE_NOTES.md
           git log ${LATEST_TAG}..HEAD --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md
 
+      # Build packages using Turborepo
+      - name: Build packages
+        run: |
+          pnpm turbo run build --filter=./packages/common
+          pnpm turbo run build --filter=./packages/database
+          pnpm turbo run build --filter=./packages/auth
+          pnpm turbo run build --filter=./packages/api
+          pnpm turbo run build --filter=./packages/storage
+          pnpm turbo run build --filter=./packages/sdk
+
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@v1.4.1
+        uses: changesets/action@v1
         with:
-          commit: 'chore(release): version packages'
-          title: 'chore(release): version packages'
-          version: node .github/changeset-version.js
           publish: pnpm release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -89,16 +96,6 @@ jobs:
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Build packages using Turborepo
-      - name: Build packages
-        run: |
-          pnpm turbo run build --filter=./packages/common
-          pnpm turbo run build --filter=./packages/database
-          pnpm turbo run build --filter=./packages/auth
-          pnpm turbo run build --filter=./packages/api
-          pnpm turbo run build --filter=./packages/storage
-          pnpm turbo run build --filter=./packages/sdk
 
       # Set up npm registry
       - name: Setup npm authentication
