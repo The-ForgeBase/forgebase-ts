@@ -1,5 +1,12 @@
 # @the-forgebase/web-auth
 
+## 0.0.2-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [[`235d622`](https://github.com/The-ForgeBase/forgebase-ts/commit/235d622f193467f15ac5ce21aa1c17cc02a4afc8)]:
+  - @the-forgebase/auth@0.1.0-alpha.0
+
 ## 0.0.1
 
 ### Patch Changes
