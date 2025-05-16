@@ -1,5 +1,13 @@
 # @the-forgebase/storage
 
+## 0.1.0-alpha.1
+
+### Patch Changes
+
+- [`c9e9816`](https://github.com/The-ForgeBase/forgebase-ts/commit/c9e9816906acf1d80a3c6134ef87a14d52a8d521) Thanks [@SOG-web](https://github.com/SOG-web)! - testing patch alpha
+
+- [`baa319f`](https://github.com/The-ForgeBase/forgebase-ts/commit/baa319f22521d3ae3e9877a24da90ea15650330c) Thanks [@SOG-web](https://github.com/SOG-web)! - final
+
 ## 0.1.0-alpha.0
 
 ### Minor Changes
