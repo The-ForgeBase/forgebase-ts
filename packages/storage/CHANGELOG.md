@@ -1,5 +1,11 @@
 # @the-forgebase/storage
 
+## 0.0.1
+
+### Patch Changes
+
+- [`a733176`](https://github.com/The-ForgeBase/forgebase-ts/commit/a7331764dfeb8160fbb74bcda66cea8aceed8ee0) Thanks [@SOG-web](https://github.com/SOG-web)! - testing versions
+
 ## 0.0.0
 
 ### Minor Changes

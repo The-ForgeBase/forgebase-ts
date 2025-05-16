@@ -1,5 +1,16 @@
 # @the-forgebase/api
 
+## 0.0.1
+
+### Patch Changes
+
+- [`a733176`](https://github.com/The-ForgeBase/forgebase-ts/commit/a7331764dfeb8160fbb74bcda66cea8aceed8ee0) Thanks [@SOG-web](https://github.com/SOG-web)! - testing versions
+
+- Updated dependencies [[`a733176`](https://github.com/The-ForgeBase/forgebase-ts/commit/a7331764dfeb8160fbb74bcda66cea8aceed8ee0)]:
+  - @the-forgebase/auth@0.0.1
+  - @the-forgebase/database@0.0.1
+  - @the-forgebase/storage@0.0.1
+
 ## 0.0.0
 
 ### Minor Changes
