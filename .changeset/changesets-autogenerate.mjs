@@ -73,11 +73,11 @@ if (commitPatterns.breaking.test(commitMessage)) {
   }
 } else if (commitPatterns.refactor.test(commitMessage)) {
   const scope = commitMessage.match(commitPatterns.refactor)?.[1];
-  if (validScopes.includes(scope)) {
-    changeType = 'patch';
-    packageName = scope;
-    description = commitMessage.match(commitPatterns.refactor)?.[2];
-  }
+  // if (validScopes.includes(scope)) {
+  changeType = 'patch';
+  packageName = scope;
+  description = commitMessage.match(commitPatterns.refactor)?.[2];
+  // }
 }
 
 // If we have identified a change, create a changeset
