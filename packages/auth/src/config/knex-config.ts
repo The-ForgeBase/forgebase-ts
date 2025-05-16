@@ -16,18 +16,6 @@ export class KnexConfigStore implements ConfigStore {
   }
 
   async initialize(): Promise<void> {
-    console.log('Initializing config store...');
-    const hasTable = await this.knex.schema.hasTable(this.tableName);
-    if (!hasTable) {
-      console.log('Creating config table...');
-      await this.knex.schema.createTable(this.tableName, (table) => {
-        table.increments('id');
-        table.text('config').notNullable();
-        table.timestamp('created_at').defaultTo(this.knex.fn.now());
-        table.timestamp('updated_at').defaultTo(this.knex.fn.now());
-      });
-    }
-
     await this.getConfig();
   }
 
@@ -73,12 +61,9 @@ export class KnexConfigStore implements ConfigStore {
           period: 30,
         },
       });
-      // console.log('Inserting default config:', defaultConfig);
-      // console.log('Default config JSON:', JSON.stringify(defaultConfig));
       const [id] = await this.knex(this.tableName)
         .insert({ config: JSON.stringify(defaultConfig) })
         .returning('id');
-      console.log('Inserted default config with ID:', id);
       const configWithId = { ...defaultConfig, id: id.id };
       this.cache = { value: configWithId, expires: Date.now() + this.cacheTTL };
       return configWithId;

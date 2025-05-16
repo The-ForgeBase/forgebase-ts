@@ -4,6 +4,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "noImplicitAny": false,
+    "strict": false,
     "composite": true
   },
   "include": ["src"],

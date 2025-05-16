@@ -18,7 +18,7 @@ import {
   AuthVerificationTokensTable,
 } from './index.js';
 
-export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
+export async function initializeAuthSchema(knex: Knex, enableAdmin?: boolean) {
   // Auth Config Table
   console.log('Initializing auth schema...');
   const hasAuthConfig = await knex.schema.hasTable(AuthConfigTable);
@@ -257,7 +257,7 @@ export async function initializeAuthSchema(knex: Knex, config?: AuthConfig) {
   console.log('Auth schema initialized');
 
   // Only create admin tables if admin feature is enabled
-  if (config?.adminFeature?.enabled) {
+  if (enableAdmin) {
     await initializeAdminTables(knex);
   }
 }

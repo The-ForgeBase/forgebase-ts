@@ -2,6 +2,72 @@
 
 A flexible, comprehensive authentication library for Server side js applications, providing multiple authentication strategies, a framework-agnostic web standard adapter, and advanced session management with dependency injection support.
 
+## Database Setup & Migrations
+
+### 1. Initialize Migration Files
+
+After installing `@the-forgebase/auth`, run the initialization script in your project root:
+
+```bash
+pnpx forgebase-init-migrations
+```
+
+This will:
+- Create a `knexfile.ts` template
+- Set up the initial migration
+- Add migration scripts to your package.json
+
+### 2. Configure Your Database
+
+Modify the generated `knexfile.ts` with your database settings:
+
+```typescript
+// knexfile.ts
+export default {
+  development: {
+    client: 'pg', // or 'mysql', 'sqlite3', etc.
+    connection: {
+      // your database connection details
+    },
+    migrations: {
+      directory: './migrations',
+      extension: 'ts',
+    },
+  },
+  // other environments...
+};
+```
+
+### 3. Run Migrations
+
+Use these commands to manage your database schema:
+
+```bash
+# Run all pending migrations
+pnpm migrate
+
+# Create a new migration file
+pnpm migrate:make migration_name
+
+# Rollback the last migration
+pnpm migrate:rollback
+```
+
+### 4. Supported Databases
+
+The auth library supports any database that Knex supports:
+- PostgreSQL
+- MySQL
+- SQLite3
+- Oracle
+- MSSQL
+
+Just update the `client` and `connection` settings in your `knexfile.ts` accordingly.
+
+### 5. Admin Tables
+
+By default, the initial migration will create both user and admin tables. If you don't need admin functionality, you can modify the migration file and set `enableAdmin` to `false`.
+
 ## Recent Updates
 
 - **Dependency Injection**: Added comprehensive dependency injection support using Awilix for better modularity and testability

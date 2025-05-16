@@ -102,6 +102,7 @@
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@the-forgebase/typescript-config": "workspace:*",
-    "tslib": "^2.8.1"
+    "tslib": "^2.8.1",
+    "@types/node": "~18.16.9"
   }
 }
