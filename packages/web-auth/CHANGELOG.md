@@ -1,5 +1,11 @@
 # @the-forgebase/web-auth
 
+## 0.0.0-alpha.23
+
+### Minor Changes
+
+- [`864c2ab`](https://github.com/The-ForgeBase/forgebase-ts/commit/864c2abe8b3e6ba3a5cb055c97beb7e37d75f611) Thanks [@SOG-web](https://github.com/SOG-web)! - mv
+
 ## 0.1.0-alpha.1
 
 ### Patch Changes
