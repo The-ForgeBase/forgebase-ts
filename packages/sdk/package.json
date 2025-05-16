@@ -1,0 +1,76 @@
+{
+  "name": "@the-forgebase/sdk",
+  "version": "0.0.0-alpha.22",
+  "private": false,
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
+    "dev": "tsc -p tsconfig.esm.json --watch",
+    "lint": "tsc --noEmit"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./client": {
+      "types": "./dist/esm/database/client/index.d.ts",
+      "import": "./dist/esm/database/client/index.js",
+      "require": "./dist/cjs/database/client/index.js"
+    },
+    "./server": {
+      "types": "./dist/esm/database/server/index.d.ts",
+      "import": "./dist/esm/database/server/index.js",
+      "require": "./dist/cjs/database/server/index.js"
+    },
+    "./jwt": {
+      "types": "./dist/esm/jwt/index.d.ts",
+      "import": "./dist/esm/jwt/index.js",
+      "require": "./dist/cjs/jwt/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "client": [
+        "./dist/esm/database/client/index.d.ts"
+      ],
+      "server": [
+        "./dist/esm/database/server/index.d.ts"
+      ],
+      "jwt": [
+        "./dist/esm/jwt/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo",
+    "package.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "knex": "^3.1.0",
+    "@the-forgebase/database": "workspace:*",
+    "hono": "^4.6.19",
+    "express": "^4.21.2",
+    "jose": "^6.0.10",
+    "axios": "^1.7.9",
+    "typescript": "5.8.2"
+  },
+  "peerDependencies": {
+    "@the-forgebase/database": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@the-forgebase/typescript-config": "workspace:*"
+  }
+}

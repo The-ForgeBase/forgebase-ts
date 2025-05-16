@@ -53,6 +53,7 @@ This monorepo is organized into two main directories:
 ### Installation
 
 1. Clone the repository:
+
    ```sh
    git clone https://github.com/The-ForgeBase/forgebase-ts.git
    cd forgebase-ts
@@ -63,101 +64,53 @@ This monorepo is organized into two main directories:
    pnpm install
    ```
 
-### Running Applications
+### Build
 
-To run the development server for an application:
+To build all apps and packages, run the following command:
 
-```sh
-npx nx serve <app-name>
+```
+cd my-turborepo
+pnpm build
 ```
 
-For example, to run the Studio application:
+### Develop
 
-```sh
-npx nx serve studio
+To develop all apps and packages, run the following command:
+
+```
+cd my-turborepo
+pnpm dev
 ```
 
-To build an application for production:
+### Remote Caching
 
-```sh
-npx nx build <app-name>
+> [!TIP]
+> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+
+Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+
+By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+
+```
+cd my-turborepo
+npx turbo login
 ```
 
-### Development Workflow
+This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
 
-#### Adding New Libraries
+Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
 
-To generate a new library:
-
-```sh
-npx nx g @nx/node:lib my-new-lib
 ```
-
-#### Adding New Applications
-
-To generate a new application:
-
-```sh
-npx nx g @nx/node:app my-new-app
+npx turbo link
 ```
-
-#### Running Tests
-
-To run tests for a specific project:
-
-```sh
-npx nx test <project-name>
-```
-
-To run tests for all projects:
-
-```sh
-npx nx run-many -t test
-```
-
-#### Linting
-
-To lint a specific project:
-
-```sh
-npx nx lint <project-name>
-```
-
-## Supported Frameworks
-
-ForgeBase is designed to work with multiple backend frameworks, including:
-
-- NestJS
-- Express
-- Fastify
-- Hono
-- And more!
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Useful Links
 
-- [Learn more about Nx](https://nx.dev/nx-api/node)
-- [Nx on CI](https://nx.dev/ci/intro/ci-with-nx)
-- [Releasing Packages with Nx](https://nx.dev/features/manage-releases)
-- [Nx Plugins](https://nx.dev/concepts/nx-plugins)
+Learn more about the power of Turborepo:
 
-## Community
-
-- [Discord](https://go.nx.dev/community)
-- [Follow Nx on Twitter](https://twitter.com/nxdevtools)
-- [Nx on LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Nx YouTube Channel](https://www.youtube.com/@nxdevtools)
-
-## License
-
-MIT
-
-
-<!-- # Create the tag
-git tag -a v0.0.0-alpha.2 -m "Release version 0.0.0-alpha.2"
-
-# Push the tag to remote repository
-git push origin v0.0.0-alpha.2 -->
+- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
+- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
+- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
+- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
+- [Configuration Options](https://turborepo.com/docs/reference/configuration)
+- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)

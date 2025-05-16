@@ -6,15 +6,15 @@ import { join } from 'path';
 const NEW_VERSION = process.env.NEW_VERSION || '0.0.0-alpha.17';
 const PKG_NAME = process.env.PKG_NAME || '@the-forgebase';
 const PACKAGES_TO_UPDATE = [
-  '@forgebase-ts/auth',
-  '@forgebase-ts/common',
-  '@forgebase-ts/database',
-  '@forgebase-ts/real-time',
-  '@forgebase-ts/storage',
-  '@forgebase-ts/sdk',
-  '@forgebase-ts/api',
-  '@forgebase-ts/web-auth',
-  '@forgebase-ts/react-native-auth',
+  '@the-forgebase/auth',
+  '@the-forgebase/common',
+  '@the-forgebase/database',
+  '@the-forgebase/real-time',
+  '@the-forgebase/storage',
+  '@the-forgebase/sdk',
+  '@the-forgebase/api',
+  '@the-forgebase/web-auth',
+  '@the-forgebase/react-native-auth',
 ];
 
 function updateDeps(obj: Record<string, any> | undefined) {
@@ -32,9 +32,9 @@ function updatePkgName(obj: Record<string, any> | undefined) {
   const updates: Record<string, any> = {};
 
   for (const [key, value] of Object.entries(obj)) {
-    if (key.startsWith('@forgebase-ts')) {
+    if (key.startsWith('@the-forgebase')) {
       // if PKG_NAME is "@the-forgebase" then remove the quotes from the key
-      const newKey = key.replace('@forgebase-ts', `${PKG_NAME}`);
+      const newKey = key.replace('@the-forgebase', `${PKG_NAME}`);
       updates[newKey] = value;
       delete obj[key];
     }

@@ -22,13 +22,13 @@ The ForgeBase-TS project is organized into several libraries and applications:
 
 ### Libraries
 
-- **@forgebase-ts/api**: Core API functionality and framework adapters
-- **@forgebase-ts/auth**: Authentication and authorization
-- **@forgebase-ts/database**: Database access and query building
-- **@forgebase-ts/storage**: File storage abstraction
-- **@forgebase-ts/common**: Shared utilities
-- **@forgebase-ts/sdk**: Client and server SDK
-- **@forgebase-ts/real-time**: Real-time communication
+- **@the-forgebase/api**: Core API functionality and framework adapters
+- **@the-forgebase/auth**: Authentication and authorization
+- **@the-forgebase/database**: Database access and query building
+- **@the-forgebase/storage**: File storage abstraction
+- **@the-forgebase/common**: Shared utilities
+- **@the-forgebase/sdk**: Client and server SDK
+- **@the-forgebase/real-time**: Real-time communication
 
 ### Applications
 
@@ -109,7 +109,7 @@ All code should be properly documented using JSDoc comments. Public APIs should 
 
 Example:
 
-```typescript
+````typescript
 /**
  * Retrieves data from the specified collection with optional filtering
  *

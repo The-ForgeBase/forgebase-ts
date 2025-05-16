@@ -1,0 +1,47 @@
+{
+  "name": "@the-forgebase/storage",
+  "version": "0.0.0-alpha.22",
+  "private": false,
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
+    "dev": "tsc -p tsconfig.esm.json --watch",
+    "lint": "tsc --noEmit"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo",
+    "package.json",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "cloudinary": "^2.5.1",
+    "@google-cloud/storage": "^7.15.2",
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@aws-sdk/s3-request-presigner": "^3.750.0",
+    "typescript": "5.8.2"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@the-forgebase/typescript-config": "workspace:*",
+    "@types/node": "~18.16.9"
+  }
+}

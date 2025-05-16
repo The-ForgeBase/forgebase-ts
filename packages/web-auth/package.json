@@ -1,0 +1,118 @@
+{
+  "name": "@the-forgebase/web-auth",
+  "version": "0.0.0-alpha.22",
+  "description": "Framework-agnostic web authentication SDK for ForgeBase with SSR support",
+  "private": false,
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
+    "dev": "tsc -p tsconfig.esm.json --watch",
+    "lint": "tsc --noEmit"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./frameworks/react": {
+      "types": "./dist/esm/frameworks/react/index.d.ts",
+      "import": "./dist/esm/frameworks/react/index.js",
+      "require": "./dist/cjs/frameworks/react/index.js"
+    },
+    "./frameworks/nextjs": {
+      "types": "./dist/esm/frameworks/nextjs/index.d.ts",
+      "import": "./dist/esm/frameworks/nextjs/index.js",
+      "require": "./dist/cjs/frameworks/nextjs/index.js"
+    },
+    "./frameworks/nextjs/app-router": {
+      "types": "./dist/esm/frameworks/nextjs/app-router/index.d.ts",
+      "import": "./dist/esm/frameworks/nextjs/app-router/index.js",
+      "require": "./dist/cjs/frameworks/nextjs/app-router/index.js"
+    },
+    "./frameworks/nextjs/pages-router": {
+      "types": "./dist/esm/frameworks/nextjs/pages-router/index.d.ts",
+      "import": "./dist/esm/frameworks/nextjs/pages-router/index.js",
+      "require": "./dist/cjs/frameworks/nextjs/pages-router/index.js"
+    },
+    "./frameworks/angular": {
+      "types": "./dist/esm/frameworks/angular/index.d.ts",
+      "import": "./dist/esm/frameworks/angular/index.js",
+      "require": "./dist/cjs/frameworks/angular/index.js"
+    },
+    "./frameworks/nitro": {
+      "types": "./dist/esm/frameworks/nitro/index.d.ts",
+      "import": "./dist/esm/frameworks/nitro/index.js",
+      "require": "./dist/cjs/frameworks/nitro/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/esm/index.d.ts"
+      ],
+      "frameworks/react": [
+        "./dist/esm/frameworks/react/index.d.ts"
+      ],
+      "frameworks/nextjs": [
+        "./dist/esm/frameworks/nextjs/index.d.ts"
+      ],
+      "frameworks/nextjs/app-router": [
+        "./dist/esm/frameworks/nextjs/app-router/index.d.ts"
+      ],
+      "frameworks/nextjs/pages-router": [
+        "./dist/esm/frameworks/nextjs/pages-router/index.d.ts"
+      ],
+      "frameworks/angular": [
+        "./dist/esm/frameworks/angular/index.d.ts"
+      ],
+      "frameworks/nitro": [
+        "./dist/esm/frameworks/nitro/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo",
+    "package.json",
+    "README.md"
+  ],
+  "keywords": [
+    "authentication",
+    "auth",
+    "forgebase",
+    "ssr",
+    "web"
+  ],
+  "author": "The-ForgeBase",
+  "license": "MIT",
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "axios": "^1.6.0",
+    "js-cookie": "^3.0.5",
+    "@angular/core": "^19.0.0",
+    "@angular/common": "^19.0.0",
+    "rxjs": "^7.8.0",
+    "next": "14.2.16",
+    "h3": "^1.15.1",
+    "react": "18.3.1",
+    "@the-forgebase/auth": "workspace:*",
+    "typescript": "5.8.2"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.3",
+    "rollup": "^3.20.0",
+    "rollup-plugin-typescript2": "^0.34.1",
+    "jest": "^29.5.0",
+    "@types/jest": "^29.5.0",
+    "@repo/eslint-config": "workspace:*",
+    "@the-forgebase/typescript-config": "workspace:*"
+  }
+}

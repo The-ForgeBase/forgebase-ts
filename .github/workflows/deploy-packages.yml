@@ -1,0 +1,127 @@
+name: Deploy Packages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Enable Corepack
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Set Git user name and email
+        run: |
+          git config --local user.email "github-actions@github.com"
+          git config --local user.name "GitHub Actions"
+
+      - name: Generate Changeset from commit messages
+        run: pnpm changeset:autogenerate
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # Get the latest version tag
+          git fetch --tags
+          LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1 || echo "v0.0.0")
+
+          # Generate release notes
+          echo "## What's Changed" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          # Add changeset entries
+          for f in .changeset/*.md; do
+            if [ -f "$f" ] && [ "$f" != ".changeset/README.md" ]; then
+              echo "Processing changeset: $f"
+              # Extract the content between the frontmatter
+              sed -n '/^---$/,/^---$/!p' "$f" >> RELEASE_NOTES.md
+              echo "" >> RELEASE_NOTES.md
+            fi
+          done
+
+          # Add commit history
+          echo "### Commits" >> RELEASE_NOTES.md
+          git log ${LATEST_TAG}..HEAD --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md
+
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@v1.4.1
+        with:
+          commit: 'chore(release): version packages'
+          title: 'chore(release): version packages'
+          version: node .github/changeset-version.js
+          publish: npx changeset publish
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: steps.changesets.outputs.published == 'true'
+        with:
+          tag_name: v${{ steps.changesets.outputs.version }}
+          name: Release v${{ steps.changesets.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build packages using Turborepo
+      - name: Build packages
+        run: |
+          pnpm turbo run build --filter=./packages/common
+          pnpm turbo run build --filter=./packages/database
+          pnpm turbo run build --filter=./packages/auth
+          pnpm turbo run build --filter=./packages/api
+          pnpm turbo run build --filter=./packages/storage
+          pnpm turbo run build --filter=./packages/sdk
+
+      # Set up npm registry
+      - name: Setup npm authentication
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          echo "@the-forgebase:registry=https://registry.npmjs.org/" >> ~/.npmrc
+
+      # Publish packages in correct order
+      - name: Publish packages
+        run: |
+          for pkg in common database auth api storage sdk; do
+            echo "Publishing @the-forgebase/$pkg..."
+            cd "packages/$pkg"
+            if [ -f "package.json" ]; then
+              pnpm publish --no-git-checks --access public || true
+            fi
+            cd ../..
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Auto-merge release PR
+        if: steps.changesets.outputs.pullRequestNumber != ''
+        run: |
+          gh pr merge ${{ steps.changesets.outputs.pullRequestNumber }} --squash --delete-branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
