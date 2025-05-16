@@ -1,0 +1,16 @@
+{
+  "extends": "@the-forgebase/typescript-config/base.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "declaration": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "jest.config.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "node_modules",
+    "dist"
+  ]
+}

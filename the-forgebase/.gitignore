@@ -12,6 +12,13 @@ node_modules
 .env.test.local
 .env.production.local
 
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
 # Testing
 coverage
 
@@ -36,3 +43,33 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+.angular
+
+keys
+
+# Expo
+node_modules/
+.expo/
+.yarn/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+cache/
+
+db.sqlite

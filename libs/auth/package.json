@@ -3,64 +3,52 @@
   "version": "0.0.1",
   "private": false,
   "type": "module",
-  "main": "./src/index.js",
-  "module": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./src/index.d.ts",
-      "import": "./src/index.js",
-      "require": "./src/index.js",
-      "default": "./src/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./adapters": {
-      "types": "./src/adapters/index.d.ts",
-      "import": "./src/adapters/index.js",
-      "require": "./src/adapters/index.js",
-      "default": "./src/adapters/index.js"
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js",
+      "require": "./dist/adapters/index.js",
+      "default": "./dist/adapters/index.js"
     },
     "./adapters/nest": {
-      "types": "./src/adapters/nest/index.d.ts",
-      "import": "./src/adapters/nest/index.js",
-      "require": "./src/adapters/nest/index.js",
-      "default": "./src/adapters/nest/index.js"
+      "types": "./dist/adapters/nest/index.d.ts",
+      "import": "./dist/adapters/nest/index.js",
+      "require": "./dist/adapters/nest/index.js",
+      "default": "./dist/adapters/nest/index.js"
     },
     "./adapters/web": {
-      "types": "./src/adapters/web/index.d.ts",
-      "import": "./src/adapters/web/index.js",
-      "require": "./src/adapters/web/index.js",
-      "default": "./src/adapters/web/index.js"
+      "types": "./dist/adapters/web/index.d.ts",
+      "import": "./dist/adapters/web/index.js",
+      "require": "./dist/adapters/web/index.js",
+      "default": "./dist/adapters/web/index.js"
     },
     "./adapters/express": {
-      "types": "./src/adapters/express/index.d.ts",
-      "import": "./src/adapters/express/index.js",
-      "require": "./src/adapters/express/index.js",
-      "default": "./src/adapters/express/index.js"
+      "types": "./dist/adapters/express/index.d.ts",
+      "import": "./dist/adapters/express/index.js",
+      "require": "./dist/adapters/express/index.js",
+      "default": "./dist/adapters/express/index.js"
     },
     "./adapters/ultimate-express": {
-      "types": "./src/adapters/ultimate-express/index.d.ts",
-      "import": "./src/adapters/ultimate-express/index.js",
-      "require": "./src/adapters/ultimate-express/index.js",
-      "default": "./src/adapters/ultimate-express/index.js"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      ".": [
-        "./src/index.d.ts"
-      ],
-      "adapters": [
-        "./src/adapters/index.d.ts"
-      ],
-      "adapters/nest": [
-        "./src/adapters/nest/index.d.ts"
-      ]
+      "types": "./dist/adapters/ultimate-express/index.d.ts",
+      "import": "./dist/adapters/ultimate-express/index.js",
+      "require": "./dist/adapters/ultimate-express/index.js",
+      "default": "./dist/adapters/ultimate-express/index.js"
     }
   },
   "files": [
-    "src",
-    "!**/*.tsbuildinfo"
+    "dist",
+    "!**/*.tsbuildinfo",
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"
@@ -90,7 +78,8 @@
     "tsup": "^8.4.0",
     "tslib": "^2.4.0",
     "awilix": "^12.0.5",
-    "ultimate-express": "^1.4.6"
+    "ultimate-express": "^1.4.6",
+    "knex-mock-client": "^3.0.2"
   },
   "peerDependencies": {
     "@forgebase-ts/database": "0.0.1",

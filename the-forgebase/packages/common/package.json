@@ -1,0 +1,29 @@
+{
+  "name": "@the-forgebase/common",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "lint": "tsc --noEmit"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "devDependencies": {
+    "@the-forgebase/typescript-config": "workspace:*",
+    "tsc": "^2.0.4",
+    "tslib": "^2.8.1",
+    "tsup": "^8.4.0",
+    "typescript": "latest"
+  },
+  "dependencies": {}
+}

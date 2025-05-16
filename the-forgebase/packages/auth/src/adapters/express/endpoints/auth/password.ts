@@ -1,0 +1,71 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { Router, Request, Response } from 'express';
+import { DynamicAuthManager } from '../../../../authManager';
+import { ExpressAuthConfig, ExpressAuthRequest } from '../../types';
+import { authGuard } from '../../middleware';
+
+export function createPasswordRouter(
+  authManager: DynamicAuthManager,
+  config: ExpressAuthConfig,
+): Router {
+  const router = Router();
+
+  router.post('/forgot-password', async (req: Request, res: Response) => {
+    try {
+      const { email, redirectUrl } = req.body;
+      const token = await authManager.sendPasswordResetEmail(
+        email,
+        redirectUrl,
+      );
+      res.status(200).json({
+        success: true,
+        message: 'Password reset email sent',
+        token: token || undefined,
+      });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  router.post('/reset-password', async (req: Request, res: Response) => {
+    try {
+      const { token, userId, newPassword } = req.body;
+      const result = await authManager.resetPassword(
+        userId,
+        newPassword,
+        token,
+      );
+      res.status(200).json({
+        success: result,
+        message: 'Password reset successful',
+      });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  router.post(
+    '/change-password',
+    // @ts-ignore
+    authGuard,
+    async (req: ExpressAuthRequest, res: Response) => {
+      try {
+        const userId = req.user!.id;
+        const { oldPassword, newPassword } = req.body;
+        const success = await authManager.changePassword(
+          userId,
+          oldPassword,
+          newPassword,
+        );
+        res.status(200).json({
+          success,
+          message: 'Password changed successfully',
+        });
+      } catch (e: any) {
+        res.status(400).json({ error: e.message });
+      }
+    },
+  );
+
+  return router;
+}
