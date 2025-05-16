@@ -72,6 +72,7 @@ jobs:
           pnpm turbo run build --filter=./packages/api
           pnpm turbo run build --filter=./packages/storage
           pnpm turbo run build --filter=./packages/sdk
+          pnpm turbo run build --filter=./packages/web-auth
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
@@ -114,7 +115,7 @@ jobs:
           fi
 
           # Publish packages in correct order
-          for pkg in common database auth api storage sdk; do
+          for pkg in common database auth api storage sdk web-auth; do
             echo "Publishing @the-forgebase/$pkg..."
             cd "packages/$pkg"
             if [ -f "package.json" ]; then
