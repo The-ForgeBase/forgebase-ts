@@ -1,0 +1,163 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    # Only run on push events (not on PRs)
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for creating releases
+      pull-requests: read # Needed for reading PR info for release notes
+      packages: write # Needed if you want to publish to GitHub Packages
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important for determining version and generating changelogs
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Git User
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Determine version
+        id: determine_version
+        run: |
+          # Get the latest version tag, ensuring we fetch all tags
+          git fetch --tags
+          LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1 || echo "v0.0.0-alpha.0")
+
+          # Extract version number without the 'v' prefix
+          LATEST_VERSION=${LATEST_TAG#v}
+
+          # If it's an alpha version, increment the alpha number
+          if [[ $LATEST_VERSION == *"-alpha."* ]]; then
+            PREFIX=$(echo $LATEST_VERSION | cut -d'-' -f1)
+            ALPHA_NUM=$(echo $LATEST_VERSION | cut -d'.' -f4)
+            NEW_ALPHA_NUM=$((ALPHA_NUM + 1))
+            NEW_VERSION="$PREFIX-alpha.$NEW_ALPHA_NUM"
+          else
+            # If it's not an alpha version, increment the patch version and add alpha.1
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_VERSION"
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH-alpha.1"
+          fi
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "PKG_NAME=@the-forgebase" >> $GITHUB_ENV
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # Get the previous tag or use the initial commit if no tags exist
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || git rev-list --max-parents=0 HEAD)
+
+          # Generate release notes from commits since the previous tag
+          echo "## Changes in this Release" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          # Get merged PRs since the last tag
+          git log ${PREVIOUS_TAG}..HEAD --pretty=format:"* %s (%h)" | grep -i "merge pull request" >> RELEASE_NOTES.md || true
+
+          # If no PRs found, list regular commits
+          if [ ! -s RELEASE_NOTES.md ]; then
+            git log ${PREVIOUS_TAG}..HEAD --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md
+          fi
+
+          cat RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          name: Release v${{ env.NEW_VERSION }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: true # Alpha releases are marked as pre-releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update package versions
+        run: |
+          find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
+
+      - name: Update internal forgebase-ts dependencies
+        run: |
+          pnpm exec tsx scripts/update-internal-deps.ts
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+          PKG_NAME: ${{ env.PKG_NAME }}
+
+      - name: Build all libraries
+        run: pnpm exec nx run-many -t build --projects=api,auth,common,database,real-time,storage,sdk,web-auth,react-native-auth
+
+      - name: Setup GitHub Package Registry
+        run: |
+          echo "@forgebase:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
+      # Uncomment the following steps if you want to publish packages to npm
+      - name: Setup npm authentication
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish to npm
+        run: |
+          # Update package versions
+          find ./libs -name "package.json" -type f -exec sed -i "s/\"version\": \".*\"/\"version\": \"${{ env.NEW_VERSION }}\"/g" {} \;
+
+          # Change Package Name
+          for pkg in dist/libs/*; do
+            if [ -d "$pkg" ]; then
+              cd "$pkg"
+              echo "Publishing $(basename $pkg)..."
+              # Update package name to use GitHub Packages scope
+              sed -i 's/"name": "@the-forgebase\/\(.*\)"/"name": "@the-forgebase\/\1"/' package.json
+              cd -
+            fi
+          done
+
+          # Publish packages
+          find ./dist/libs -type d -maxdepth 1 -exec pnpm publish --access public --no-git-checks {} \;
+
+      - name: Setup Node.js with GitHub Package Registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@the-forgebase'
+
+      - name: Publish to GitHub Packages
+        run: |
+          for pkg in dist/libs/*; do
+            if [ -d "$pkg" ]; then
+              cd "$pkg"
+              echo "Publishing $(basename $pkg)..."
+              # Update package name to use GitHub Packages scope
+              sed -i 's/"name": "@the-forgebase\/\(.*\)"/"name": "@the-forgebase\/\1"/' package.json
+              npm publish --access public
+              cd -
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
