@@ -37,8 +37,8 @@ jobs:
           git config --local user.email "github-actions@github.com"
           git config --local user.name "GitHub Actions"
 
-      # - name: Generate Changeset from commit messages
-      #   run: pnpm changeset:autogenerate
+      - name: Generate Changeset from commit messages
+        run: pnpm changeset:autogenerate
 
       - name: Generate Release Notes
         id: release_notes
