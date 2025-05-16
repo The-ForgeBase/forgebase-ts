@@ -14,7 +14,7 @@
     "@the-forgebase/storage": "0.1.0-alpha.0",
     "@the-forgebase/typescript-config": "0.0.0",
     "@repo/ui": "0.0.0-alpha.22",
-    "@the-forgebase/web-auth": "0.1.0-alpha.0"
+    "@the-forgebase/web-auth": "0.0.0-alpha.22"
   },
   "changesets": [
     "dirty-socks-kneel",
