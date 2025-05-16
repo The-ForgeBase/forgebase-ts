@@ -16,5 +16,9 @@
     "@repo/ui": "0.0.0-alpha.22",
     "@the-forgebase/web-auth": "0.1.0-alpha.0"
   },
-  "changesets": ["light-snakes-dress"]
+  "changesets": [
+    "dirty-socks-kneel",
+    "light-snakes-dress",
+    "strong-clocks-glow"
+  ]
 }
