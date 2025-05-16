@@ -14,6 +14,7 @@ const commitPatterns = {
   feature: /^feat(?:\(([^)]+)\))?: (.+)/,
   fix: /^fix(?:\(([^)]+)\))?: (.+)/,
   chore: /^chore(?:\(([^)]+)\))?: (.+)/,
+  refactor: /^refactor(?:\(([^)]+)\))?: (.+)/,
 };
 
 // Helper to get package version
@@ -70,6 +71,13 @@ if (commitPatterns.breaking.test(commitMessage)) {
     packageName = scope;
     description = commitMessage.match(commitPatterns.chore)?.[2];
   }
+} else if (commitPatterns.refactor.test(commitMessage)) {
+  const scope = commitMessage.match(commitPatterns.refactor)?.[1];
+  if (validScopes.includes(scope)) {
+    changeType = 'patch';
+    packageName = scope;
+    description = commitMessage.match(commitPatterns.refactor)?.[2];
+  }
 }
 
 // If we have identified a change, create a changeset
@@ -103,6 +111,7 @@ ${description}
   console.log('- feat(<package>): <description>');
   console.log('- fix(<package>): <description>');
   console.log('- chore(<package>): <description>');
+  console.log('- refactor(<package>): <description>');
   console.log('\nValid packages are:', validScopes.join(', '));
   process.exit(1);
 }

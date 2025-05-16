@@ -30,23 +30,18 @@
       "types": "./dist/esm/database/server/index.d.ts",
       "import": "./dist/esm/database/server/index.js",
       "require": "./dist/cjs/database/server/index.js"
-    },
-    "./jwt": {
-      "types": "./dist/esm/jwt/index.d.ts",
-      "import": "./dist/esm/jwt/index.js",
-      "require": "./dist/cjs/jwt/index.js"
     }
   },
   "typesVersions": {
     "*": {
+      ".": [
+        "./dist/esm/index.d.ts"
+      ],
       "client": [
         "./dist/esm/database/client/index.d.ts"
       ],
       "server": [
         "./dist/esm/database/server/index.d.ts"
-      ],
-      "jwt": [
-        "./dist/esm/jwt/index.d.ts"
       ]
     }
   },
@@ -60,9 +55,6 @@
     "tslib": "^2.3.0",
     "knex": "^3.1.0",
     "@the-forgebase/database": "workspace:*",
-    "hono": "^4.6.19",
-    "express": "^4.21.2",
-    "jose": "^6.0.10",
     "axios": "^1.7.9",
     "typescript": "5.8.2"
   },
