@@ -28,19 +28,31 @@ export default defineAppConfig({
       },
       nav: [
         {
-          title: 'Docs',
+          title: 'Getting Started',
           to: '/getting-started',
           icon: 'lucide:rocket',
           target: '_self',
-          description: 'Start building your document with shadcn-docs-nuxt',
-          // links: [
-          //   {
-          //     title: 'Getting Started',
-          //     to: '/getting-started/introduction',
-          //     description: 'Start building your document with shadcn-docs-nuxt',
-          //     icon: 'lucide:rocket',
-          //   },
-          // ],
+          description: 'Get started with ForgeBase',
+        },
+        {
+          title: 'API',
+          to: '/api',
+          icon: 'lucide:globe',
+          target: '_self',
+          description: 'API documentation and reference',
+        },
+        {
+          title: 'Packages',
+          icon: 'lucide:package',
+          links: [
+            {
+              title: 'Database',
+              icon: 'lucide:database',
+              to: '/database',
+              target: '_self',
+              description: 'Explore ForgeBase database and it functionality',
+            },
+          ],
         },
       ],
       links: [
@@ -113,6 +125,8 @@ export default defineAppConfig({
         yml: 'vscode-icons:file-type-light-yaml',
         json: 'vscode-icons:file-type-json',
         terminal: 'lucide:terminal',
+        http: 'lucide:globe',
+        git: 'vscode-icons:file-type-git',
       },
     },
     footer: {

@@ -9,12 +9,16 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
+  content: {
+    highlight: {
+      preload: ['http'],
+    },
+  },
   modules: [
     '@nuxt/eslint',
     '@nuxt/fonts',
     '@nuxt/icon',
     '@nuxt/image',
     '@nuxt/scripts',
-    // '@nuxt/ui',
   ],
 });
