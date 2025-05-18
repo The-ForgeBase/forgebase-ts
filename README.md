@@ -24,16 +24,16 @@ Our mission is to simplify backend development by providing a highly flexible, l
 
 This monorepo is organized into two main directories:
 
-### Libraries (`libs/`)
+### Libraries (`packages/`)
 
-- **[Auth](libs/auth/README.md)**: A flexible authentication library providing multiple authentication strategies and framework adapters
-- **[API](libs/api/README.md)**: Provides API functionalities and integrations
-- **[Common](libs/common/README.md)**: Common utilities and shared code used across the project
-- **[Database](libs/database/README.md)**: Database management and integration
-- **[Real-Time](libs/real-time/README.md)**: Real-time communication and updates
-- **[Storage](libs/storage/README.md)**: Storage management and integration
-- **[Studio UI Utils](libs/studio-ui-utils/README.md)**: UI utilities for the Studio application
-- **[Studio UI](libs/studio-ui/README.md)**: UI components for the Studio application
+- **[Auth](packages/auth/README.md)**: A flexible authentication library providing multiple authentication strategies and framework adapters
+- **[API](packages/api/README.md)**: Provides API functionalities and integrations
+- **[Common](packages/common/README.md)**: Common utilities and shared code used across the project
+- **[Database](packages/database/README.md)**: Database management and integration
+- **[Real-Time](packages/real-time/README.md)**: Real-time communication and updates
+- **[Storage](packages/storage/README.md)**: Storage management and integration
+- **[Studio UI Utils](packages/studio-ui-utils/README.md)**: UI utilities for the Studio application
+- **[Studio UI](packages/studio-ui/README.md)**: UI components for the Studio application
 
 ### Applications (`apps/`)
 
