@@ -35,13 +35,6 @@ export default defineAppConfig({
           description: 'Get started with ForgeBase',
         },
         {
-          title: 'API',
-          to: '/api',
-          icon: 'lucide:globe',
-          target: '_self',
-          description: 'API documentation and reference',
-        },
-        {
           title: 'Packages',
           icon: 'lucide:package',
           links: [
@@ -51,6 +44,13 @@ export default defineAppConfig({
               to: '/database',
               target: '_self',
               description: 'Explore ForgeBase database and it functionality',
+            },
+            {
+              title: 'API',
+              to: '/api',
+              target: '_self',
+              icon: 'lucide:globe',
+              description: 'Explore ForgeBase API and it functionality',
             },
           ],
         },
@@ -65,9 +65,9 @@ export default defineAppConfig({
     },
     aside: {
       useLevel: true,
-      collapse: false,
+      collapse: true,
       collapseLevel: 1,
-      folderStyle: 'tree',
+      folderStyle: 'default',
     },
     main: {
       breadCrumb: true,
