@@ -52,6 +52,14 @@ export default defineAppConfig({
               icon: 'lucide:globe',
               description: 'Explore ForgeBase API and it functionality',
             },
+            {
+              title: 'Client Packages',
+              to: '/client-packages',
+              target: '_self',
+              icon: 'lucide:package-open',
+              description:
+                'Explore ForgeBase client packages for web and mobile applications',
+            },
           ],
         },
       ],
