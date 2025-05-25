@@ -6,15 +6,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noImplicitAny": false,
-    "composite": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "types": ["deno"],
-    "strictNullChecks": true,
-    "exactOptionalPropertyTypes": true,
-    "skipLibCheck": true
+    "composite": true
   },
-  "include": ["src", "examples/standard-schema-example"],
+  "include": ["src"],
   "exclude": [
     "node_modules",
     "dist",

@@ -204,5 +204,3 @@ try {
   console.error('Validation failed:', error);
 }
 ```
-
-See the [Standard Schema Example Plugin](./src/plugins/standard-schema-example/README.md) for more details.

@@ -11,7 +11,9 @@
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
     "dev": "pnpm build:esm --watch",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -19,12 +21,44 @@
       "types": "./dist/esm/src/index.d.ts",
       "import": "./dist/esm/src/index.js",
       "require": "./dist/cjs/src/index.js"
+    },
+    "./plugins/utils": {
+      "types": "./dist/esm/src/plugins/utils/index.d.ts",
+      "import": "./dist/esm/src/plugins/utils/index.js",
+      "require": "./dist/cjs/src/plugins/utils/index.js"
+    },
+    "./plugins/email-password": {
+      "types": "./dist/esm/src/plugins/email-password/email-password.plugin.d.ts",
+      "import": "./dist/esm/src/plugins/email-password/email-password.plugin.js",
+      "require": "./dist/cjs/src/plugins/email-password/email-password.plugin.js"
+    },
+    "./plugins/passwordless": {
+      "types": "./dist/esm/src/plugins/passwordless/passwordless.plugin.d.ts",
+      "import": "./dist/esm/src/plugins/passwordless/passwordless.plugin.js",
+      "require": "./dist/cjs/src/plugins/passwordless/passwordless.plugin.js"
+    },
+    "./services": {
+      "types": "./dist/esm/src/services/index.d.ts",
+      "import": "./dist/esm/src/services/index.js",
+      "require": "./dist/cjs/src/services/index.js"
     }
   },
   "typesVersions": {
     "*": {
       ".": [
         "./dist/esm/src/index.d.ts"
+      ],
+      "plugins/utils": [
+        "./dist/esm/src/plugins/utils/index.d.ts"
+      ],
+      "plugins/email-password": [
+        "./dist/esm/src/plugins/email-password/email-password.plugin.d.ts"
+      ],
+      "plugins/passwordless": [
+        "./dist/esm/src/plugins/passwordless/passwordless.plugin.d.ts"
+      ],
+      "services": [
+        "./dist/esm/src/services/index.d.ts"
       ]
     }
   },
@@ -38,16 +72,29 @@
     "@repo/eslint-config": "workspace:*",
     "@the-forgebase/typescript-config": "workspace:*",
     "@types/deno": "^2.2.0",
-    "tslib": "^2.8.1"
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.15.21",
+    "tslib": "^2.8.1",
+    "vitest": "^3.1.4"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
     "@oslojs/crypto": "^1.0.1",
     "@standard-schema/spec": "^1.0.0",
+    "arctic": "^3.6.1",
     "arktype": "^2.1.20",
     "awilix": "^12.0.5",
     "axios": "^1.9.0",
+    "express": "^5.1.0",
+    "itty-router": "^5.0.18",
+    "jsonwebtoken": "^9.0.2",
+    "jsx-email": "^2.7.2",
+    "knex": "^3.1.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.0",
+    "rfc4648": "^1.5.4",
     "typescript": "^5.8.3",
+    "ultimate-express": "^2.0.4",
     "uuid": "^11.1.0"
   }
 }

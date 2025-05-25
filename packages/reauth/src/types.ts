@@ -1,6 +1,5 @@
 import { AwilixContainer } from 'awilix';
-
-export type CookieSameSite = 'lax' | 'strict' | 'none';
+import { Knex } from 'knex';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -12,76 +11,179 @@ export type ValidationRule<T = any> = (
   input: AuthInput,
 ) => string | undefined;
 
-export interface ValidationSchema {
-  [key: string]: ValidationRule | ValidationRule[];
-}
+export type ValidationSchema = Record<
+  string,
+  ValidationRule | ValidationRule[]
+>;
 
-export type HookFunction = (
-  input: AuthInput,
-  output?: AuthOutput,
-) => Promise<void> | void;
+type StepInputHook<T> = (
+  input: T,
+  container: AwilixContainer<ReAuthCradle>,
+) => T | Promise<T>;
+type StepOutputHook<T> = (
+  output: T,
+  container: AwilixContainer<ReAuthCradle>,
+) => T | Promise<T>;
 
 export interface AuthStepHooks {
-  before?: HookFunction | HookFunction[];
-  after?: HookFunction | HookFunction[];
-  onError?: (error: Error, input: AuthInput) => Promise<void> | void;
+  before?: StepInputHook<AuthInput>;
+  after?: StepOutputHook<AuthOutput>;
+  onError?: (
+    error: Error,
+    input: AuthInput,
+    container: AwilixContainer<ReAuthCradle>,
+  ) => Promise<void> | void;
 }
 
-export interface AuthStep {
+export type PluginProp<T = any> = {
+  pluginName: string;
+  container: AwilixContainer<ReAuthCradle>;
+  config: T;
+};
+
+export interface AuthStep<T> {
   name: string;
   description: string;
   validationSchema?: ValidationSchema;
+  inputs: string[];
   hooks?: AuthStepHooks;
-  run(input: AuthInput): Promise<AuthOutput>;
+  registerHook?(
+    type: HooksType,
+    fn: (
+      data: AuthInput | AuthOutput,
+      container: AwilixContainer<ReAuthCradle>,
+      error?: Error,
+    ) => Promise<AuthOutput | AuthInput | void>,
+  ): void;
+  run(input: AuthInput, pluginProperties?: PluginProp<T>): Promise<AuthOutput>;
+  protocol: {
+    http?: {
+      method: string;
+      auth?: boolean;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
 }
 
-export interface AuthInput {
-  reqBody?: Record<string, any>;
-  reqQuery?: Record<string, any>;
-  reqParams?: Record<string, any>;
-  reqHeaders?: Record<string, any>;
-  reqMethod?: string;
-}
+export type AuthInput = {
+  entity?: Entity;
+  token?: AuthToken;
+} & Record<string, any>;
 
 export type HooksType = 'before' | 'after' | 'onError';
 
-export interface ReAuthCradle {
-  [key: string]: any;
+export interface SensitiveFields {
+  [pluginName: string]: string[];
 }
 
-export interface AuthPlugin {
+export interface AuthPlugin<T = any> {
   name: string;
-  steps: AuthStep[];
-  defaultConfig: {
-    useCookie?: boolean;
-    cookieName?: string;
-    cookieOptions?: {
-      maxAge: number;
-      httpOnly: boolean;
-      secure: boolean;
-      sameSite: CookieSameSite;
-    };
-    returnToken?: boolean;
-    useRedirect?: boolean;
-    redirectUrl?: string;
-  };
-  requiredInput: {
-    reqBody: boolean;
-    reqQuery: boolean;
-    reqParams: boolean;
-    reqHeaders: boolean;
-    reqMethod: boolean;
-  };
-
+  steps: AuthStep<T>[];
+  container?: AwilixContainer<ReAuthCradle>;
   /**
    * Initialize the plugin with an optional DI container
    * @param container Optional Awilix container for dependency injection
    */
-  initialize(container?: AwilixContainer<ReAuthCradle>): Promise<void> | void;
+  initialize(container: AwilixContainer<ReAuthCradle>): Promise<void> | void;
 
-  getStep(step: string): AuthStep | undefined;
+  /**
+   * Returns an array of field names that should be considered sensitive
+   * and redacted during serialization
+   */
+  getSensitiveFields?(): string[];
 
-  runStep(step: string, input: AuthInput): Promise<AuthOutput>;
+  migrationConfig?: PluginMigrationConfig;
+
+  config: T;
+
+  runStep?(
+    step: string,
+    input: AuthInput,
+    container: AwilixContainer<ReAuthCradle>,
+  ): Promise<AuthOutput>;
+}
+
+export type AuthOutput = {
+  entity?: Entity;
+  token?: AuthToken;
+  redirect?: string;
+  success: boolean;
+  message: string;
+  status: string;
+} & Record<string, any>;
+
+export interface BaseReAuthCradle {
+  entityService: EntityService;
+  sessionService: SessionService;
+  knex: Knex;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ReAuthCradleExtension {}
+
+export interface ReAuthCradle extends BaseReAuthCradle, ReAuthCradleExtension {
+  sensitiveFields: SensitiveFields;
+  serializeEntity: <T extends Entity>(entity: T) => T;
+}
+
+type CradleService<T extends keyof ReAuthCradle> = ReAuthCradle[T];
+
+export interface ColumnDefinition {
+  type:
+    | 'string'
+    | 'integer'
+    | 'boolean'
+    | 'datetime'
+    | 'timestamp'
+    | 'text'
+    | 'json'
+    | 'decimal'
+    | 'uuid';
+  length?: number;
+  nullable?: boolean;
+  defaultValue?: any;
+  unique?: boolean;
+  index?: boolean;
+  primary?: boolean;
+  references?: {
+    table: string;
+    column: string;
+    onDelete?: 'CASCADE' | 'SET NULL' | 'RESTRICT';
+    onUpdate?: 'CASCADE' | 'SET NULL' | 'RESTRICT';
+  };
+}
+
+export interface TableSchema {
+  tableName: string;
+  columns: Record<string, ColumnDefinition>;
+  timestamps?: boolean;
+  indexes?: Array<{
+    columns: string[];
+    name?: string;
+    unique?: boolean;
+  }>;
+}
+
+export interface PluginMigrationConfig {
+  pluginName: string;
+  tables?: TableSchema[];
+  extendTables?: Array<{
+    tableName: string;
+    columns: Record<string, ColumnDefinition>;
+    indexes?: Array<{
+      columns: string[];
+      name?: string;
+      unique?: boolean;
+    }>;
+  }>;
+}
+
+export interface MigrationConfig {
+  migrationName: string;
+  outputDir: string;
+  plugins: PluginMigrationConfig[];
+  baseTables?: TableSchema[];
 }
 
 export class ConfigError extends Error {
@@ -164,43 +266,50 @@ export class InitializationError extends Error {
   }
 }
 
-export type BaseUser = {
+export type BaseEntity = {
   id: string;
-  email: string;
-  name?: string;
-  phone?: string;
-  picture?: string;
-  permissions?: string | string[];
-  role?: string;
-  labels?: string | string[];
-  teams?: string | string[];
-  password_hash?: string;
-  email_verified: boolean;
-  phone_verified: boolean;
+  role: string;
   created_at: Date;
   updated_at: Date;
-  mfa_enabled: boolean;
-  mfa_secret?: string;
-  mfa_recovery_codes?: string[];
-  last_login_at?: Date;
-  // Add other mandatory fields as needed
 };
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface UserExtension {}
+export interface EntityExtension {}
 
 // Generic type for custom user fields
-export type User = BaseUser & UserExtension;
+export type Entity = BaseEntity & EntityExtension;
 
-export type AuthToken =
-  | {
-      accessToken: string;
-      refreshToken: string;
-    }
-  | string;
+export interface BaseSession {
+  id: string;
+  entity_id: string;
+  token: string;
+  expires_at: Date;
+  created_at: Date;
+  updated_at: Date;
+}
 
-export type AuthOutput = {
-  user?: User;
-  token?: AuthToken;
-  redirect?: string;
-} & Record<string, any>;
+export interface SessionExtension {}
+
+export type Session = BaseSession & SessionExtension;
+
+export type AuthToken = string | null;
+
+export type EntityService = {
+  findEntity(id: string, filed: string): Promise<Entity | null>;
+  createEntity(entity: Partial<Entity>): Promise<Entity>;
+  updateEntity(
+    id: string,
+    filed: string,
+    entity: Partial<Entity>,
+  ): Promise<Entity>;
+  deleteEntity(id: string, filed: string): Promise<void>;
+};
+
+export type SessionService = {
+  createSession(entityId: string | number): Promise<AuthToken>;
+  verifySession(
+    token: string,
+  ): Promise<{ entity: Entity | null; token: AuthToken }>;
+  destroySession(token: string): Promise<void>;
+  destroyAllSessions(entityId: string | number): Promise<void>;
+};
