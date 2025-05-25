@@ -1,0 +1,19 @@
+{
+  "extends": "@the-forgebase/typescript-config/base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2020",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "allowJs": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    "esm": true
+  }
+}
