@@ -16,7 +16,7 @@ import type {
   SessionService,
   SensitiveFields,
   Entity,
-  BaseEntity
+  BaseEntity,
 } from './types';
 import { PluginNotFound, StepNotFound } from './types';
 
@@ -41,7 +41,7 @@ export class ReAuthEngine {
       entityService: asValue(config.entity),
       sessionService: asValue(config.session),
       sensitiveFields: asValue(this.sensitiveFields),
-      serializeEntity: asValue(this.serializeEntity.bind(this))
+      serializeEntity: asValue(this.serializeEntity.bind(this)),
     });
 
     config.plugins.forEach((plugin) => this.registerPlugin(plugin));
@@ -122,7 +122,7 @@ export class ReAuthEngine {
    */
   private registerPlugin(plugin: AuthPlugin) {
     this.plugins.push(plugin);
-    
+
     // Register plugin's sensitive fields if defined
     if (plugin.getSensitiveFields) {
       const fields = plugin.getSensitiveFields();
@@ -144,10 +144,10 @@ export class ReAuthEngine {
 
     // Create a shallow copy of the entity
     const serialized = { ...entity } as Record<string, any>;
-    
+
     // Get all sensitive fields from all plugins
-    const allSensitiveFields = Object.values(this.sensitiveFields).flat() as string[];
-    
+    const allSensitiveFields = Object.values(this.sensitiveFields).flat();
+
     // Redact sensitive fields
     allSensitiveFields.forEach((field) => {
       if (field in serialized) {
