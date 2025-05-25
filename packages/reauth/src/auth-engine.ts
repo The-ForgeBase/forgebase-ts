@@ -16,7 +16,6 @@ import type {
   SessionService,
   SensitiveFields,
   Entity,
-  BaseEntity,
 } from './types';
 import { PluginNotFound, StepNotFound } from './types';
 
