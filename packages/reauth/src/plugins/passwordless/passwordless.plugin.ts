@@ -315,8 +315,6 @@ const plugin: AuthPlugin<AuthStepConfig> = {
           magiclink_code_expires_at: { type: 'timestamp', nullable: true },
           otp_code: { type: 'string', nullable: true },
           otp_code_expires_at: { type: 'timestamp', nullable: true },
-          phone: { type: 'string', nullable: true },
-          phone_verified: { type: 'boolean', index: true, defaultValue: false },
         },
       },
     ],
@@ -423,7 +421,5 @@ declare module '../../types' {
     magiclink_code_expires_at?: Date | undefined;
     otp_code?: string | undefined;
     otp_code_expires_at?: Date | undefined;
-    phone?: string | undefined;
-    phone_verified?: boolean;
   }
 }

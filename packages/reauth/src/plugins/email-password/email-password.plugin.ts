@@ -75,6 +75,14 @@ const plugin: AuthPlugin<AuthStepConfig> = {
           };
         }
 
+        if (!entity.password_hash) {
+          return {
+            success: false,
+            message: 'This user does not have a password',
+            status: 'unf',
+          };
+        }
+
         const passwordMatch = await verifyPasswordHash(
           entity.password_hash,
           password,
