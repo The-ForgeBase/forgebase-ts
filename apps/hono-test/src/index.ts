@@ -1,15 +1,8 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
-import type {
-  AuthOutput,
-  AuthPlugin,
-  AuthToken,
-  Entity,
-} from '@the-forgebase/reauth';
 import { showRoutes } from 'hono/dev';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import knex from 'knex';
-import reAuth from './reauth/auth';
 
 const app = new Hono();
 
@@ -21,143 +14,142 @@ export const db = knex({
   useNullAsDefault: true,
 });
 
-app.use(async (c, next) => {
-  c.set('entity', null);
-  c.set('token', null);
-  const token = getCookie(c, 'token');
-  console.log(token);
-  if (token) {
-    const container = reAuth.getContainer();
-    const sessionService = container.cradle.sessionService;
-    const { entity, token: newToken } = await sessionService.verifySession(
-      token as string,
-    );
+// app.use(async (c, next) => {
+//   c.set('entity', null);
+//   c.set('token', null);
+//   const token = getCookie(c, 'token');
+//   console.log(token);
+//   if (token) {
+//     const container = reAuth.getContainer();
+//     const sessionService = container.cradle.sessionService;
+//     const { entity, token: newToken } = await sessionService.verifySession(
+//       token as string,
+//     );
 
-    console.log(entity, newToken);
+//     console.log(entity, newToken);
 
-    if (!entity || !newToken) {
-      // Invalid session, clear cookie
-      deleteCookie(c, 'token');
-      return next();
-    }
+//     if (!entity || !newToken) {
+//       // Invalid session, clear cookie
+//       deleteCookie(c, 'token');
+//       return next();
+//     }
 
-    c.set('entity', entity);
-    c.set('token', newToken);
-    setCookie(c, 'token', newToken);
-  }
-  await next();
-});
+//     c.set('entity', entity);
+//     c.set('token', newToken);
+//     setCookie(c, 'token', newToken);
+//   }
+//   await next();
+// });
 
 const auth = new Hono();
 
-// list of plugins and there names with steps
-const authRoutes = reAuth.getAllPlugins().map((plugin: AuthPlugin) => {
-  return {
-    name: plugin.name,
-    steps: plugin.steps.map((step) => ({
-      name: step.name,
-      protocol: step.protocol,
-    })),
-  };
-});
+// // list of plugins and there names with steps
+// const authRoutes = reAuth.getAllPlugins().map((plugin: AuthPlugin) => {
+//   return {
+//     name: plugin.name,
+//     steps: plugin.steps.map((step) => ({
+//       name: step.name,
+//       protocol: step.protocol,
+//     })),
+//   };
+// });
 
-// each step is a route
-authRoutes.forEach((route) => {
-  route.steps.forEach((step) => {
-    // If no http protocol, skip
-    if (!step.protocol?.http) return;
-    auth.on(
-      [step.protocol.http.method],
-      `/${route.name}/${step.name}`,
-      async (c) => {
-        try {
-          const expectedInputs = reAuth.getStepInputs(route.name, step.name);
-          let inputs: Record<string, any> = {};
-          const body: Record<string, any> = await c.req.json();
+// // each step is a route
+// authRoutes.forEach((route) => {
+//   route.steps.forEach((step) => {
+//     // If no http protocol, skip
+//     if (!step.protocol?.http) return;
+//     auth.on(
+//       [step.protocol.http.method],
+//       `/${route.name}/${step.name}`,
+//       async (c) => {
+//         try {
+//           const expectedInputs = reAuth.getStepInputs(route.name, step.name);
+//           let inputs: Record<string, any> = {};
+//           const body: Record<string, any> = await c.req.json();
 
-          //1. find the expected inputs in the body
-          expectedInputs.forEach((input) => {
-            if (body[input]) {
-              inputs[input] = body[input];
-            }
-          });
+//           //1. find the expected inputs in the body
+//           expectedInputs.forEach((input) => {
+//             if (body[input]) {
+//               inputs[input] = body[input];
+//             }
+//           });
 
-          //2. find the expected inputs in the query params
-          expectedInputs.forEach((input) => {
-            if (c.req.query(input)) {
-              inputs[input] = c.req.query(input);
-            }
-          });
+//           //2. find the expected inputs in the query params
+//           expectedInputs.forEach((input) => {
+//             if (c.req.query(input)) {
+//               inputs[input] = c.req.query(input);
+//             }
+//           });
 
-          if (step.protocol.http && step.protocol.http.auth) {
-            const entity = c.get('entity');
-            const token = c.get('token');
-            if (!entity) {
-              return c.json({ error: 'Unauthorized' }, 401);
-            }
-            inputs.entity = entity;
-            inputs.token = token;
-          }
+//           if (step.protocol.http && step.protocol.http.auth) {
+//             const entity = c.get('entity');
+//             const token = c.get('token');
+//             if (!entity) {
+//               return c.json({ error: 'Unauthorized' }, 401);
+//             }
+//             inputs.entity = entity;
+//             inputs.token = token;
+//           }
 
-          if (Object.keys(inputs).length !== expectedInputs.length) {
-            return c.json({ error: 'Missing inputs' }, 400);
-          }
+//           if (Object.keys(inputs).length !== expectedInputs.length) {
+//             return c.json({ error: 'Missing inputs' }, 400);
+//           }
 
-          const {
-            token,
-            redirect: rd,
-            success,
-            status,
-            ...rest
-          }: AuthOutput = await reAuth.executeStep(
-            route.name,
-            step.name,
-            inputs,
-          );
+//           const {
+//             token,
+//             redirect: rd,
+//             success,
+//             status,
+//             ...rest
+//           }: AuthOutput = await reAuth.executeStep(
+//             route.name,
+//             step.name,
+//             inputs,
+//           );
 
-          const st: any | undefined = step.protocol.http
-            ? step.protocol.http[status]
-            : undefined;
+//           const st: any | undefined = step.protocol.http
+//             ? step.protocol.http[status]
+//             : undefined;
 
-          if (!success) {
-            return c.json(
-              {
-                success,
-                ...rest,
-              },
-              { status: st || 400 },
-            );
-          }
-          if (token) {
-            // save cookie
-            setCookie(c, 'token', token);
-          }
+//           if (!success) {
+//             return c.json(
+//               {
+//                 success,
+//                 ...rest,
+//               },
+//               { status: st || 400 },
+//             );
+//           }
+//           if (token) {
+//             // save cookie
+//             setCookie(c, 'token', token);
+//           }
 
-          if (rd) {
-            return c.redirect(rd);
-          }
+//           if (rd) {
+//             return c.redirect(rd);
+//           }
 
-          return c.json(
-            {
-              success,
-              ...rest,
-            },
-            { status: st || 200 },
-          );
-        } catch (error) {
-          console.log(error);
-          return c.json({ error }, 500);
-        }
-      },
-    );
-  });
-});
+//           return c.json(
+//             {
+//               success,
+//               ...rest,
+//             },
+//             { status: st || 200 },
+//           );
+//         } catch (error) {
+//           console.log(error);
+//           return c.json({ error }, 500);
+//         }
+//       },
+//     );
+//   });
+// });
 
 app.route('/auth', auth);
 
 app.get('/', (c) => {
-  const entity = c.get('entity');
-  return c.json({ message: 'Hello Hono!', entity });
+  return c.json({ message: 'Hello Hono!' });
 });
 
 showRoutes(app, {
@@ -175,8 +167,8 @@ serve(
 );
 
 declare module 'hono' {
-  interface ContextVariableMap {
-    entity: Entity | null;
-    token: AuthToken | null;
-  }
+  // interface ContextVariableMap {
+  //   entity: Entity | null;
+  //   token: AuthToken | null;
+  // }
 }
