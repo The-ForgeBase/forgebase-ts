@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/sdk",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "type": "module",
   "main": "./dist/cjs/index.js",
@@ -34,12 +34,23 @@
   },
   "typesVersions": {
     "*": {
-      ".": ["./dist/esm/index.d.ts"],
-      "client": ["./dist/esm/database/client/index.d.ts"],
-      "server": ["./dist/esm/database/server/index.d.ts"]
+      ".": [
+        "./dist/esm/index.d.ts"
+      ],
+      "client": [
+        "./dist/esm/database/client/index.d.ts"
+      ],
+      "server": [
+        "./dist/esm/database/server/index.d.ts"
+      ]
     }
   },
-  "files": ["dist", "!**/*.tsbuildinfo", "package.json", "README.md"],
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo",
+    "package.json",
+    "README.md"
+  ],
   "dependencies": {
     "tslib": "^2.3.0",
     "knex": "^3.1.0",

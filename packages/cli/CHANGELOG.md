@@ -1,5 +1,11 @@
 # @the-forgebase/cli
 
+## 0.0.2
+
+### Patch Changes
+
+- [`c0433b8`](https://github.com/The-ForgeBase/forgebase-ts/commit/c0433b87c9763202cf33c0255519089d4e181db4) Thanks [@SOG-web](https://github.com/SOG-web)! - prod
+
 ## 1.0.0
 
 ### Major Changes

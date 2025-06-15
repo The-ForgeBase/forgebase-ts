@@ -1,5 +1,14 @@
 # @the-forgebase/sdk
 
+## 0.0.2
+
+### Patch Changes
+
+- [`c0433b8`](https://github.com/The-ForgeBase/forgebase-ts/commit/c0433b87c9763202cf33c0255519089d4e181db4) Thanks [@SOG-web](https://github.com/SOG-web)! - prod
+
+- Updated dependencies [[`c0433b8`](https://github.com/The-ForgeBase/forgebase-ts/commit/c0433b87c9763202cf33c0255519089d4e181db4)]:
+  - @the-forgebase/database@0.0.2
+
 ## 2.0.0
 
 ### Major Changes
