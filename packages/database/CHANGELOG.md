@@ -1,5 +1,11 @@
 # @the-forgebase/database
 
+## 0.0.3
+
+### Patch Changes
+
+- [`3ba352a`](https://github.com/The-ForgeBase/forgebase-ts/commit/3ba352af3e46cd33b4e7d4101d7e77cf4b0013cc) Thanks [@SOG-web](https://github.com/SOG-web)! - refactore database lib
+
 ## 0.0.2
 
 ### Patch Changes

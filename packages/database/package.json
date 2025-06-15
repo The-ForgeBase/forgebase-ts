@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/database",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -23,10 +23,17 @@
   },
   "typesVersions": {
     "*": {
-      ".": ["./dist/esm/index.d.ts"]
+      ".": [
+        "./dist/esm/index.d.ts"
+      ]
     }
   },
-  "files": ["dist", "!**/*.tsbuildinfo", "package.json", "README.md"],
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo",
+    "package.json",
+    "README.md"
+  ],
   "dependencies": {
     "lodash.flatten": "^4.4.0",
     "knex": "^3.1.0",
