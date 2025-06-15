@@ -16,12 +16,15 @@
     "@repo/ui": "0.0.0-alpha.22",
     "@the-forgebase/web-auth": "0.0.0-alpha.22",
     "nuxt-shadcn-dashboard": "0.2.6",
-    "@the-forgebase/cli": "0.1.0-alpha.2"
+    "@the-forgebase/cli": "0.1.0-alpha.2",
+    "@the-forgebase/knex-libsql": "0.0.1"
   },
   "changesets": [
+    "deep-crabs-draw",
     "dirty-socks-kneel",
     "light-snakes-dress",
     "old-pens-repeat",
+    "quick-parts-stay",
     "rotten-clowns-sniff",
     "sad-years-tease",
     "strong-clocks-glow"
