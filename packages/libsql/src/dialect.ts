@@ -1,8 +1,7 @@
-//@ts-ignore
-import BetterSqlite3Dialect from "knex/lib/dialects/better-sqlite3";
+import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index.js";
 import { SqliteTableCompiler } from "./tabelcompiler";
 
-export class LibSqlKnexDialect extends BetterSqlite3Dialect {
+export class Client_LibSql extends Client_BetterSQLite3 {
   get driverName() {
     return "libsql";
   }

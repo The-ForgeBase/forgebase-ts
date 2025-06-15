@@ -536,12 +536,9 @@ importers:
 
   packages/libsql:
     dependencies:
-      better-sqlite3:
-        specifier: '*'
-        version: 11.10.0
       knex:
         specifier: ^3.1.0
-        version: 3.1.0(better-sqlite3@11.10.0)
+        version: 3.1.0
       libsql:
         specifier: 0.5.13
         version: 0.5.13
@@ -25614,6 +25611,25 @@ snapshots:
     dependencies:
       knex: 3.1.0(better-sqlite3@11.10.0)
       lodash.clonedeep: 4.5.0
+
+  knex@3.1.0:
+    dependencies:
+      colorette: 2.0.19
+      commander: 10.0.1
+      debug: 4.3.4
+      escalade: 3.2.0
+      esm: 3.2.25
+      get-package-type: 0.1.0
+      getopts: 2.3.0
+      interpret: 2.2.0
+      lodash: 4.17.21
+      pg-connection-string: 2.6.2
+      rechoir: 0.8.0
+      resolve-from: 5.0.0
+      tarn: 3.0.2
+      tildify: 2.0.0
+    transitivePeerDependencies:
+      - supports-color
 
   knex@3.1.0(better-sqlite3@11.10.0):
     dependencies:
