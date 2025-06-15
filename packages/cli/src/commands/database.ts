@@ -205,6 +205,8 @@ async function generate(options: {
 
     // Write output file
     const outputPath = path.resolve(options.output);
+    const outputDir = path.dirname(outputPath);
+    fs.mkdirSync(outputDir, { recursive: true });
     fs.writeFileSync(outputPath, output);
 
     console.log(
