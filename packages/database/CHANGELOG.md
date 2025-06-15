@@ -1,5 +1,11 @@
 # @the-forgebase/database
 
+## 0.1.0-alpha.2
+
+### Patch Changes
+
+- [`557fbf5`](https://github.com/The-ForgeBase/forgebase-ts/commit/557fbf5352b373dc4e0a0d72b4849e56a92e77fe) Thanks [@SOG-web](https://github.com/SOG-web)! - esm
+
 ## 0.1.0-alpha.1
 
 ### Patch Changes

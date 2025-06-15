@@ -1,5 +1,16 @@
 # @the-forgebase/api
 
+## 0.1.0-alpha.3
+
+### Minor Changes
+
+- [`f64b675`](https://github.com/The-ForgeBase/forgebase-ts/commit/f64b6753dea27ba2b1e8246d2294dd901eb63c37) Thanks [@SOG-web](https://github.com/SOG-web)! - added cli
+
+### Patch Changes
+
+- Updated dependencies [[`557fbf5`](https://github.com/The-ForgeBase/forgebase-ts/commit/557fbf5352b373dc4e0a0d72b4849e56a92e77fe)]:
+  - @the-forgebase/database@0.1.0-alpha.2
+
 ## 0.1.0-alpha.2
 
 ### Minor Changes
