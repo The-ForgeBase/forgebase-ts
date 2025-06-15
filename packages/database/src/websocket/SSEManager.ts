@@ -1,18 +1,19 @@
-import { TablePermissions, UserContext } from '../types';
-import { evaluatePermission } from '../rlsManager';
-import { PermissionService } from '../permissionService';
-import { RealtimeAdapter } from './RealtimeAdapter';
+import { TablePermissions, UserContext } from "../types";
+import { evaluatePermission } from "../rlsManager";
+import { PermissionService } from "../permissionService";
+import { RealtimeAdapter } from "./RealtimeAdapter";
+import sseAdapter from "crossws/adapters/sse";
 // Using dynamic import for ESM module
 // This avoids the CommonJS/ESM compatibility issue
 
 interface SubscribeMessage {
-  type: 'subscribe';
+  type: "subscribe";
   tableName: string;
   userContext?: UserContext;
 }
 
 interface UnsubscribeMessage {
-  type: 'unsubscribe';
+  type: "unsubscribe";
   tableName: string;
 }
 
@@ -32,12 +33,12 @@ export class SSEManager implements RealtimeAdapter {
 
   constructor(
     private port: number,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
   ) {
     // Call initialize but don't await it here
     // This allows the constructor to return synchronously
     this.initialize().catch((error) => {
-      console.error('Failed to initialize SSE adapter:', error);
+      console.error("Failed to initialize SSE adapter:", error);
     });
   }
 
@@ -50,7 +51,7 @@ export class SSEManager implements RealtimeAdapter {
 
   private async setupSSEServer() {
     // Dynamically import the SSE adapter
-    const { default: sseAdapter } = await import('crossws/adapters/sse');
+    // const { default: sseAdapter } = await import('crossws/adapters/sse');
 
     this.sseAdapter = sseAdapter({
       bidir: true, // Enable bidirectional messaging support
@@ -59,27 +60,27 @@ export class SSEManager implements RealtimeAdapter {
           // Extract user context from request headers
           let userContext: UserContext | undefined;
           try {
-            const userContextHeader = request.headers.get('userContext');
+            const userContextHeader = request.headers.get("userContext");
             // console.log('sse request context', request.context);
             // console.log('sse request header', request.headers);
             if (userContextHeader) {
-              console.log('userContextHeader', userContextHeader);
+              console.log("userContextHeader", userContextHeader);
               userContext = JSON.parse(userContextHeader);
             }
 
             if (!userContext) {
               // return new Response('Authentication required', { status: 401 });
               userContext = {
-                userId: '1',
-                role: 'user',
+                userId: "1",
+                role: "user",
                 labels: [],
                 teams: [],
                 permissions: [],
               };
             }
           } catch (error) {
-            console.error('Error parsing user context:', error);
-            return new Response('Invalid user context', { status: 400 });
+            console.error("Error parsing user context:", error);
+            return new Response("Invalid user context", { status: 400 });
           }
           request.context.userContext = userContext;
           // In case of bidirectional mode, extra auth is recommended based on request
@@ -91,24 +92,24 @@ export class SSEManager implements RealtimeAdapter {
           // Send welcome message
           peer.send(
             JSON.stringify({
-              type: 'welcome',
+              type: "welcome",
               message: `Welcome ${peer.id}`,
-            })
+            }),
           );
         },
         message: async (peer, message) => {
           try {
             // Handle both string and ReadableStream message types
             let messageData: string;
-            console.log('message', typeof message);
-            console.log('message event', message.event);
-            console.log('message peer', message.peer);
-            console.log('message data', message.data);
-            console.log('message text', message.text());
+            console.log("message", typeof message);
+            console.log("message event", message.event);
+            console.log("message peer", message.peer);
+            console.log("message data", message.data);
+            console.log("message text", message.text());
             // console.log('message json', message.json());
-            console.log('message blob', message.blob);
-            console.log('message array', message.uint8Array().toString());
-            console.log('message array buffer', message.arrayBuffer());
+            console.log("message blob", message.blob);
+            console.log("message array", message.uint8Array().toString());
+            console.log("message array buffer", message.arrayBuffer());
             if (message instanceof ReadableStream) {
               const reader = message.getReader();
               const { value } = await reader.read();
@@ -116,10 +117,10 @@ export class SSEManager implements RealtimeAdapter {
             } else {
               messageData = message.toString();
             }
-            console.log('Received message:', messageData);
+            console.log("Received message:", messageData);
             const msg = JSON.parse(messageData) as ClientMessage;
 
-            if (msg.type === 'subscribe' && msg.tableName) {
+            if (msg.type === "subscribe" && msg.tableName) {
               // Get user context from peer data
               const userContext = peer.context.userContext as
                 | UserContext
@@ -128,9 +129,9 @@ export class SSEManager implements RealtimeAdapter {
               if (!userContext) {
                 peer.send(
                   JSON.stringify({
-                    type: 'error',
-                    message: 'Authentication required',
-                  })
+                    type: "error",
+                    message: "Authentication required",
+                  }),
                 );
                 return;
               }
@@ -138,15 +139,15 @@ export class SSEManager implements RealtimeAdapter {
               // Check table permissions
               const permissions =
                 await this.permissionService.getPermissionsForTable(
-                  msg.tableName
+                  msg.tableName,
                 );
 
               if (!permissions) {
                 peer.send(
                   JSON.stringify({
-                    type: 'error',
-                    message: 'Table not found',
-                  })
+                    type: "error",
+                    message: "Table not found",
+                  }),
                 );
                 return;
               }
@@ -154,14 +155,14 @@ export class SSEManager implements RealtimeAdapter {
               // Check if user can subscribe
               const canSubscribe = await this.canSubscribe(
                 userContext,
-                permissions
+                permissions,
               );
               if (!canSubscribe) {
                 peer.send(
                   JSON.stringify({
-                    type: 'error',
-                    message: 'Permission denied',
-                  })
+                    type: "error",
+                    message: "Permission denied",
+                  }),
                 );
                 return;
               }
@@ -171,28 +172,28 @@ export class SSEManager implements RealtimeAdapter {
 
               peer.send(
                 JSON.stringify({
-                  type: 'subscribed',
+                  type: "subscribed",
                   tableName: msg.tableName,
-                })
+                }),
               );
-            } else if (msg.type === 'unsubscribe' && msg.tableName) {
+            } else if (msg.type === "unsubscribe" && msg.tableName) {
               // Unsubscribe from the table channel
               peer.unsubscribe(`table:${msg.tableName}`);
 
               peer.send(
                 JSON.stringify({
-                  type: 'unsubscribed',
+                  type: "unsubscribed",
                   tableName: msg.tableName,
-                })
+                }),
               );
             }
           } catch (error) {
-            console.error('Error handling message:', error);
+            console.error("Error handling message:", error);
             peer.send(
               JSON.stringify({
-                type: 'error',
-                message: 'Invalid message format',
-              })
+                type: "error",
+                message: "Invalid message format",
+              }),
             );
           }
         },
@@ -207,7 +208,7 @@ export class SSEManager implements RealtimeAdapter {
 
   private async canSubscribe(
     userContext: UserContext,
-    permissions: TablePermissions
+    permissions: TablePermissions,
   ): Promise<boolean> {
     if (!permissions.operations.SELECT) return false;
 
@@ -233,20 +234,19 @@ export class SSEManager implements RealtimeAdapter {
   public async broadcast(
     tableName: string,
     event: string,
-    data: Record<string, unknown> | Record<string, unknown>[]
+    data: Record<string, unknown> | Record<string, unknown>[],
   ): Promise<void> {
     // Check if the SSE adapter is initialized
     if (!this.sseAdapter) {
       console.warn(
-        'SSE adapter not initialized yet. Waiting for initialization...'
+        "SSE adapter not initialized yet. Waiting for initialization...",
       );
       await this.initialize();
     }
 
     // Get permissions for the table
-    const permissions = await this.permissionService.getPermissionsForTable(
-      tableName
-    );
+    const permissions =
+      await this.permissionService.getPermissionsForTable(tableName);
 
     if (!permissions || !permissions.operations.SELECT) return;
 
@@ -284,7 +284,7 @@ export class SSEManager implements RealtimeAdapter {
     // Check if the SSE adapter is initialized
     if (!this.sseAdapter) {
       console.warn(
-        'SSE adapter not initialized yet. Waiting for initialization...'
+        "SSE adapter not initialized yet. Waiting for initialization...",
       );
       await this.initialize();
     }
@@ -301,20 +301,20 @@ export class SSEManager implements RealtimeAdapter {
     // Check if the SSE adapter is initialized
     if (!this.sseAdapter) {
       console.warn(
-        'SSE adapter not initialized yet. Waiting for initialization...'
+        "SSE adapter not initialized yet. Waiting for initialization...",
       );
       await this.initialize();
     }
 
     // Check if this is an SSE request
     if (
-      request.headers.get('accept') === 'text/event-stream' ||
-      request.headers.has('x-crossws-id')
+      request.headers.get("accept") === "text/event-stream" ||
+      request.headers.has("x-crossws-id")
     ) {
       return this.sseAdapter.fetch(request);
     }
 
     // Return 404 for non-SSE requests
-    return new Response('Not found', { status: 404 });
+    return new Response("Not found", { status: 404 });
   }
 }

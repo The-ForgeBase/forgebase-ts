@@ -3,10 +3,10 @@ import type {
   TablePermissions,
   UserContext,
   UserContextFields,
-} from './types';
-import { PermissionService } from './permissionService';
-import type { Knex } from 'knex';
-import { rlsFunctionRegistry } from './rlsFunctionRegistry';
+} from "./types";
+import { PermissionService } from "./permissionService";
+import type { Knex } from "knex";
+import { rlsFunctionRegistry } from "./rlsFunctionRegistry";
 
 export async function evaluatePermission(
   rules: PermissionRule[],
@@ -16,13 +16,13 @@ export async function evaluatePermission(
 ): Promise<boolean> {
   for (const rule of rules) {
     switch (rule.allow) {
-      case 'public':
+      case "public":
         return true;
 
-      case 'private':
+      case "private":
         return false;
 
-      case 'role':
+      case "role":
         if (!rule.roles || rule.roles.length === 0) {
           // If no roles specified, continue to next rule
           continue;
@@ -38,7 +38,7 @@ export async function evaluatePermission(
         // Continue to the next rule instead of returning false
         continue;
 
-      case 'auth':
+      case "auth":
         if (userContext.userId) {
           return true;
         }
@@ -46,18 +46,16 @@ export async function evaluatePermission(
         // Continue to the next rule instead of breaking
         continue;
 
-      case 'guest':
+      case "guest":
         if (!userContext.userId) return true;
         // If we reach here, the guest rule didn't match
         // Continue to the next rule instead of breaking
         continue;
 
-      case 'labels':
+      case "labels":
         if (
           rule.labels !== undefined &&
-          userContext.labels.some(
-            (label) => rule.labels && rule.labels.includes(label),
-          )
+          userContext.labels.some((label) => rule.labels?.includes(label))
         ) {
           return true;
         }
@@ -65,12 +63,10 @@ export async function evaluatePermission(
         // Continue to the next rule instead of breaking
         continue;
 
-      case 'teams':
+      case "teams":
         if (
           rule.teams !== undefined &&
-          userContext.teams.some(
-            (team) => rule.teams && rule.teams.includes(team),
-          )
+          userContext.teams.some((team) => rule.teams?.includes(team))
         ) {
           return true;
         }
@@ -78,32 +74,32 @@ export async function evaluatePermission(
         // Continue to the next rule instead of breaking
         continue;
 
-      case 'static':
-        if (typeof rule.static === 'boolean') {
+      case "static":
+        if (typeof rule.static === "boolean") {
           return rule.static;
         }
         // If we reach here, the static rule didn't match
         // Continue to the next rule instead of breaking
         continue;
 
-      case 'fieldCheck':
+      case "fieldCheck":
         if (rule.fieldCheck) {
           const { field, operator, valueType, value } = rule.fieldCheck;
           const dataValue = row[field];
-          console.log('Data value:', dataValue);
+          console.log("Data value:", dataValue);
           const comparisonValue =
-            valueType === 'userContext'
+            valueType === "userContext"
               ? userContext[value as UserContextFields]
               : value;
 
           switch (operator) {
-            case '===':
+            case "===":
               if (dataValue === comparisonValue) return true;
               break;
-            case '!==':
+            case "!==":
               if (dataValue !== comparisonValue) return true;
               break;
-            case 'in':
+            case "in":
               if (
                 Array.isArray(comparisonValue) &&
                 comparisonValue.includes(dataValue)
@@ -111,7 +107,7 @@ export async function evaluatePermission(
                 return true;
               }
               break;
-            case 'notIn':
+            case "notIn":
               if (
                 Array.isArray(comparisonValue) &&
                 !comparisonValue.includes(dataValue)
@@ -125,7 +121,7 @@ export async function evaluatePermission(
         // Continue to the next rule instead of breaking
         continue;
 
-      case 'customSql':
+      case "customSql":
         if (rule.customSql && knex) {
           try {
             // Replace placeholders with userContext values
@@ -137,19 +133,19 @@ export async function evaluatePermission(
                 }
                 // For SQL parameters, we need to handle different types appropriately
                 const value = userContext[key as UserContextFields];
-                if (typeof value === 'string') {
+                if (typeof value === "string") {
                   return `'${value.replace(/'/g, "''")}'`; // Escape single quotes for SQL
                 } else if (value === null) {
-                  return 'NULL';
+                  return "NULL";
                 } else if (Array.isArray(value)) {
                   // Convert array to SQL array format
                   return `(${value
                     .map((item) => {
-                      if (typeof item === 'string')
+                      if (typeof item === "string")
                         return `'${item.replace(/'/g, "''")}'`;
                       return item;
                     })
-                    .join(', ')})`;
+                    .join(", ")})`;
                 }
                 return String(value);
               },
@@ -164,7 +160,7 @@ export async function evaluatePermission(
             if (Array.isArray(result)) {
               // For most database drivers, result is an array
               return result.length > 0 && result[0].length > 0;
-            } else if (result && typeof result === 'object') {
+            } else if (result && typeof result === "object") {
               // For some drivers, result might be an object with rows property
               const rows = result.rows || result;
               return Array.isArray(rows) ? rows.length > 0 : !!rows;
@@ -173,7 +169,7 @@ export async function evaluatePermission(
             // Default to false if we couldn't determine the result
             return false;
           } catch (error) {
-            console.error(`Error executing custom SQL:`, error);
+            console.error("Error executing custom SQL:", error);
             return false;
           }
         }
@@ -181,7 +177,7 @@ export async function evaluatePermission(
         // Continue to the next rule instead of breaking
         continue;
 
-      case 'customFunction':
+      case "customFunction":
         if (rule.customFunction) {
           try {
             // Get the function from the registry
@@ -236,7 +232,7 @@ type Row = Record<string, unknown>;
 
 export async function enforcePermissions(
   tableName: string,
-  operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE',
+  operation: "SELECT" | "INSERT" | "UPDATE" | "DELETE",
   userContext: UserContext,
   permissionService: PermissionService,
   rows?: Row | Row[],
@@ -285,12 +281,12 @@ export async function enforcePermissions(
   }
 
   // Separate rules into different types
-  const fieldCheckRules = rules.filter((rule) => rule.allow === 'fieldCheck');
+  const fieldCheckRules = rules.filter((rule) => rule.allow === "fieldCheck");
   const customFunctionRules = rules.filter(
-    (rule) => rule.allow === 'customFunction',
+    (rule) => rule.allow === "customFunction",
   );
   const simpleRules = rules.filter(
-    (rule) => rule.allow !== 'fieldCheck' && rule.allow !== 'customFunction',
+    (rule) => rule.allow !== "fieldCheck" && rule.allow !== "customFunction",
   );
 
   // First check simple rules that don't need row data
@@ -319,7 +315,7 @@ export async function enforcePermissions(
         status: false,
         hasFieldCheck: false,
         hasCustomFunction: true,
-        message: 'Custom function check required, please provide row data',
+        message: "Custom function check required, please provide row data",
       };
     }
 
@@ -388,7 +384,7 @@ export async function enforcePermissions(
         status: false,
         hasFieldCheck: true,
         hasCustomFunction: false,
-        message: 'Field-level check required, please provide row data',
+        message: "Field-level check required, please provide row data",
       };
     }
 
@@ -423,7 +419,7 @@ export async function enforcePermissions(
         hasCustomFunction: false,
         message:
           result.length === 0
-            ? 'No rows matched the field-level permission rules'
+            ? "No rows matched the field-level permission rules"
             : undefined,
       };
     }

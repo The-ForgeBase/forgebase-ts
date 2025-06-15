@@ -26,7 +26,11 @@
       },
       "style": {
         "useImportType": "off",
-        "noParameterAssign": "off"
+        "noParameterAssign": "off",
+        "noUselessElse": "off"
+      },
+      "complexity": {
+        "noForEach": "off"
       }
     }
   },

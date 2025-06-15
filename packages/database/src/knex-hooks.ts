@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 // hookableDb.ts
-import EventEmitter from 'events';
-import type { Knex } from 'knex';
-import { RealtimeAdapter } from './websocket/RealtimeAdapter';
+import EventEmitter from "node:events";
+import type { Knex } from "knex";
+import { RealtimeAdapter } from "./websocket/RealtimeAdapter";
 
-type MutationType = 'create' | 'update' | 'delete';
+type MutationType = "create" | "update" | "delete";
 
 type QueryFunction<T extends {}> = (
-  query: Knex.QueryBuilder<T, any>
+  query: Knex.QueryBuilder<T, any>,
 ) => Promise<T[]>;
 
 type MutationFunction<T extends {}> = (
-  query: Knex.QueryBuilder<T, any>
+  query: Knex.QueryBuilder<T, any>,
 ) => Promise<any>;
 
 type HookContext = Record<string, any>;
@@ -46,7 +46,7 @@ class KnexHooks {
   constructor(knexInstance: Knex, realtimeAdapter?: RealtimeAdapter) {
     if (!knexInstance) {
       throw new Error(
-        'A Knex.js instance is required to initialize HookableDB.'
+        "A Knex.js instance is required to initialize HookableDB.",
       );
     }
     this.knex = knexInstance;
@@ -65,16 +65,16 @@ class KnexHooks {
     tableName: string,
     queryFn: QueryFunction<T>,
     context?: HookContext,
-    trx?: Knex.Transaction
+    trx?: Knex.Transaction,
   ): Promise<T[]> {
-    this.events.emit('beforeQuery', { tableName, context });
+    this.events.emit("beforeQuery", { tableName, context });
     await this.beforeQuery(tableName, context);
 
     // Use transaction if provided, otherwise use the knex instance
     const queryBuilder = trx ? trx<T>(tableName) : this.knex<T>(tableName);
     const result = await queryFn(queryBuilder);
 
-    this.events.emit('afterQuery', { tableName, result, context });
+    this.events.emit("afterQuery", { tableName, result, context });
     await this.afterQuery(tableName, result, context);
     return result;
   }
@@ -86,9 +86,9 @@ class KnexHooks {
     mutationFn: MutationFunction<T>,
     data?: any,
     context?: HookContext,
-    trx?: Knex.Transaction
+    trx?: Knex.Transaction,
   ): Promise<any> {
-    this.events.emit('beforeMutation', {
+    this.events.emit("beforeMutation", {
       tableName,
       mutationType,
       data,
@@ -109,7 +109,7 @@ class KnexHooks {
     //   context,
     // });
 
-    this.events.emit('afterMutation', {
+    this.events.emit("afterMutation", {
       tableName,
       mutationType,
       result,
@@ -129,7 +129,7 @@ class KnexHooks {
   async afterQuery(
     tableName: string,
     result: any,
-    context?: HookContext
+    context?: HookContext,
   ): Promise<void> {
     // Example: Log fetched data
     // console.log(`[Query] Fetched from ${tableName}:`, result);
@@ -139,7 +139,7 @@ class KnexHooks {
     tableName: string,
     mutationType: MutationType,
     data?: any,
-    context?: HookContext
+    context?: HookContext,
   ): Promise<void> {
     // Example: Enforce permissions here
     console.log(`[Before ${mutationType}] On ${tableName}:`, data);
@@ -150,14 +150,14 @@ class KnexHooks {
     mutationType: MutationType,
     result: any,
     data?: any,
-    context?: HookContext
+    context?: HookContext,
   ): Promise<void> {
     // Emit real-time events on mutations
     if (this.realtimeAdapter) {
       //TODO: Check if  real-time is allowed for the table
       this.realtimeAdapter.broadcast(tableName, mutationType, {
         type: mutationType,
-        data: mutationType === 'delete' ? data : result,
+        data: mutationType === "delete" ? data : result,
       });
     }
   }
@@ -165,14 +165,14 @@ class KnexHooks {
   // Expose the EventEmitter for external listeners
   on<Event extends keyof KnexHooksEvents>(
     event: Event,
-    listener: KnexHooksEvents[Event]
+    listener: KnexHooksEvents[Event],
   ): void {
     this.events.on(event, listener);
   }
 
   off<Event extends keyof KnexHooksEvents>(
     event: Event,
-    listener: KnexHooksEvents[Event]
+    listener: KnexHooksEvents[Event],
   ): void {
     this.events.off(event, listener);
   }
