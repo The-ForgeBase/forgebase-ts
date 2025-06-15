@@ -1,5 +1,21 @@
 # @the-forgebase/database
 
+## 0.1.0
+
+### Minor Changes
+
+- [`25ef503`](https://github.com/The-ForgeBase/forgebase-ts/commit/25ef5034572e1ae3b3899f78b72428acbbe72219) Thanks [@SOG-web](https://github.com/SOG-web)! - added knex-libsql client
+
+- [`235d622`](https://github.com/The-ForgeBase/forgebase-ts/commit/235d622f193467f15ac5ce21aa1c17cc02a4afc8) Thanks [@SOG-web](https://github.com/SOG-web)! - testing alpha
+
+### Patch Changes
+
+- [`c9e9816`](https://github.com/The-ForgeBase/forgebase-ts/commit/c9e9816906acf1d80a3c6134ef87a14d52a8d521) Thanks [@SOG-web](https://github.com/SOG-web)! - testing patch alpha
+
+- [`557fbf5`](https://github.com/The-ForgeBase/forgebase-ts/commit/557fbf5352b373dc4e0a0d72b4849e56a92e77fe) Thanks [@SOG-web](https://github.com/SOG-web)! - esm
+
+- [`baa319f`](https://github.com/The-ForgeBase/forgebase-ts/commit/baa319f22521d3ae3e9877a24da90ea15650330c) Thanks [@SOG-web](https://github.com/SOG-web)! - final
+
 ## 0.1.0-alpha.3
 
 ### Minor Changes

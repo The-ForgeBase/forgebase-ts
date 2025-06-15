@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/real-time",
-  "version": "0.0.0-alpha.24",
+  "version": "0.0.0",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

@@ -1,5 +1,22 @@
 # @the-forgebase/sdk
 
+## 1.0.0
+
+### Minor Changes
+
+- [`235d622`](https://github.com/The-ForgeBase/forgebase-ts/commit/235d622f193467f15ac5ce21aa1c17cc02a4afc8) Thanks [@SOG-web](https://github.com/SOG-web)! - testing alpha
+
+- [`f64b675`](https://github.com/The-ForgeBase/forgebase-ts/commit/f64b6753dea27ba2b1e8246d2294dd901eb63c37) Thanks [@SOG-web](https://github.com/SOG-web)! - added cli
+
+### Patch Changes
+
+- [`c9e9816`](https://github.com/The-ForgeBase/forgebase-ts/commit/c9e9816906acf1d80a3c6134ef87a14d52a8d521) Thanks [@SOG-web](https://github.com/SOG-web)! - testing patch alpha
+
+- [`baa319f`](https://github.com/The-ForgeBase/forgebase-ts/commit/baa319f22521d3ae3e9877a24da90ea15650330c) Thanks [@SOG-web](https://github.com/SOG-web)! - final
+
+- Updated dependencies [[`25ef503`](https://github.com/The-ForgeBase/forgebase-ts/commit/25ef5034572e1ae3b3899f78b72428acbbe72219), [`c9e9816`](https://github.com/The-ForgeBase/forgebase-ts/commit/c9e9816906acf1d80a3c6134ef87a14d52a8d521), [`235d622`](https://github.com/The-ForgeBase/forgebase-ts/commit/235d622f193467f15ac5ce21aa1c17cc02a4afc8), [`557fbf5`](https://github.com/The-ForgeBase/forgebase-ts/commit/557fbf5352b373dc4e0a0d72b4849e56a92e77fe), [`baa319f`](https://github.com/The-ForgeBase/forgebase-ts/commit/baa319f22521d3ae3e9877a24da90ea15650330c)]:
+  - @the-forgebase/database@0.1.0
+
 ## 1.0.0-alpha.4
 
 ### Patch Changes
