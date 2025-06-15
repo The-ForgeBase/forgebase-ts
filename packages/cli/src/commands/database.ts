@@ -228,3 +228,5 @@ export const databaseCommand = new Command()
   .option("-o, --output <path>", "Output TypeScript file path", "schema.ts")
   .option("-H, --header <headers...>", "HTTP headers (format: key=value)", [])
   .action(generate);
+
+const t = "test";

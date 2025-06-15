@@ -435,6 +435,9 @@ importers:
       '@types/node':
         specifier: ~18.16.9
         version: 18.16.20
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
       typescript:
         specifier: 5.3.3
         version: 5.3.3
@@ -472,12 +475,6 @@ importers:
       lru-cache:
         specifier: ^11.0.2
         version: 11.1.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-      uWebSockets.js:
-        specifier: https://github.com/uNetworking/uWebSockets.js/archive/refs/tags/v20.51.0.tar.gz
-        version: https://github.com/uNetworking/uWebSockets.js/archive/refs/tags/v20.51.0.tar.gz
     devDependencies:
       '@repo/eslint-config':
         specifier: workspace:*
@@ -497,6 +494,9 @@ importers:
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
 
   packages/eslint-config:
     devDependencies:
@@ -538,7 +538,7 @@ importers:
     dependencies:
       knex:
         specifier: ^3.1.0
-        version: 3.1.0
+        version: 3.1.0(better-sqlite3@11.10.0)
       libsql:
         specifier: 0.5.13
         version: 0.5.13
@@ -25611,25 +25611,6 @@ snapshots:
     dependencies:
       knex: 3.1.0(better-sqlite3@11.10.0)
       lodash.clonedeep: 4.5.0
-
-  knex@3.1.0:
-    dependencies:
-      colorette: 2.0.19
-      commander: 10.0.1
-      debug: 4.3.4
-      escalade: 3.2.0
-      esm: 3.2.25
-      get-package-type: 0.1.0
-      getopts: 2.3.0
-      interpret: 2.2.0
-      lodash: 4.17.21
-      pg-connection-string: 2.6.2
-      rechoir: 0.8.0
-      resolve-from: 5.0.0
-      tarn: 3.0.2
-      tildify: 2.0.0
-    transitivePeerDependencies:
-      - supports-color
 
   knex@3.1.0(better-sqlite3@11.10.0):
     dependencies:
