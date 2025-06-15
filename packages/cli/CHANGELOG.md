@@ -1,5 +1,11 @@
 # @the-forgebase/cli
 
+## 0.0.4
+
+### Patch Changes
+
+- [`c5c36ea`](https://github.com/The-ForgeBase/forgebase-ts/commit/c5c36ea146796a166cc1f04ddec956326bd109a7) Thanks [@SOG-web](https://github.com/SOG-web)! - fix tsc
+
 ## 0.0.3
 
 ### Patch Changes
