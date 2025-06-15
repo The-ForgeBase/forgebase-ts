@@ -68,6 +68,12 @@ For local development, you can use a `filename` for a local SQLite file.
 
 For remote databases, like Turso, you can provide a `url` and `authToken`.
 
+## Why `@the-forgebase/knex-libsql`?
+
+The official `knex-libsql` package ([@libsql/knex-libsql](https://github.com/libsql/knex-libsql)) is a great lightweight option. However, it is based on the `sqlite3` package, whereas this package uses `better-sqlite3`.
+
+This package takes a different approach by extending Knex's built-in `better-sqlite3` dialect. This allows us to leverage the existing, mature, and feature-rich functionalities of the `better-sqlite3` dialect while adapting it to work with `libsql`. This can provide a more stable and full-featured experience for developers already familiar with Knex's SQLite integrations.
+
 ## Credits
 
 This package is heavily based on the SQLite dialect implementation from [MikroORM](https://github.com/mikro-orm/mikro-orm).
