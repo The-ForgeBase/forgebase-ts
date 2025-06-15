@@ -1,5 +1,11 @@
 # @the-forgebase/database
 
+## 1.0.0
+
+### Major Changes
+
+- [`3524ca3`](https://github.com/The-ForgeBase/forgebase-ts/commit/3524ca35049c29bd338659af79cae85bb6e594f9) Thanks [@SOG-web](https://github.com/SOG-web)! - prod ready
+
 ## 0.1.0
 
 ### Minor Changes
