@@ -10,5 +10,14 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": [
+    "@the-forgebase/api",
+    "@the-forgebase/auth",
+    "@the-forgebase/common",
+    "@the-forgebase/real-time",
+    "@the-forgebase/react-native-auth",
+    "@the-forgebase/web-auth",
+    "@the-forgebase/storage",
+    "nuxt-shadcn-dashboard"
+  ]
 }
