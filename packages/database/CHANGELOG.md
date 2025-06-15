@@ -1,5 +1,11 @@
 # @the-forgebase/database
 
+## 0.0.4
+
+### Patch Changes
+
+- [`5aa4827`](https://github.com/The-ForgeBase/forgebase-ts/commit/5aa48275872ad23a49a27467d7a4e56ca520900e) Thanks [@SOG-web](https://github.com/SOG-web)! - fixed ws error
+
 ## 0.0.3
 
 ### Patch Changes
