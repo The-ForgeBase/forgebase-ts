@@ -20,6 +20,7 @@ export function SchemaInspector(knex: Knex) {
     case "Client_SQLite3":
     case "Client_BetterSQLite3":
     case "Client_Libsql":
+    case "Client_LibSql":
     case "libsql":
       console.log("sqlite");
       constructor = sqlite;
