@@ -1,5 +1,11 @@
 # @the-forgebase/database
 
+## 0.0.5
+
+### Patch Changes
+
+- [`fe01c7d`](https://github.com/The-ForgeBase/forgebase-ts/commit/fe01c7de8181aedba5fbd98f908d8bd513c36310) Thanks [@SOG-web](https://github.com/SOG-web)! - fix Client_LibSql
+
 ## 0.0.4
 
 ### Patch Changes
