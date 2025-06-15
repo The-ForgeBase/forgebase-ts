@@ -1,5 +1,11 @@
 # @the-forgebase/sdk
 
+## 0.0.7
+
+### Patch Changes
+
+- [`eedcf7c`](https://github.com/The-ForgeBase/forgebase-ts/commit/eedcf7c270fd8ca121dd5edac61d986e37a3ea6c) Thanks [@SOG-web](https://github.com/SOG-web)! - fix dist
+
 ## 0.0.6
 
 ### Patch Changes
