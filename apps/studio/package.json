@@ -2,6 +2,7 @@
   "name": "nuxt-shadcn-dashboard",
   "type": "module",
   "version": "0.2.6",
+  "private": true,
   "description": "Shadcn Dashboard built with Nuxt",
   "author": "Dian Pratama <dianpratama2@gmail.com>",
   "license": "MIT",

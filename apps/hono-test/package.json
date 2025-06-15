@@ -1,6 +1,7 @@
 {
   "name": "hono-test",
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
