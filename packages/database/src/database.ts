@@ -1,13 +1,13 @@
-import type { Knex } from 'knex';
-import { PermissionService } from './permissionService';
-import { enforcePermissions } from './rlsManager';
-import { DBInspector, type DatabaseSchema } from './utils/inspector';
-import { KnexHooks } from './knex-hooks';
+import type { Knex } from "knex";
+import { PermissionService } from "./permissionService";
+import { enforcePermissions } from "./rlsManager";
+import { DBInspector, type DatabaseSchema } from "./utils/inspector";
+import { KnexHooks } from "./knex-hooks";
 import {
   AuthenticationRequiredError,
   ExcludedTableError,
   PermissionDeniedError,
-} from './errors';
+} from "./errors";
 import {
   FG_PERMISSION_TABLE,
   type AddForeignKeyParams,
@@ -22,24 +22,23 @@ import {
   type PermissionInitializationReport,
   type SchemaCreateParams,
   type TablePermissions,
-} from './types';
+} from "./types";
 import type {
   AdvanceDataDeleteParams,
   AdvanceDataMutationParams,
   UserContext,
-} from './types';
-import { createColumn } from './utils/column-utils';
+} from "./types";
+import { createColumn } from "./utils/column-utils";
 import {
   addForeignKey,
   dropForeignKey,
   modifySchema,
   truncateTable,
-} from './schema';
-import { QueryHandler } from './sdk/server';
-import { WebSocketManager } from './websocket/WebSocketManager';
-import { SSEManager } from './websocket/SSEManager';
-import { RealtimeAdapter } from './websocket/RealtimeAdapter';
-import { initializePermissions } from './utils/permission-initializer';
+} from "./schema";
+import { QueryHandler } from "./sdk/server";
+import { SSEManager } from "./websocket/SSEManager";
+import { RealtimeAdapter } from "./websocket/RealtimeAdapter";
+import { initializePermissions } from "./utils/permission-initializer";
 
 export class ForgeDatabase {
   private queryHandler: QueryHandler;
@@ -50,22 +49,22 @@ export class ForgeDatabase {
     operations: {
       SELECT: [
         {
-          allow: 'private',
+          allow: "private",
         },
       ],
       INSERT: [
         {
-          allow: 'private',
+          allow: "private",
         },
       ],
       UPDATE: [
         {
-          allow: 'private',
+          allow: "private",
         },
       ],
       DELETE: [
         {
-          allow: 'private',
+          allow: "private",
         },
       ],
     },
@@ -74,7 +73,7 @@ export class ForgeDatabase {
   private excludedTables: string[] = [FG_PERMISSION_TABLE];
 
   constructor(private config: ForgeDatabaseConfig = {}) {
-    if (!config.db) throw new Error('Database instance is required');
+    if (!config.db) throw new Error("Database instance is required");
 
     if (config.excludedTables) {
       this.excludedTables = [...this.excludedTables, ...config.excludedTables];
@@ -86,17 +85,9 @@ export class ForgeDatabase {
 
     // Initialize realtime adapter if realtime is enabled
     if (config.realtime) {
-      const adapterType = config.realtimeAdapter || 'sse';
       const port = config.websocketPort || 9001;
 
-      if (adapterType === 'websocket') {
-        this.realtimeAdapter = new WebSocketManager(
-          port,
-          this.permissionService,
-        );
-      } else if (adapterType === 'sse') {
-        this.realtimeAdapter = new SSEManager(port, this.permissionService);
-      }
+      this.realtimeAdapter = new SSEManager(port, this.permissionService);
     }
     this.hooks = config.hooks || new KnexHooks(config.db, this.realtimeAdapter);
     this.queryHandler = new QueryHandler(this.hooks.getKnexInstance());
@@ -164,7 +155,7 @@ export class ForgeDatabase {
       finalCallback,
     );
 
-    console.log('Permission initialization started in the background');
+    console.log("Permission initialization started in the background");
   }
 
   /**
@@ -202,7 +193,7 @@ export class ForgeDatabase {
     try {
       return await this.hooks.getKnexInstance().transaction(callback);
     } catch (error) {
-      console.error('Transaction error:', error);
+      console.error("Transaction error:", error);
       throw error;
     }
   }
@@ -231,15 +222,15 @@ export class ForgeDatabase {
         const { tableName, columns } = payload;
 
         if (!tableName) {
-          throw new Error('Invalid request body');
+          throw new Error("Invalid request body");
         }
 
         const hasTable = await this.hooks
           .getKnexInstance()
           .schema.hasTable(tableName);
         if (hasTable) {
-          console.log('Table already exists');
-          throw new Error('Table already exists');
+          console.log("Table already exists");
+          throw new Error("Table already exists");
           // await this.hooks
           //   .getKnexInstance()
           //   .schema.dropTableIfExists(tableName);
@@ -264,9 +255,9 @@ export class ForgeDatabase {
           trx,
         );
         return {
-          message: 'Table created successfully',
+          message: "Table created successfully",
           tablename: tableName,
-          action: 'create',
+          action: "create",
         };
       },
       delete: async (tableName: string, trx?: Knex.Transaction) => {
@@ -282,9 +273,9 @@ export class ForgeDatabase {
         await this.permissionService.deletePermissionsForTable(tableName, trx);
 
         return {
-          message: 'Table deleted successfully',
+          message: "Table deleted successfully",
           tablename: tableName,
-          action: 'delete',
+          action: "delete",
         };
       },
       modify: async (payload: ModifySchemaParams, trx?: Knex.Transaction) => {
@@ -451,7 +442,7 @@ export class ForgeDatabase {
 
         if (!user && !isSystem && this.config.enforceRls) {
           throw new AuthenticationRequiredError(
-            'Authentication required to query records',
+            "Authentication required to query records",
           );
         }
 
@@ -461,7 +452,7 @@ export class ForgeDatabase {
           hasCustomFunction: initialHasCustomFunction,
         } = await enforcePermissions(
           tableName,
-          'SELECT',
+          "SELECT",
           user as UserContext,
           this.permissionService,
           undefined,
@@ -492,7 +483,7 @@ export class ForgeDatabase {
 
         const { status, row } = await enforcePermissions(
           tableName,
-          'SELECT',
+          "SELECT",
           user as UserContext,
           this.permissionService,
           records,
@@ -542,18 +533,18 @@ export class ForgeDatabase {
           !records.length ||
           !records.every(
             (record) =>
-              typeof record === 'object' && Object.keys(record).length > 0,
+              typeof record === "object" && Object.keys(record).length > 0,
           )
         ) {
-          console.log('Invalid request body', records);
-          throw new Error('Invalid request body');
+          console.log("Invalid request body", records);
+          throw new Error("Invalid request body");
         }
 
         if (!this.config.enforceRls || isSystem) {
           return this.hooks.mutate(
             tableName,
-            'create',
-            async (query) => query.insert(records).returning('*'),
+            "create",
+            async (query) => query.insert(records).returning("*"),
             records,
             undefined,
             trx,
@@ -562,7 +553,7 @@ export class ForgeDatabase {
 
         if (!user && !isSystem && this.config.enforceRls) {
           throw new AuthenticationRequiredError(
-            'Authentication required to create records',
+            "Authentication required to create records",
           );
         }
 
@@ -572,7 +563,7 @@ export class ForgeDatabase {
           hasCustomFunction: initialHasCustomFunction,
         } = await enforcePermissions(
           tableName,
-          'INSERT',
+          "INSERT",
           user as UserContext,
           this.permissionService,
           undefined,
@@ -593,8 +584,8 @@ export class ForgeDatabase {
           // If the user has permission to create, proceed with the creation
           return this.hooks.mutate(
             tableName,
-            'create',
-            async (query) => query.insert(records).returning('*'),
+            "create",
+            async (query) => query.insert(records).returning("*"),
             records,
             undefined,
             trx,
@@ -603,7 +594,7 @@ export class ForgeDatabase {
 
         const { status, row } = await enforcePermissions(
           tableName,
-          'INSERT',
+          "INSERT",
           user as UserContext,
           this.permissionService,
           records,
@@ -624,8 +615,8 @@ export class ForgeDatabase {
 
         const result = this.hooks.mutate(
           tableName,
-          'create',
-          async (query) => query.insert(row).returning('*'),
+          "create",
+          async (query) => query.insert(row).returning("*"),
           row,
           undefined,
           trx,
@@ -660,8 +651,8 @@ export class ForgeDatabase {
         if (!this.config.enforceRls || isSystem) {
           const result = this.hooks.mutate(
             tableName,
-            'update',
-            async (query) => query.where({ id }).update(data).returning('*'),
+            "update",
+            async (query) => query.where({ id }).update(data).returning("*"),
             { id, ...data },
             undefined,
             trx,
@@ -672,7 +663,7 @@ export class ForgeDatabase {
 
         if (!user && !isSystem && this.config.enforceRls) {
           throw new AuthenticationRequiredError(
-            'Authentication required to update records',
+            "Authentication required to update records",
           );
         }
 
@@ -682,7 +673,7 @@ export class ForgeDatabase {
           hasCustomFunction: initialHasCustomFunction,
         } = await enforcePermissions(
           tableName,
-          'UPDATE',
+          "UPDATE",
           user as UserContext,
           this.permissionService,
           undefined,
@@ -703,8 +694,8 @@ export class ForgeDatabase {
           // If the user has permission to delete, proceed with the deletion
           const result = this.hooks.mutate(
             tableName,
-            'update',
-            async (query) => query.where({ id }).update(data).returning('*'),
+            "update",
+            async (query) => query.where({ id }).update(data).returning("*"),
             { id, ...data },
             undefined,
             trx,
@@ -724,7 +715,7 @@ export class ForgeDatabase {
 
         const { status } = await enforcePermissions(
           tableName,
-          'UPDATE',
+          "UPDATE",
           user as UserContext,
           this.permissionService,
           record[0],
@@ -739,8 +730,8 @@ export class ForgeDatabase {
 
         const result = this.hooks.mutate(
           tableName,
-          'update',
-          async (query) => query.where({ id }).update(data).returning('*'),
+          "update",
+          async (query) => query.where({ id }).update(data).returning("*"),
           { id, ...data },
           undefined,
           trx,
@@ -777,12 +768,12 @@ export class ForgeDatabase {
         if (!this.config.enforceRls || isSystem) {
           const result = this.hooks.mutate(
             tableName,
-            'update',
+            "update",
             async (query) =>
               this.queryHandler
                 .buildQuery(queryParams, query)
                 .update(data)
-                .returning('*'),
+                .returning("*"),
             { ...data },
             undefined,
             trx,
@@ -793,7 +784,7 @@ export class ForgeDatabase {
 
         if (!user && !isSystem && this.config.enforceRls) {
           throw new AuthenticationRequiredError(
-            'Authentication required to update records',
+            "Authentication required to update records",
           );
         }
 
@@ -803,7 +794,7 @@ export class ForgeDatabase {
           hasCustomFunction: initialHasCustomFunction,
         } = await enforcePermissions(
           tableName,
-          'UPDATE',
+          "UPDATE",
           user as UserContext,
           this.permissionService,
           undefined,
@@ -816,7 +807,7 @@ export class ForgeDatabase {
           !initialHasCustomFunction
         ) {
           throw new Error(
-            `User does not have permission to update this records`,
+            "User does not have permission to update this records",
           );
         }
 
@@ -824,12 +815,12 @@ export class ForgeDatabase {
           // If the user has permission to delete, proceed with the deletion
           const result = this.hooks.mutate(
             tableName,
-            'update',
+            "update",
             async (query) =>
               this.queryHandler
                 .buildQuery(queryParams, query)
                 .update(data)
-                .returning('*'),
+                .returning("*"),
             { ...data },
             queryParams,
             trx,
@@ -847,7 +838,7 @@ export class ForgeDatabase {
 
         const { status } = await enforcePermissions(
           tableName,
-          'UPDATE',
+          "UPDATE",
           user as UserContext,
           this.permissionService,
           records,
@@ -856,18 +847,18 @@ export class ForgeDatabase {
 
         if (!status) {
           throw new PermissionDeniedError(
-            `User does not have permission to update this records`,
+            "User does not have permission to update this records",
           );
         }
 
         const result = this.hooks.mutate(
           tableName,
-          'update',
+          "update",
           async (query) =>
             this.queryHandler
               .buildQuery(queryParams, query)
               .update(data)
-              .returning('*'),
+              .returning("*"),
           { ...data },
           queryParams,
           trx,
@@ -902,11 +893,11 @@ export class ForgeDatabase {
         if (!this.config.enforceRls || isSystem) {
           return this.hooks.mutate(
             tableName,
-            'delete',
+            "delete",
             async (query) =>
               query
                 .where({ id })
-                .del(['id'], { includeTriggerModifications: true }),
+                .del(["id"], { includeTriggerModifications: true }),
             { id },
             undefined,
             trx,
@@ -915,7 +906,7 @@ export class ForgeDatabase {
 
         if (!user && !isSystem && this.config.enforceRls) {
           throw new AuthenticationRequiredError(
-            'Authentication required to delete records',
+            "Authentication required to delete records",
           );
         }
 
@@ -925,7 +916,7 @@ export class ForgeDatabase {
           hasCustomFunction: initialHasCustomFunction,
         } = await enforcePermissions(
           tableName,
-          'DELETE',
+          "DELETE",
           user as UserContext,
           this.permissionService,
           undefined,
@@ -946,7 +937,7 @@ export class ForgeDatabase {
           // If the user has permission to delete, proceed with the deletion
           return this.hooks.mutate(
             tableName,
-            'delete',
+            "delete",
             async (query) => query.where({ id }).delete(),
             { id },
             undefined,
@@ -966,7 +957,7 @@ export class ForgeDatabase {
 
         const { status } = await enforcePermissions(
           tableName,
-          'DELETE',
+          "DELETE",
           user as UserContext,
           this.permissionService,
           record,
@@ -980,7 +971,7 @@ export class ForgeDatabase {
 
         return this.hooks.mutate(
           tableName,
-          'delete',
+          "delete",
           async (query) => query.where({ id }).delete(),
           { id },
           undefined,
@@ -1016,11 +1007,11 @@ export class ForgeDatabase {
         if (!this.config.enforceRls || isSystem) {
           return this.hooks.mutate(
             tableName,
-            'delete',
+            "delete",
             async (query) =>
               this.queryHandler
                 .buildQuery(queryParams, query)
-                .del(['id'], { includeTriggerModifications: true }),
+                .del(["id"], { includeTriggerModifications: true }),
             undefined,
             queryParams,
             trx,
@@ -1029,7 +1020,7 @@ export class ForgeDatabase {
 
         if (!user && !isSystem && this.config.enforceRls) {
           throw new AuthenticationRequiredError(
-            'Authentication required to delete records',
+            "Authentication required to delete records",
           );
         }
 
@@ -1039,7 +1030,7 @@ export class ForgeDatabase {
           hasCustomFunction: initialHasCustomFunction,
         } = await enforcePermissions(
           tableName,
-          'DELETE',
+          "DELETE",
           user as UserContext,
           this.permissionService,
           undefined,
@@ -1052,7 +1043,7 @@ export class ForgeDatabase {
           !initialHasCustomFunction
         ) {
           throw new PermissionDeniedError(
-            `User does not have permission to delete this records`,
+            "User does not have permission to delete this records",
           );
         }
 
@@ -1060,11 +1051,11 @@ export class ForgeDatabase {
           // If the user has permission to delete, proceed with the deletion
           return this.hooks.mutate(
             tableName,
-            'delete',
+            "delete",
             async (query) =>
               this.queryHandler
                 .buildQuery(queryParams, query)
-                .del(['id'], { includeTriggerModifications: true }),
+                .del(["id"], { includeTriggerModifications: true }),
             undefined,
             queryParams,
             trx,
@@ -1081,7 +1072,7 @@ export class ForgeDatabase {
 
         const { status } = await enforcePermissions(
           tableName,
-          'DELETE',
+          "DELETE",
           user as UserContext,
           this.permissionService,
           records,
@@ -1089,17 +1080,17 @@ export class ForgeDatabase {
         );
         if (!status) {
           throw new PermissionDeniedError(
-            `User does not have permission to delete this records`,
+            "User does not have permission to delete this records",
           );
         }
 
         return this.hooks.mutate(
           tableName,
-          'delete',
+          "delete",
           async (query) =>
             this.queryHandler
               .buildQuery(queryParams, query)
-              .del(['id'], { includeTriggerModifications: true }),
+              .del(["id"], { includeTriggerModifications: true }),
           undefined,
           queryParams,
           trx,
@@ -1141,7 +1132,7 @@ export class ForgeDatabase {
         const { tableName, permissions } = params;
 
         if (!permissions) {
-          throw new Error('Permissions object is required');
+          throw new Error("Permissions object is required");
         }
 
         return this.permissionService.setPermissionsForTable(
@@ -1157,12 +1148,12 @@ export class ForgeDatabase {
     const queryParams: Record<string, any> = {};
 
     Object.entries(params).forEach(([key, value]) => {
-      if (typeof value === 'string') {
+      if (typeof value === "string") {
         try {
           queryParams[key] = JSON.parse(value);
         } catch {
-          if (key === 'limit' || key === 'offset') {
-            queryParams[key] = parseInt(value, 10) || 10;
+          if (key === "limit" || key === "offset") {
+            queryParams[key] = Number.parseInt(value, 10) || 10;
           } else {
             queryParams[key] = value;
           }
