@@ -323,8 +323,13 @@ export class QueryHandler {
             subQuery.where(
               rightField,
               operator,
-              // biome-ignore lint/complexity/useLiteralKeys: <explanation>
-              this.knex.raw("??", [`${query["_single"].table}.${leftField}`]),
+              // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
+              this.knex.raw(`??`, [
+                `${
+                  // biome-ignore lint/complexity/useLiteralKeys: <explanation>
+                  query["_single"].table
+                }.${leftField}`,
+              ]),
             );
           }
 
