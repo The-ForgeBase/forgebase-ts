@@ -1,5 +1,11 @@
 # @the-forgebase/knex-libsql
 
+## 1.0.0-alpha.0
+
+### Major Changes
+
+- [`926dd80`](https://github.com/The-ForgeBase/forgebase-ts/commit/926dd80ae096ee1a8a02f4460a77b4bad3e718df) Thanks [@SOG-web](https://github.com/SOG-web)! - production ready
+
 ## 0.1.0-alpha.0
 
 ### Minor Changes
