@@ -1,5 +1,12 @@
 # @the-forgebase/sdk
 
+## 1.0.0-alpha.4
+
+### Patch Changes
+
+- Updated dependencies [[`25ef503`](https://github.com/The-ForgeBase/forgebase-ts/commit/25ef5034572e1ae3b3899f78b72428acbbe72219)]:
+  - @the-forgebase/database@0.1.0-alpha.3
+
 ## 0.1.0-alpha.3
 
 ### Minor Changes

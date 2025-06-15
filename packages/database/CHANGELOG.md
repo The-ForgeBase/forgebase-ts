@@ -1,5 +1,11 @@
 # @the-forgebase/database
 
+## 0.1.0-alpha.3
+
+### Minor Changes
+
+- [`25ef503`](https://github.com/The-ForgeBase/forgebase-ts/commit/25ef5034572e1ae3b3899f78b72428acbbe72219) Thanks [@SOG-web](https://github.com/SOG-web)! - added knex-libsql client
+
 ## 0.1.0-alpha.2
 
 ### Patch Changes

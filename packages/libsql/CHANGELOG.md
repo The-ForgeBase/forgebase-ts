@@ -1,0 +1,9 @@
+# @the-forgebase/knex-libsql
+
+## 0.1.0-alpha.0
+
+### Minor Changes
+
+- [`25ef503`](https://github.com/The-ForgeBase/forgebase-ts/commit/25ef5034572e1ae3b3899f78b72428acbbe72219) Thanks [@SOG-web](https://github.com/SOG-web)! - added knex-libsql client
+
+- [`a66608b`](https://github.com/The-ForgeBase/forgebase-ts/commit/a66608b7ffd4463687d20960de7a8db19ee5f783) Thanks [@SOG-web](https://github.com/SOG-web)! - promote to production ready
