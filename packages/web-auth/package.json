@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/web-auth",
-  "version": "0.0.0",
+  "version": "0.0.0-alpha.22",
   "description": "Framework-agnostic web authentication SDK for ForgeBase with SSR support",
   "private": false,
   "type": "module",
@@ -55,42 +55,21 @@
   },
   "typesVersions": {
     "*": {
-      ".": [
-        "./dist/esm/index.d.ts"
-      ],
-      "frameworks/react": [
-        "./dist/esm/frameworks/react/index.d.ts"
-      ],
-      "frameworks/nextjs": [
-        "./dist/esm/frameworks/nextjs/index.d.ts"
-      ],
+      ".": ["./dist/esm/index.d.ts"],
+      "frameworks/react": ["./dist/esm/frameworks/react/index.d.ts"],
+      "frameworks/nextjs": ["./dist/esm/frameworks/nextjs/index.d.ts"],
       "frameworks/nextjs/app-router": [
         "./dist/esm/frameworks/nextjs/app-router/index.d.ts"
       ],
       "frameworks/nextjs/pages-router": [
         "./dist/esm/frameworks/nextjs/pages-router/index.d.ts"
       ],
-      "frameworks/angular": [
-        "./dist/esm/frameworks/angular/index.d.ts"
-      ],
-      "frameworks/nitro": [
-        "./dist/esm/frameworks/nitro/index.d.ts"
-      ]
+      "frameworks/angular": ["./dist/esm/frameworks/angular/index.d.ts"],
+      "frameworks/nitro": ["./dist/esm/frameworks/nitro/index.d.ts"]
     }
   },
-  "files": [
-    "dist",
-    "!**/*.tsbuildinfo",
-    "package.json",
-    "README.md"
-  ],
-  "keywords": [
-    "authentication",
-    "auth",
-    "forgebase",
-    "ssr",
-    "web"
-  ],
+  "files": ["dist", "!**/*.tsbuildinfo", "package.json", "README.md"],
+  "keywords": ["authentication", "auth", "forgebase", "ssr", "web"],
   "author": "The-ForgeBase",
   "license": "MIT",
   "dependencies": {

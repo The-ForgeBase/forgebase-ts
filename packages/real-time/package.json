@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/real-time",
-  "version": "0.0.0",
+  "version": "0.0.0-alpha.22",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -21,12 +21,7 @@
       "require": "./dist/cjs/index.js"
     }
   },
-  "files": [
-    "dist",
-    "!**/*.tsbuildinfo",
-    "package.json",
-    "README.md"
-  ],
+  "files": ["dist", "!**/*.tsbuildinfo", "package.json", "README.md"],
   "publishConfig": {
     "access": "public"
   },

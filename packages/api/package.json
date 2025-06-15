@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/api",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.4",
   "private": false,
   "type": "module",
   "main": "./dist/cjs/index.js",
@@ -49,35 +49,16 @@
   },
   "typesVersions": {
     "*": {
-      ".": [
-        "./dist/esm/index.d.ts"
-      ],
-      "frameworks": [
-        "./dist/esm/frameworks/index.d.ts"
-      ],
-      "frameworks/nest": [
-        "./dist/esm/frameworks/nest/index.d.ts"
-      ],
-      "core/nest": [
-        "./dist/esm/core/nest/index.d.ts"
-      ],
-      "core/hono": [
-        "./dist/esm/core/hono/index.d.ts"
-      ],
-      "core/web": [
-        "./dist/esm/core/web/index.d.ts"
-      ],
-      "core": [
-        "./dist/esm/core/index.d.ts"
-      ]
+      ".": ["./dist/esm/index.d.ts"],
+      "frameworks": ["./dist/esm/frameworks/index.d.ts"],
+      "frameworks/nest": ["./dist/esm/frameworks/nest/index.d.ts"],
+      "core/nest": ["./dist/esm/core/nest/index.d.ts"],
+      "core/hono": ["./dist/esm/core/hono/index.d.ts"],
+      "core/web": ["./dist/esm/core/web/index.d.ts"],
+      "core": ["./dist/esm/core/index.d.ts"]
     }
   },
-  "files": [
-    "dist",
-    "!**/*.tsbuildinfo",
-    "package.json",
-    "README.md"
-  ],
+  "files": ["dist", "!**/*.tsbuildinfo", "package.json", "README.md"],
   "publishConfig": {
     "access": "public"
   },

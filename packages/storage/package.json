@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/storage",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.4",
   "private": false,
   "type": "module",
   "main": "./dist/cjs/index.js",
@@ -24,17 +24,10 @@
   },
   "typesVersions": {
     "*": {
-      ".": [
-        "./dist/esm/index.d.ts"
-      ]
+      ".": ["./dist/esm/index.d.ts"]
     }
   },
-  "files": [
-    "dist",
-    "!**/*.tsbuildinfo",
-    "package.json",
-    "README.md"
-  ],
+  "files": ["dist", "!**/*.tsbuildinfo", "package.json", "README.md"],
   "publishConfig": {
     "access": "public"
   },

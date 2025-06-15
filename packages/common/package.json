@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/common",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.4",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -23,17 +23,10 @@
   },
   "typesVersions": {
     "*": {
-      ".": [
-        "./dist/esm/index.d.ts"
-      ]
+      ".": ["./dist/esm/index.d.ts"]
     }
   },
-  "files": [
-    "dist",
-    "!**/*.tsbuildinfo",
-    "package.json",
-    "README.md"
-  ],
+  "files": ["dist", "!**/*.tsbuildinfo", "package.json", "README.md"],
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@the-forgebase/typescript-config": "workspace:*",

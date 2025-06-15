@@ -1,6 +1,6 @@
 {
   "name": "@the-forgebase/auth",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.4",
   "type": "module",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/src/index.js",
@@ -50,29 +50,16 @@
   },
   "typesVersions": {
     "*": {
-      ".": [
-        "./dist/esm/src/index.d.ts"
-      ],
-      "adapters/nest": [
-        "./dist/esm/src/adapters/nest/index.d.ts"
-      ],
-      "adapters/web": [
-        "./dist/esm/src/adapters/web/index.d.ts"
-      ],
-      "adapters/express": [
-        "./dist/esm/src/adapters/express/index.d.ts"
-      ],
+      ".": ["./dist/esm/src/index.d.ts"],
+      "adapters/nest": ["./dist/esm/src/adapters/nest/index.d.ts"],
+      "adapters/web": ["./dist/esm/src/adapters/web/index.d.ts"],
+      "adapters/express": ["./dist/esm/src/adapters/express/index.d.ts"],
       "adapters/ultimate-express": [
         "./dist/esm/src/adapters/ultimate-express/index.d.ts"
       ]
     }
   },
-  "files": [
-    "dist",
-    "!**/*.tsbuildinfo",
-    "package.json",
-    "README.md"
-  ],
+  "files": ["dist", "!**/*.tsbuildinfo", "package.json", "README.md"],
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@the-forgebase/typescript-config": "workspace:*",
