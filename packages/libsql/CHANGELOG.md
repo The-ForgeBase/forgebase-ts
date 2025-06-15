@@ -1,5 +1,11 @@
 # @the-forgebase/knex-libsql
 
+## 0.0.6
+
+### Patch Changes
+
+- [`b44709f`](https://github.com/The-ForgeBase/forgebase-ts/commit/b44709f89bf8710b0e690d5598f547b80c3806f9) Thanks [@SOG-web](https://github.com/SOG-web)! - fix type error in knex-libsql
+
 ## 0.0.5
 
 ### Patch Changes
