@@ -1,10 +1,10 @@
-import type { Knex } from 'knex';
-import { SQLiteAdapter } from './sqlite';
-import { PostgresAdapter } from './postgres';
-import type { DatabaseAdapter } from './base';
+import type { Knex } from "knex";
+import { SQLiteAdapter } from "./sqlite";
+import { PostgresAdapter } from "./postgres";
+import type { DatabaseAdapter } from "./base";
 
 const getLibSQL = (client: any) => {
-  if (client === 'Client_Libsql') {
+  if (client === "Client_Libsql" || client === "Client_LibSql") {
     return true;
   }
   console.log(client);
@@ -17,20 +17,20 @@ export function getAdapter(knex: Knex): DatabaseAdapter {
   //console.log("Database client:", client);
 
   if (getLibSQL(knex.client.constructor.name)) {
-    client = 'libsql';
+    client = "libsql";
   }
 
   switch (client) {
-    case 'sqlite3':
+    case "sqlite3":
       return new SQLiteAdapter();
-    case 'pg':
+    case "pg":
       return new PostgresAdapter();
-    case 'libsql':
+    case "libsql":
       return new SQLiteAdapter();
     default:
       throw new Error(`Unsupported database client: ${client}`);
   }
 }
 
-export { DatabaseFeature } from './base';
-export type { DatabaseAdapter } from './base';
+export { DatabaseFeature } from "./base";
+export type { DatabaseAdapter } from "./base";

@@ -434,6 +434,7 @@ export class QueryHandler {
       ...row,
       ...Object.entries(computations).reduce(
         (acc, [key, fn]) => ({
+          // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
           ...acc,
           [key]: fn(row),
         }),

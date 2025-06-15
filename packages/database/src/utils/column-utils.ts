@@ -1,71 +1,75 @@
-import type { Knex } from 'knex';
-import type { ColumnDefinition, UpdateColumnDefinition } from '../types';
-import { SchemaInspector } from '../knex-schema-inspector/lib/index';
+import type { Knex } from "knex";
+import type { ColumnDefinition, UpdateColumnDefinition } from "../types";
+import { SchemaInspector } from "../knex-schema-inspector/lib/index";
 
 export function createColumn(
   table: Knex.TableBuilder,
   columnDef: ColumnDefinition,
-  knex: Knex
+  knex: Knex,
 ) {
+  // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
   let column;
 
   switch (columnDef.type) {
-    case 'increments':
+    case "increments":
       column = table.increments(columnDef.name);
       break;
-    case 'string':
+    case "string":
       column = table.string(columnDef.name);
       break;
-    case 'text':
-      column = table.text(columnDef.name, 'longtext');
+    case "text":
+      column = table.text(columnDef.name, "longtext");
       break;
-    case 'integer':
+    case "integer":
       column = table.integer(columnDef.name);
       break;
-    case 'bigInteger':
+    case "bigInteger":
       column = table.bigInteger(columnDef.name);
       break;
-    case 'boolean':
+    case "boolean":
       column = table.boolean(columnDef.name);
       break;
-    case 'decimal':
+    case "decimal":
       column = table.decimal(columnDef.name);
       break;
-    case 'float':
+    case "float":
       column = table.float(columnDef.name);
       break;
-    case 'datetime':
+    case "datetime":
       column = table.datetime(columnDef.name);
       break;
-    case 'date':
+    case "date":
       column = table.date(columnDef.name);
       break;
-    case 'time':
+    case "time":
       column = table.time(columnDef.name);
       break;
-    case 'timestamp':
+    case "timestamp":
       column = table.timestamp(columnDef.name);
       break;
-    case 'binary':
+    case "binary":
       column = table.binary(columnDef.name);
       break;
-    case 'json':
+    case "json":
       column = table.json(columnDef.name);
       break;
-    case 'jsonb':
+    case "jsonb":
       column = table.jsonb(columnDef.name);
       break;
-    case 'enum':
+    case "enum":
       if (!columnDef.enumValues) {
-        throw new Error('Enum values are required');
+        throw new Error("Enum values are required");
       }
       column = table.enum(columnDef.name, columnDef.enumValues);
       break;
-    case 'uuid':
+    case "uuid":
       if (
-        ['Client_SQLite3', 'Client_BetterSQLite3', 'Client_Libsql'].includes(
-          knex.client.constructor.name
-        )
+        [
+          "Client_SQLite3",
+          "Client_BetterSQLite3",
+          "Client_Libsql",
+          "Client_LibSql",
+        ].includes(knex.client.constructor.name)
       ) {
         column = table.string(columnDef.name, 36);
         break;
@@ -80,14 +84,17 @@ export function createColumn(
   // add createdAt and updatedAt columns
   if (knex) {
     try {
-      if (columnDef.name === 'created_at') column.defaultTo(knex.fn.now());
-      if (columnDef.name === 'updated_at') column.defaultTo(knex.fn.now());
+      if (columnDef.name === "created_at") column.defaultTo(knex.fn.now());
+      if (columnDef.name === "updated_at") column.defaultTo(knex.fn.now());
       if (
-        columnDef.name === 'id' &&
-        columnDef.type === 'uuid' &&
-        !['Client_SQLite3', 'Client_BetterSQLite3', 'Client_Libsql'].includes(
-          knex.client.constructor.name
-        )
+        columnDef.name === "id" &&
+        columnDef.type === "uuid" &&
+        ![
+          "Client_SQLite3",
+          "Client_BetterSQLite3",
+          "Client_Libsql",
+          "Client_LibSql",
+        ].includes(knex.client.constructor.name)
       )
         column.defaultTo(knex.fn.uuid());
     } catch (error) {
@@ -118,7 +125,7 @@ async function dropExistingForeignKeys(
   knex: Knex,
   tableName: string,
   columnName: string,
-  trx?: Knex.Transaction
+  trx?: Knex.Transaction,
 ) {
   const inspector = SchemaInspector(knex);
   // Get foreign key constraints
@@ -140,7 +147,7 @@ export async function updateColumn(
   knex: Knex,
   tableName: string,
   columnDef: UpdateColumnDefinition,
-  trx?: Knex.Transaction
+  trx?: Knex.Transaction,
 ) {
   // First, check and drop any existing foreign keys
   await dropExistingForeignKeys(knex, tableName, columnDef.currentName, trx);
@@ -164,7 +171,7 @@ export async function updateColumn(
         foreignKeys: columnDef.foreignKeys,
         default: columnDef.default,
       },
-      knex
+      knex,
     );
 
     return column;

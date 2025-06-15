@@ -1,5 +1,5 @@
-import { Knex } from 'knex';
-import { UserFieldDefinition } from './user-extension.js';
+import { Knex } from "knex";
+import { UserFieldDefinition } from "./user-extension.js";
 
 /**
  * Options for a migration operation
@@ -57,7 +57,7 @@ export async function addColumns(
   knex: Knex,
   options: AddColumnsOptions,
 ): Promise<void> {
-  const { fields, tableName = 'users', transaction = true } = options;
+  const { fields, tableName = "users", transaction = true } = options;
 
   const operation = async (trx: Knex.Transaction | Knex) => {
     // Check if table exists
@@ -80,53 +80,55 @@ export async function addColumns(
         }
 
         // Add column based on type
+        // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
         let column;
         switch (field.type) {
-          case 'string':
+          case "string":
             column = table.string(field.name);
             break;
-          case 'text':
+          case "text":
             column = table.text(field.name);
             break;
-          case 'integer':
+          case "integer":
             column = table.integer(field.name);
             break;
-          case 'bigInteger':
+          case "bigInteger":
             column = table.bigInteger(field.name);
             break;
-          case 'boolean':
+          case "boolean":
             column = table.boolean(field.name);
             break;
-          case 'decimal':
+          case "decimal":
             column = table.decimal(field.name);
             break;
-          case 'float':
+          case "float":
             column = table.float(field.name);
             break;
-          case 'datetime':
+          case "datetime":
             column = table.datetime(field.name);
             break;
-          case 'date':
+          case "date":
             column = table.date(field.name);
             break;
-          case 'time':
+          case "time":
             column = table.time(field.name);
             break;
-          case 'timestamp':
+          case "timestamp":
             column = table.timestamp(field.name);
             break;
-          case 'json':
+          case "json":
             column = table.json(field.name);
             break;
-          case 'jsonb':
+          case "jsonb":
             column = table.jsonb(field.name);
             break;
-          case 'uuid':
+          case "uuid":
             if (
               [
-                'Client_SQLite3',
-                'Client_BetterSQLite3',
-                'Client_Libsql',
+                "Client_SQLite3",
+                "Client_BetterSQLite3",
+                "Client_Libsql",
+                "Client_LibSql",
               ].includes(trx.client.constructor.name)
             ) {
               column = table.string(field.name, 36);
@@ -198,7 +200,7 @@ export async function renameColumn(
   knex: Knex,
   options: RenameColumnOptions,
 ): Promise<void> {
-  const { oldName, newName, tableName = 'users', transaction = true } = options;
+  const { oldName, newName, tableName = "users", transaction = true } = options;
 
   const operation = async (trx: Knex.Transaction | Knex) => {
     // Check if table exists
@@ -243,7 +245,7 @@ export async function modifyColumn(
   knex: Knex,
   options: ModifyColumnOptions,
 ): Promise<void> {
-  const { field, oldName, tableName = 'users', transaction = true } = options;
+  const { field, oldName, tableName = "users", transaction = true } = options;
 
   const operation = async (trx: Knex.Transaction | Knex) => {
     // Check if table exists
@@ -265,7 +267,7 @@ export async function modifyColumn(
 
     // For SQLite, we need to recreate the table
     if (
-      ['Client_SQLite3', 'Client_BetterSQLite3', 'Client_Libsql'].includes(
+      ["Client_SQLite3", "Client_BetterSQLite3", "Client_Libsql"].includes(
         trx.client.constructor.name,
       )
     ) {
@@ -273,7 +275,7 @@ export async function modifyColumn(
       // We need to create a new table, copy data, and drop the old table
       // This is a simplified approach and may not work for all cases
       throw new Error(
-        'Modifying columns in SQLite is not supported directly. Please use a migration with a new table.',
+        "Modifying columns in SQLite is not supported directly. Please use a migration with a new table.",
       );
     } else {
       // For other databases, we can alter the column
@@ -284,48 +286,49 @@ export async function modifyColumn(
         }
 
         // Now modify the column
+        // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
         let column;
         switch (field.type) {
-          case 'string':
+          case "string":
             column = table.string(field.name).alter();
             break;
-          case 'text':
+          case "text":
             column = table.text(field.name).alter();
             break;
-          case 'integer':
+          case "integer":
             column = table.integer(field.name).alter();
             break;
-          case 'bigInteger':
+          case "bigInteger":
             column = table.bigInteger(field.name).alter();
             break;
-          case 'boolean':
+          case "boolean":
             column = table.boolean(field.name).alter();
             break;
-          case 'decimal':
+          case "decimal":
             column = table.decimal(field.name).alter();
             break;
-          case 'float':
+          case "float":
             column = table.float(field.name).alter();
             break;
-          case 'datetime':
+          case "datetime":
             column = table.datetime(field.name).alter();
             break;
-          case 'date':
+          case "date":
             column = table.date(field.name).alter();
             break;
-          case 'time':
+          case "time":
             column = table.time(field.name).alter();
             break;
-          case 'timestamp':
+          case "timestamp":
             column = table.timestamp(field.name).alter();
             break;
-          case 'json':
+          case "json":
             column = table.json(field.name).alter();
             break;
-          case 'jsonb':
+          case "jsonb":
             column = table.jsonb(field.name).alter();
             break;
-          case 'uuid':
+          case "uuid":
             column = table.uuid(field.name).alter();
             break;
           default:
@@ -373,7 +376,7 @@ export async function dropColumns(
   knex: Knex,
   options: DropColumnsOptions,
 ): Promise<void> {
-  const { columnNames, tableName = 'users', transaction = true } = options;
+  const { columnNames, tableName = "users", transaction = true } = options;
 
   const operation = async (trx: Knex.Transaction | Knex) => {
     // Check if table exists
@@ -419,7 +422,7 @@ export async function migrateData(
 ): Promise<void> {
   const {
     transform,
-    tableName = 'users',
+    tableName = "users",
     transaction = true,
     batchSize = 100,
   } = options;
@@ -432,7 +435,7 @@ export async function migrateData(
     }
 
     // Get total count
-    const { count } = (await trx(tableName).count('* as count').first()) as {
+    const { count } = (await trx(tableName).count("* as count").first()) as {
       count: number;
     };
 
@@ -442,15 +445,15 @@ export async function migrateData(
     for (let batch = 0; batch < totalBatches; batch++) {
       // Get batch of rows
       const rows = await trx(tableName)
-        .select('*')
-        .orderBy('id')
+        .select("*")
+        .orderBy("id")
         .limit(batchSize)
         .offset(batch * batchSize);
 
       // Transform each row and update
       for (const row of rows) {
         const transformedData = transform(row);
-        await trx(tableName).where('id', row.id).update(transformedData);
+        await trx(tableName).where("id", row.id).update(transformedData);
       }
     }
   };

@@ -1,8 +1,8 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 /* eslint-disable no-useless-escape */
-import { Knex } from 'knex';
-import { ColumnType, ForeignKey } from '@the-forgebase/common';
-import { User } from '../types.js';
+import { Knex } from "knex";
+import { ColumnType, ForeignKey } from "@the-forgebase/common";
+import { User } from "../types.js";
 
 /**
  * Definition for a custom user field
@@ -54,7 +54,7 @@ export async function extendUserTable(
   knex: Knex,
   options: ExtendUserTableOptions,
 ): Promise<void> {
-  const tableName = options.tableName || 'users';
+  const tableName = options.tableName || "users";
   const { fields, migrateExisting = true } = options;
 
   // Check if table exists
@@ -77,53 +77,55 @@ export async function extendUserTable(
       }
 
       // Add column based on type
+      // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
       let column;
       switch (field.type) {
-        case 'string':
+        case "string":
           column = table.string(field.name);
           break;
-        case 'text':
+        case "text":
           column = table.text(field.name);
           break;
-        case 'integer':
+        case "integer":
           column = table.integer(field.name);
           break;
-        case 'bigInteger':
+        case "bigInteger":
           column = table.bigInteger(field.name);
           break;
-        case 'boolean':
+        case "boolean":
           column = table.boolean(field.name);
           break;
-        case 'decimal':
+        case "decimal":
           column = table.decimal(field.name);
           break;
-        case 'float':
+        case "float":
           column = table.float(field.name);
           break;
-        case 'datetime':
+        case "datetime":
           column = table.datetime(field.name);
           break;
-        case 'date':
+        case "date":
           column = table.date(field.name);
           break;
-        case 'time':
+        case "time":
           column = table.time(field.name);
           break;
-        case 'timestamp':
+        case "timestamp":
           column = table.timestamp(field.name);
           break;
-        case 'json':
+        case "json":
           column = table.json(field.name);
           break;
-        case 'jsonb':
+        case "jsonb":
           column = table.jsonb(field.name);
           break;
-        case 'uuid':
+        case "uuid":
           if (
             [
-              'Client_SQLite3',
-              'Client_BetterSQLite3',
-              'Client_Libsql',
+              "Client_SQLite3",
+              "Client_BetterSQLite3",
+              "Client_Libsql",
+              "Client_LibSql",
             ].includes(knex.client.constructor.name)
           ) {
             column = table.string(field.name, 36);
@@ -208,7 +210,7 @@ export function validateUserData(
     if (value === undefined || value === null) continue;
 
     // Validate string fields
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       if (validation.minLength && value.length < validation.minLength) {
         errors[field.name] =
           `${field.name} must be at least ${validation.minLength} characters`;
@@ -244,14 +246,14 @@ export function validateUserData(
 
       if (
         validation.isPhone &&
-        !/^\+?[1-9]\d{1,14}$/.test(value.replace(/\s+/g, ''))
+        !/^\+?[1-9]\d{1,14}$/.test(value.replace(/\s+/g, ""))
       ) {
         errors[field.name] = `${field.name} must be a valid phone number`;
       }
     }
 
     // Validate number fields
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       if (validation.min !== undefined && value < validation.min) {
         errors[field.name] = `${field.name} must be at least ${validation.min}`;
       }
@@ -301,46 +303,46 @@ export function generateUserTypeInterface(
 ): string {
   const fieldDefinitions = fields
     .map((field) => {
-      const nullable = field.nullable !== false ? '?' : '';
+      const nullable = field.nullable !== false ? "?" : "";
       let type: string;
 
       switch (field.type) {
-        case 'string':
-        case 'text':
-          type = 'string';
+        case "string":
+        case "text":
+          type = "string";
           break;
-        case 'integer':
-        case 'bigInteger':
-        case 'decimal':
-        case 'float':
-          type = 'number';
+        case "integer":
+        case "bigInteger":
+        case "decimal":
+        case "float":
+          type = "number";
           break;
-        case 'boolean':
-          type = 'boolean';
+        case "boolean":
+          type = "boolean";
           break;
-        case 'datetime':
-        case 'date':
-        case 'time':
-        case 'timestamp':
-          type = 'Date';
+        case "datetime":
+        case "date":
+        case "time":
+        case "timestamp":
+          type = "Date";
           break;
-        case 'json':
-        case 'jsonb':
-          type = 'Record<string, any>';
+        case "json":
+        case "jsonb":
+          type = "Record<string, any>";
           break;
-        case 'uuid':
-          type = 'string';
+        case "uuid":
+          type = "string";
           break;
         default:
-          type = 'any';
+          type = "any";
       }
 
       const comment = field.description
         ? `  /** ${field.description} */\n`
-        : '';
+        : "";
       return `${comment}  ${field.name}${nullable}: ${type};`;
     })
-    .join('\n');
+    .join("\n");
 
   return `import { User } from '@the-forgebase/auth';
 
