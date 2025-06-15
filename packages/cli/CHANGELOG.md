@@ -1,5 +1,11 @@
 # @the-forgebase/cli
 
+## 0.0.3
+
+### Patch Changes
+
+- [`9a04c42`](https://github.com/The-ForgeBase/forgebase-ts/commit/9a04c42d3bbef18bb3bac4a95b7b8bb06859362c) Thanks [@SOG-web](https://github.com/SOG-web)! - fix Error: ENOENT: no such file or directory
+
 ## 0.0.2
 
 ### Patch Changes
