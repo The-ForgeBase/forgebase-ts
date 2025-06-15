@@ -1,5 +1,11 @@
 # @the-forgebase/knex-libsql
 
+## 0.0.4
+
+### Patch Changes
+
+- [`4f30336`](https://github.com/The-ForgeBase/forgebase-ts/commit/4f30336a64c97ce9a6aaa527f545c8e3c0d3b126) Thanks [@SOG-web](https://github.com/SOG-web)! - mod2
+
 ## 0.0.3
 
 ### Patch Changes
