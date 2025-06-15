@@ -1,0 +1,29 @@
+{
+  "name": "@the-forgebase/cli",
+  "version": "0.1.0-alpha.1",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "pnpm clean && tsc",
+    "dev": "tsc -w",
+    "lint": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@the-forgebase/typescript-config": "workspace:*",
+    "@types/node": "~18.16.9",
+    "typescript": "5.3.3"
+  }
+}

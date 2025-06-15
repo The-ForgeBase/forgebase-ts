@@ -1,25 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type knex from 'knex';
+import type knex from "knex";
 import {
   DatabaseAdapter,
   DatabaseFeature,
   getAdapter,
-} from '@the-forgebase/database';
+} from "@the-forgebase/database";
 
 // types.ts
 type WhereOperator =
-  | '='
-  | '!='
-  | '>'
-  | '>='
-  | '<'
-  | '<='
-  | 'like'
-  | 'in'
-  | 'not in'
-  | 'between'
-  | 'is null'
-  | 'is not null';
+  | "="
+  | "!="
+  | ">"
+  | ">="
+  | "<"
+  | "<="
+  | "like"
+  | "in"
+  | "not in"
+  | "between"
+  | "is null"
+  | "is not null";
 
 interface WhereClause {
   field: string;
@@ -30,33 +30,33 @@ interface WhereClause {
 
 interface WhereBetweenClause {
   field: string;
-  operator: 'between';
+  operator: "between";
   value: [any, any];
   boolean?: GroupOperator;
 }
 
 interface OrderByClause {
   field: string;
-  direction?: 'asc' | 'desc';
-  nulls?: 'first' | 'last';
+  direction?: "asc" | "desc";
+  nulls?: "first" | "last";
 }
 
 interface WindowFunction {
   type:
-    | 'row_number'
-    | 'rank'
-    | 'dense_rank'
-    | 'lag'
-    | 'lead'
-    | 'first_value'
-    | 'last_value'
-    | 'sum'
-    | 'avg'
-    | 'count'
-    | 'min'
-    | 'max'
-    | 'nth_value'
-    | 'ntile';
+    | "row_number"
+    | "rank"
+    | "dense_rank"
+    | "lag"
+    | "lead"
+    | "first_value"
+    | "last_value"
+    | "sum"
+    | "avg"
+    | "count"
+    | "min"
+    | "max"
+    | "nth_value"
+    | "ntile";
   field?: string;
   alias: string;
   partitionBy?: string[];
@@ -90,7 +90,7 @@ interface TransformConfig {
 }
 
 interface AggregateOptions {
-  type: 'count' | 'sum' | 'avg' | 'min' | 'max';
+  type: "count" | "sum" | "avg" | "min" | "max";
   field: string;
   alias?: string;
 }
@@ -111,7 +111,7 @@ interface SubQueryConfig {
   };
 }
 
-type GroupOperator = 'AND' | 'OR';
+type GroupOperator = "AND" | "OR";
 
 interface WhereGroup {
   type: GroupOperator;
@@ -129,9 +129,9 @@ interface WindowFunctionAdvanced extends WindowFunction {
     partitionBy?: string[];
     orderBy?: OrderByClause[];
     frame?: {
-      type: 'ROWS' | 'RANGE';
-      start: 'UNBOUNDED PRECEDING' | 'CURRENT ROW' | number;
-      end?: 'UNBOUNDED FOLLOWING' | 'CURRENT ROW' | number;
+      type: "ROWS" | "RANGE";
+      start: "UNBOUNDED PRECEDING" | "CURRENT ROW" | number;
+      end?: "UNBOUNDED FOLLOWING" | "CURRENT ROW" | number;
     };
   };
   filter?: WhereClause[];
@@ -146,7 +146,7 @@ interface QueryParams {
   whereIn?: Record<string, any[]>;
   whereNotIn?: Record<string, any[]>;
   whereExists?: SubQueryConfig[];
-  whereGroups?: Array<{ type: 'AND' | 'OR'; clauses: WhereClause[] }>;
+  whereGroups?: Array<{ type: "AND" | "OR"; clauses: WhereClause[] }>;
   orderBy?: OrderByClause[];
   groupBy?: string[];
   having?: HavingClause[];
@@ -181,24 +181,24 @@ export class QueryHandler {
     // 1. CTEs and Window Functions (must come first)
     // Handle CTEs first
     if (params.ctes?.length) {
-      params.ctes.forEach((cte) => {
+      for (const cte of params.ctes) {
         query = query.with(cte.name, (qb: knex.Knex.QueryBuilder) =>
           this.buildQuery(cte.query.params, qb),
         );
-      });
+      }
     }
 
     // Handle recursive CTEs
     if (params.recursiveCtes?.length) {
-      params.recursiveCtes.forEach((cte) => {
+      for (const cte of params.recursiveCtes) {
         query = query.withRecursive(cte.name, (qb) => {
           return qb.from(() => {
             const initial = this.knex(cte.initialQuery.tableName)
-              .select('*')
+              .select("*")
               .where(cte.initialQuery.params.filter || {});
 
             const recursive = this.knex(cte.recursiveQuery.tableName)
-              .select('*')
+              .select("*")
               .where(cte.recursiveQuery.params.filter || {});
 
             if (cte.unionAll) {
@@ -207,7 +207,7 @@ export class QueryHandler {
             return initial.union(recursive);
           });
         });
-      });
+      }
     }
 
     // Apply regular window functions first
@@ -215,10 +215,10 @@ export class QueryHandler {
       params.windowFunctions &&
       this.adapter.supportsFeature(DatabaseFeature.WindowFunctions)
     ) {
-      params.windowFunctions.forEach((wf) => {
+      for (const wf of params.windowFunctions) {
         const windowClause = this.adapter.buildWindowFunction(wf);
         query = query.select(this.knex.raw(windowClause));
-      });
+      }
     }
 
     // Apply enhanced window functions second
@@ -227,10 +227,10 @@ export class QueryHandler {
       this.adapter.supportsFeature(DatabaseFeature.WindowFunctions)
     ) {
       if (params.advancedWindows?.length) {
-        params.advancedWindows.forEach((wf) => {
+        for (const wf of params.advancedWindows) {
           const windowClause = this.adapter.buildWindowFunction(wf);
           query = query.select(this.knex.raw(windowClause));
-        });
+        }
       }
     }
 
@@ -243,71 +243,71 @@ export class QueryHandler {
 
     // Handle aggregates
     if (params.aggregates?.length) {
-      params.aggregates.forEach(({ type, field, alias }) => {
+      for (const { type, field, alias } of params.aggregates) {
         const column = alias || `${type}_${field}`;
         switch (type) {
-          case 'count':
+          case "count":
             query = query.count(field as any, { as: column });
             break;
-          case 'sum':
+          case "sum":
             query = query.sum(field as any, { as: column });
             break;
-          case 'avg':
+          case "avg":
             query = query.avg(field as any, { as: column });
             break;
-          case 'min':
+          case "min":
             query = query.min(field as any, { as: column });
             break;
-          case 'max':
+          case "max":
             query = query.max(field as any, { as: column });
             break;
         }
-      });
+      }
     }
 
     // Apply raw where clauses
     if (params.whereRaw) {
-      params.whereRaw.forEach((clause) => {
+      for (const clause of params.whereRaw) {
         query = query.where(clause.field, clause.operator, clause.value);
-      });
+      }
     }
 
     // Apply where between clauses
     if (params.whereBetween) {
-      params.whereBetween.forEach((clause) => {
+      for (const clause of params.whereBetween) {
         query = query.whereBetween(clause.field, clause.value);
-      });
+      }
     }
 
     // Apply where null/not null
     if (params.whereNull) {
-      params.whereNull.forEach((field) => {
+      for (const field of params.whereNull) {
         query = query.whereNull(field);
-      });
+      }
     }
 
     if (params.whereNotNull) {
-      params.whereNotNull.forEach((field) => {
+      for (const field of params.whereNotNull) {
         query = query.whereNotNull(field);
-      });
+      }
     }
 
     // Apply where in/not in
     if (params.whereIn) {
-      Object.entries(params.whereIn).forEach(([field, values]) => {
+      for (const [field, values] of Object.entries(params.whereIn)) {
         query = query.whereIn(field, values);
-      });
+      }
     }
 
     if (params.whereNotIn) {
-      Object.entries(params.whereNotIn).forEach(([field, values]) => {
+      for (const [field, values] of Object.entries(params.whereNotIn)) {
         query = query.whereNotIn(field, values);
-      });
+      }
     }
 
     // Apply where exists
     if (params.whereExists) {
-      params.whereExists.forEach((subQueryConfig) => {
+      for (const subQueryConfig of params.whereExists) {
         query = query.whereExists((builder) => {
           // Create a new builder for the subquery
           const subQuery = this.knex(subQueryConfig.tableName);
@@ -323,26 +323,27 @@ export class QueryHandler {
             subQuery.where(
               rightField,
               operator,
-              this.knex.raw(`??`, [`${query['_single'].table}.${leftField}`]),
+              // biome-ignore lint/complexity/useLiteralKeys: <explanation>
+              this.knex.raw("??", [`${query["_single"].table}.${leftField}`]),
             );
           }
 
           return subQuery;
         });
-      });
+      }
     }
 
     // Apply grouped where clauses
     if (params.whereGroups) {
-      params.whereGroups.forEach((group) => {
+      for (const group of params.whereGroups) {
         query = query.where(function (this: any) {
-          group.clauses.forEach((clause) => {
+          for (const clause of group.clauses) {
             const method =
-              clause.boolean?.toLowerCase() === 'or' ? 'orWhere' : 'where';
+              clause.boolean?.toLowerCase() === "or" ? "orWhere" : "where";
             this[method](clause.field, clause.operator, clause.value);
-          });
+          }
         });
-      });
+      }
     }
 
     // Apply group by
@@ -352,9 +353,9 @@ export class QueryHandler {
 
     // Apply having
     if (params.having) {
-      params.having.forEach((clause) => {
+      for (const clause of params.having) {
         query = query.having(clause.field, clause.operator, clause.value);
-      });
+      }
     }
 
     // Update order by handling with adapter

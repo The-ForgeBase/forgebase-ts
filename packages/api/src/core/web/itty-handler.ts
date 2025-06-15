@@ -8,9 +8,9 @@ import {
   RequestHandler,
   ResponseHandler,
   RouteEntry,
-} from 'itty-router';
+} from "itty-router";
 // import { StorageService } from '../storage';
-import { DatabaseService } from '../database';
+import { DatabaseService } from "../database";
 import {
   AdvanceDataMutationParams,
   AuthenticationRequiredError,
@@ -19,15 +19,15 @@ import {
   ExcludedTableError,
   PermissionDeniedError,
   UserContext,
-} from '@the-forgebase/database';
-import { BaaSConfig } from '../../types';
+} from "@the-forgebase/database";
+import { BaaSConfig } from "../../types";
 import {
   attachNewToken,
   userContextMiddleware,
   WebAuthConfig,
-} from '@the-forgebase/auth/adapters/web';
-import { DynamicAuthManager } from '@the-forgebase/auth';
-import { InternalAdminManager } from '@the-forgebase/auth';
+} from "@the-forgebase/auth/adapters/web";
+import { DynamicAuthManager } from "@the-forgebase/auth";
+import { InternalAdminManager } from "@the-forgebase/auth";
 
 export type IttyWebRequest = {
   userContext?: UserContext;
@@ -81,7 +81,7 @@ export class IttyWebHandler {
 
     if (!config.authMiddleware && !config.useFgAuth?.enabled) {
       console.warn(
-        'No auth middleware provided, you must provide a auth middleware if you want to use the database RLS feature.',
+        "No auth middleware provided, you must provide a auth middleware if you want to use the database RLS feature.",
       );
     }
 
@@ -96,18 +96,18 @@ export class IttyWebHandler {
     }
 
     this.config = {
-      prefix: '/api',
+      prefix: "/api",
       auth: {
         enabled: false,
-        exclude: ['/auth/login', '/auth/register'],
+        exclude: ["/auth/login", "/auth/register"],
       },
       services: {
         storage: {
-          provider: 'local',
+          provider: "local",
           config: {},
         },
         db: {
-          provider: 'sqlite',
+          provider: "sqlite",
           config: {
             enforceRls: true,
           },
@@ -176,8 +176,8 @@ export class IttyWebHandler {
   private handleError(e: any): Response {
     if (e instanceof ExcludedTableError) {
       return error(403, {
-        error: 'Forbidden',
-        message: 'table does not exist',
+        error: "Forbidden",
+        message: "table does not exist",
       });
     }
     if (
@@ -185,7 +185,7 @@ export class IttyWebHandler {
       e instanceof PermissionDeniedError
     ) {
       return error(403, {
-        error: 'Forbidden',
+        error: "Forbidden",
         message: e.message,
       });
     }
@@ -200,7 +200,7 @@ export class IttyWebHandler {
         route.startsWith(`${this.config.prefix}/permissions`)) &&
       !req.isSystem
     ) {
-      return error(403, 'Forbidden');
+      return error(403, "Forbidden");
     }
   }
 
@@ -220,18 +220,18 @@ export class IttyWebHandler {
 
   private dataRoute() {
     this.router.post(
-      '/db/create/:tableName',
+      "/db/create/:tableName",
       async ({ json, params, userContext, isSystem }) => {
         try {
           const { tableName } = params;
           const { data } = await json();
 
-          if (!data || typeof data !== 'object') {
+          if (!data || typeof data !== "object") {
             return new Response(
-              JSON.stringify({ error: 'Invalid data format' }),
+              JSON.stringify({ error: "Invalid data format" }),
               {
                 status: 400,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { "Content-Type": "application/json" },
               },
             );
           }
@@ -248,7 +248,7 @@ export class IttyWebHandler {
 
           return new Response(JSON.stringify(result), {
             status: 201,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
           });
         } catch (e) {
           return this.handleError(e);
@@ -257,7 +257,7 @@ export class IttyWebHandler {
     );
 
     this.router.post(
-      '/db/query/:tableName',
+      "/db/query/:tableName",
       async ({ params, userContext, isSystem, json }) => {
         try {
           const { tableName } = params;
@@ -271,7 +271,7 @@ export class IttyWebHandler {
 
           return new Response(JSON.stringify(result), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
           });
         } catch (e) {
           return this.handleError(e);
@@ -280,7 +280,7 @@ export class IttyWebHandler {
     );
 
     this.router.post(
-      '/db/query/:tableName/:id',
+      "/db/query/:tableName/:id",
       async ({ params, userContext, isSystem }) => {
         try {
           // eslint-disable-next-line prefer-const
@@ -288,11 +288,11 @@ export class IttyWebHandler {
             tableName: string;
             id: number | string;
           };
-          if (typeof id === 'string' && !isNaN(Number(id))) {
+          if (typeof id === "string" && !Number.isNaN(Number(id))) {
             id = Number(id);
           }
 
-          const query: DataQueryParams = { filter: { id: id }, select: ['*'] };
+          const query: DataQueryParams = { filter: { id: id }, select: ["*"] };
           const result = await this.db.query(
             tableName,
             query,
@@ -302,7 +302,7 @@ export class IttyWebHandler {
 
           return new Response(JSON.stringify(result), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
           });
         } catch (e) {
           return this.handleError(e);
@@ -311,7 +311,7 @@ export class IttyWebHandler {
     );
 
     this.router.post(
-      '/db/update/:tableName/:id',
+      "/db/update/:tableName/:id",
       async ({ params, userContext, isSystem, json }) => {
         try {
           // eslint-disable-next-line prefer-const
@@ -320,17 +320,17 @@ export class IttyWebHandler {
             id: number | string;
           };
 
-          if (typeof id === 'string' && !isNaN(Number(id))) {
+          if (typeof id === "string" && !Number.isNaN(Number(id))) {
             id = Number(id);
           }
           const { data } = await json();
 
-          if (!data || typeof data !== 'object') {
+          if (!data || typeof data !== "object") {
             return new Response(
-              JSON.stringify({ error: 'Invalid data format' }),
+              JSON.stringify({ error: "Invalid data format" }),
               {
                 status: 400,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { "Content-Type": "application/json" },
               },
             );
           }
@@ -345,7 +345,7 @@ export class IttyWebHandler {
 
           return new Response(JSON.stringify(result), {
             status: 204,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
           });
         } catch (e) {
           return this.handleError(e);
@@ -354,11 +354,11 @@ export class IttyWebHandler {
     );
 
     this.router.post(
-      '/db/update/:tableName',
+      "/db/update/:tableName",
       async ({ params, userContext, isSystem, json }) => {
         try {
           // eslint-disable-next-line prefer-const
-          let { tableName } = params as {
+          const { tableName } = params as {
             tableName: string;
           };
 
@@ -366,15 +366,15 @@ export class IttyWebHandler {
 
           if (
             !data ||
-            typeof data !== 'object' ||
+            typeof data !== "object" ||
             !query ||
-            typeof query !== 'object'
+            typeof query !== "object"
           ) {
             return new Response(
-              JSON.stringify({ error: 'Invalid data format' }),
+              JSON.stringify({ error: "Invalid data format" }),
               {
                 status: 400,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { "Content-Type": "application/json" },
               },
             );
           }
@@ -389,7 +389,7 @@ export class IttyWebHandler {
 
           return new Response(JSON.stringify(result), {
             status: 204,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
           });
         } catch (e) {
           return this.handleError(e);
@@ -398,7 +398,7 @@ export class IttyWebHandler {
     );
 
     this.router.post(
-      '/db/del/:tableName/:id',
+      "/db/del/:tableName/:id",
       async ({ params, userContext, isSystem }) => {
         try {
           // eslint-disable-next-line prefer-const
@@ -406,7 +406,7 @@ export class IttyWebHandler {
             tableName: string;
             id: number | string;
           };
-          if (typeof id === 'string' && !isNaN(Number(id))) {
+          if (typeof id === "string" && !Number.isNaN(Number(id))) {
             id = Number(id);
           }
 
@@ -419,7 +419,7 @@ export class IttyWebHandler {
 
           return new Response(data, {
             status: 204,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
           });
         } catch (e) {
           return this.handleError(e);
@@ -428,11 +428,11 @@ export class IttyWebHandler {
     );
 
     this.router.post(
-      '/db/del/:tableName',
+      "/db/del/:tableName",
       async ({ params, userContext, isSystem, json }) => {
         try {
           // eslint-disable-next-line prefer-const
-          let { tableName } = params as {
+          const { tableName } = params as {
             tableName: string;
           };
 
@@ -449,7 +449,7 @@ export class IttyWebHandler {
 
           return new Response(data, {
             status: 204,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { "Content-Type": "application/json" },
           });
         } catch (e) {
           return this.handleError(e);
@@ -459,141 +459,141 @@ export class IttyWebHandler {
   }
 
   private schemaRoute() {
-    this.router.get('/db/schema', async () => {
+    this.router.get("/db/schema", async () => {
       try {
         const res = await this.db.getSchema();
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.get('/db/schema/tables/:tableName', async ({ params }) => {
+    this.router.get("/db/schema/tables/:tableName", async ({ params }) => {
       try {
         const { tableName } = params;
         const res = await this.db.getTableSchema(tableName);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.delete('/db/schema/tables/:tableName', async ({ params }) => {
+    this.router.delete("/db/schema/tables/:tableName", async ({ params }) => {
       try {
         const { tableName } = params;
         const res = await this.db.deleteSchema(tableName);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.get('/db/schema/tables', async () => {
+    this.router.get("/db/schema/tables", async () => {
       try {
         const res = await this.db.getTables();
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.post('/db/schema', async ({ json }) => {
+    this.router.post("/db/schema", async ({ json }) => {
       try {
         const { tableName, columns } = await json();
         const res = await this.db.createSchema(tableName, columns);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.post('/db/schema/column', async ({ json }) => {
+    this.router.post("/db/schema/column", async ({ json }) => {
       try {
         const { tableName, columns } = await json();
         const res = await this.db.addColumn(tableName, columns);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.delete('/db/schema/column', async ({ json }) => {
+    this.router.delete("/db/schema/column", async ({ json }) => {
       try {
         const { tableName, columns } = await json();
         const res = await this.db.deleteColumn(tableName, columns);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.put('/db/schema/column', async ({ json }) => {
+    this.router.put("/db/schema/column", async ({ json }) => {
       try {
         const { tableName, columns } = await json();
         const res = await this.db.updateColumn(tableName, columns);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.post('/db/schema/foreign_key', async ({ json }) => {
+    this.router.post("/db/schema/foreign_key", async ({ json }) => {
       try {
         const { tableName, foreignKey } = await json();
         const res = await this.db.addForeignKey(tableName, foreignKey);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.delete('/db/schema/foreign_key', async ({ json }) => {
+    this.router.delete("/db/schema/foreign_key", async ({ json }) => {
       try {
         const { tableName, column } = await json();
         const res = await this.db.dropForeignKey(tableName, column);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.delete('/db/schema/truncate', async ({ json }) => {
+    this.router.delete("/db/schema/truncate", async ({ json }) => {
       try {
         const { tableName } = await json();
         const res = await this.db.truncateTable(tableName);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
@@ -602,27 +602,27 @@ export class IttyWebHandler {
   }
 
   private permissionRoute() {
-    this.router.get('/permissions/:tableName', async ({ params }) => {
+    this.router.get("/permissions/:tableName", async ({ params }) => {
       try {
         const { tableName } = params;
         const res = await this.db.getPermissions(tableName);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);
       }
     });
 
-    this.router.post('/permissions/:tableName', async ({ params, json }) => {
+    this.router.post("/permissions/:tableName", async ({ params, json }) => {
       try {
         const { tableName } = params;
         const { permissions } = await json();
         const res = await this.db.setPermissions(tableName, permissions);
         return new Response(JSON.stringify(res), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
         return this.handleError(e);

@@ -84,9 +84,6 @@ importers:
       '@hono/node-server':
         specifier: ^1.14.2
         version: 1.14.2(hono@4.7.10)
-      '@the-forgebase/reauth':
-        specifier: workspace:*
-        version: link:../../packages/reauth
       better-sqlite3:
         specifier: ^11.10.0
         version: 11.10.0
@@ -420,6 +417,28 @@ importers:
         specifier: ^2.8.1
         version: 2.8.1
 
+  packages/cli:
+    dependencies:
+      axios:
+        specifier: ^1.7.2
+        version: 1.9.0
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@the-forgebase/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ~18.16.9
+        version: 18.16.20
+      typescript:
+        specifier: 5.3.3
+        version: 5.3.3
+
   packages/common:
     dependencies:
       typescript:
@@ -603,85 +622,6 @@ importers:
       '@types/web':
         specifier: ^0.0.226
         version: 0.0.226
-
-  packages/reauth:
-    dependencies:
-      '@node-rs/argon2':
-        specifier: ^2.0.2
-        version: 2.0.2
-      '@oslojs/crypto':
-        specifier: ^1.0.1
-        version: 1.0.1
-      '@standard-schema/spec':
-        specifier: ^1.0.0
-        version: 1.0.0
-      arctic:
-        specifier: ^3.6.1
-        version: 3.6.1
-      arktype:
-        specifier: ^2.1.20
-        version: 2.1.20
-      awilix:
-        specifier: ^12.0.5
-        version: 12.0.5
-      axios:
-        specifier: ^1.9.0
-        version: 1.9.0
-      express:
-        specifier: ^5.1.0
-        version: 5.1.0
-      itty-router:
-        specifier: ^5.0.18
-        version: 5.0.18
-      jsonwebtoken:
-        specifier: ^9.0.2
-        version: 9.0.2
-      jsx-email:
-        specifier: ^2.7.2
-        version: 2.7.2(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.2)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.15.21)(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(lightningcss@1.30.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.39.2)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))(typescript@5.8.3)
-      knex:
-        specifier: ^3.1.0
-        version: 3.1.0(better-sqlite3@11.10.0)
-      qrcode:
-        specifier: ^1.5.4
-        version: 1.5.4
-      react:
-        specifier: ^19.1.0
-        version: 19.1.0
-      rfc4648:
-        specifier: ^1.5.4
-        version: 1.5.4
-      typescript:
-        specifier: ^5.8.3
-        version: 5.8.3
-      ultimate-express:
-        specifier: ^2.0.4
-        version: 2.0.4
-      uuid:
-        specifier: ^11.1.0
-        version: 11.1.0
-    devDependencies:
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
-      '@the-forgebase/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/deno':
-        specifier: ^2.2.0
-        version: 2.3.0
-      '@types/jsonwebtoken':
-        specifier: ^9.0.9
-        version: 9.0.9
-      '@types/node':
-        specifier: ^22.15.21
-        version: 22.15.21
-      tslib:
-        specifier: ^2.8.1
-        version: 2.8.1
-      vitest:
-        specifier: ^3.1.4
-        version: 3.1.4(@types/debug@4.1.12)(@types/node@22.15.21)(@vitest/ui@3.1.4)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/sdk:
     dependencies:
@@ -918,12 +858,6 @@ packages:
   '@apidevtools/json-schema-ref-parser@11.9.3':
     resolution: {integrity: sha512-60vepv88RwcJtSHrD6MjIL6Ta3SOYbgfnkHb+ppAVK+o9mXprRtulx7VlRl3lN3bbvysAfCS7WMVfhUYemB0IQ==}
     engines: {node: '>= 16'}
-
-  '@ark/schema@0.46.0':
-    resolution: {integrity: sha512-c2UQdKgP2eqqDArfBqQIJppxJHvNNXuQPeuSPlDML4rjw+f1cu0qAlzOG4b8ujgm9ctIDWwhpyw6gjG5ledIVQ==}
-
-  '@ark/util@0.46.0':
-    resolution: {integrity: sha512-JPy/NGWn/lvf1WmGCPw2VGpBg5utZraE84I7wli18EDF3p3zc/e9WolT35tINeZO3l7C77SjqRJeAUoT0CvMRg==}
 
   '@aws-crypto/crc32@5.2.0':
     resolution: {integrity: sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==}
@@ -4842,9 +4776,6 @@ packages:
   '@speed-highlight/core@1.2.7':
     resolution: {integrity: sha512-0dxmVj4gxg3Jg879kvFS/msl4s9F3T9UXC1InxgOf7t5NvcPD97u/WTA5vL/IxWHMn7qSxBozqrnnE2wvl1m8g==}
 
-  '@standard-schema/spec@1.0.0':
-    resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
-
   '@stylistic/eslint-plugin@4.2.0':
     resolution: {integrity: sha512-8hXezgz7jexGHdo5WN6JBEIPHCSFyyU4vgbxevu4YLVS5vl+sxqAAGyXSzfNDyR6xMNSH5H1x67nsXcYMOHtZA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -5108,9 +5039,6 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
-
-  '@types/jsonwebtoken@9.0.9':
-    resolution: {integrity: sha512-uoe+GxEuHbvy12OUQct2X9JenKM3qAscquYymuQN4fMWG9DBQtykrQEFcAbVACF7qaLw9BePSodUL0kquqBJpQ==}
 
   '@types/leaflet@1.7.6':
     resolution: {integrity: sha512-Emkz3V08QnlelSbpT46OEAx+TBZYTOX2r1yM7W+hWg5+djHtQ1GbEXBDRLaqQDOYcDI51Ss0ayoqoKD4CtLUDA==}
@@ -6117,9 +6045,6 @@ packages:
   aria-hidden@1.2.4:
     resolution: {integrity: sha512-y+CcFFwelSXpLZk/7fMB2mUbGtX9lKycf1MWJ7CaTIERyitVlyQx6C+sxcROU2BAJ24OiZyK+8wj2i8AlBoS3A==}
     engines: {node: '>=10'}
-
-  arktype@2.1.20:
-    resolution: {integrity: sha512-IZCEEXaJ8g+Ijd59WtSYwtjnqXiwM8sWQ5EjGamcto7+HVN9eK0C4p0zDlCuAwWhpqr6fIBkxPuYDl4/Mcj/+Q==}
 
   array-buffer-byte-length@1.0.2:
     resolution: {integrity: sha512-LHE+8BuR7RYGDKvnrmcuSq3tDcKv9OFEXQt/HpbZhY7V6h0zlUXutnAD82GiFx9rdieCMjkvtcsPqBwgUl1Iiw==}
@@ -13027,6 +12952,11 @@ packages:
       eslint: ^8.57.0 || ^9.0.0
       typescript: '>=4.8.4 <5.9.0'
 
+  typescript@5.3.3:
+    resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   typescript@5.6.3:
     resolution: {integrity: sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==}
     engines: {node: '>=14.17'}
@@ -13045,10 +12975,6 @@ packages:
   uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/6609a88ffa9a16ac5158046761356ce03250a0df:
     resolution: {tarball: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/6609a88ffa9a16ac5158046761356ce03250a0df}
     version: 20.51.0
-
-  uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/cfc9a40d8132a34881813cec3d5f8e3a185b3ce3:
-    resolution: {tarball: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/cfc9a40d8132a34881813cec3d5f8e3a185b3ce3}
-    version: 20.52.0
 
   uWebSockets.js@https://github.com/uNetworking/uWebSockets.js/archive/refs/tags/v20.51.0.tar.gz:
     resolution: {tarball: https://github.com/uNetworking/uWebSockets.js/archive/refs/tags/v20.51.0.tar.gz}
@@ -13072,10 +12998,6 @@ packages:
   ultimate-express@1.4.9:
     resolution: {integrity: sha512-DauxCLOPGT+sCuD8KxoSdK07lpT3BMWzjLevjVZ8q+fZWITYtJZgW0QsodgJfOcxQMGJfgePrfQRqL/Ip8ZiQw==}
     engines: {node: '>=18'}
-
-  ultimate-express@2.0.4:
-    resolution: {integrity: sha512-p3u1PMfNoZgTcCsE0OJfQRrCCOrBwtpI8UkAUXi7glujVhvj1gJdEeuPRhfy0hJltmxuuSDhYtHRboKKeX1o6Q==}
-    engines: {node: '>=20'}
 
   ultrahtml@1.6.0:
     resolution: {integrity: sha512-R9fBn90VTJrqqLDwyMph+HGne8eqY1iPfYhPzZrvKpIfwkWZbcYlfpsb8B9dTvBfpy1/hqAD7Wi8EKfP9e8zdw==}
@@ -14062,12 +13984,6 @@ snapshots:
       '@jsdevtools/ono': 7.1.3
       '@types/json-schema': 7.0.15
       js-yaml: 4.1.0
-
-  '@ark/schema@0.46.0':
-    dependencies:
-      '@ark/util': 0.46.0
-
-  '@ark/util@0.46.0': {}
 
   '@aws-crypto/crc32@5.2.0':
     dependencies:
@@ -16570,13 +16486,13 @@ snapshots:
       '@adobe/css-tools': 4.4.2
       hast-util-select: 6.0.4
       hast-util-to-string: 3.0.1
-      jsx-email: 2.7.2(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.2)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.15.21)(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(lightningcss@1.30.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.39.2)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))(typescript@5.8.3)
+      jsx-email: 2.7.2(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.2)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.15.21)(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(lightningcss@1.30.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.39.2)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.2))(typescript@5.8.2)
       unist-util-remove: 4.0.0
       unist-util-visit: 5.0.0
 
   '@jsx-email/plugin-minify@1.0.2(jsx-email@2.7.2)':
     dependencies:
-      jsx-email: 2.7.2(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.2)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.15.21)(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(lightningcss@1.30.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.39.2)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))(typescript@5.8.3)
+      jsx-email: 2.7.2(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.2)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.15.21)(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(lightningcss@1.30.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.39.2)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.2))(typescript@5.8.2)
       rehype-minify-attribute-whitespace: 4.0.1
       rehype-minify-css-style: 4.0.1
       rehype-minify-enumerated-attribute: 5.0.2
@@ -16598,7 +16514,7 @@ snapshots:
 
   '@jsx-email/plugin-pretty@1.0.0(jsx-email@2.7.2)':
     dependencies:
-      jsx-email: 2.7.2(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.2)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.15.21)(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(lightningcss@1.30.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.39.2)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))(typescript@5.8.3)
+      jsx-email: 2.7.2(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.2)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.15.21)(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(lightningcss@1.30.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.39.2)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.2))(typescript@5.8.2)
       pretty: 2.0.0
 
   '@juggle/resize-observer@3.4.0': {}
@@ -19195,8 +19111,6 @@ snapshots:
 
   '@speed-highlight/core@1.2.7': {}
 
-  '@standard-schema/spec@1.0.0': {}
-
   '@stylistic/eslint-plugin@4.2.0(eslint@9.26.0(jiti@2.4.2))(typescript@5.8.2)':
     dependencies:
       '@typescript-eslint/utils': 8.32.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.8.2)
@@ -19545,11 +19459,6 @@ snapshots:
   '@types/js-cookie@3.0.6': {}
 
   '@types/json-schema@7.0.15': {}
-
-  '@types/jsonwebtoken@9.0.9':
-    dependencies:
-      '@types/ms': 2.1.0
-      '@types/node': 22.15.21
 
   '@types/leaflet@1.7.6':
     dependencies:
@@ -20406,6 +20315,7 @@ snapshots:
       '@vitest/utils': 3.1.4
       chai: 5.2.0
       tinyrainbow: 2.0.0
+    optional: true
 
   '@vitest/mocker@3.1.4(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0))':
     dependencies:
@@ -20414,25 +20324,30 @@ snapshots:
       magic-string: 0.30.17
     optionalDependencies:
       vite: 6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0)
+    optional: true
 
   '@vitest/pretty-format@3.1.4':
     dependencies:
       tinyrainbow: 2.0.0
+    optional: true
 
   '@vitest/runner@3.1.4':
     dependencies:
       '@vitest/utils': 3.1.4
       pathe: 2.0.3
+    optional: true
 
   '@vitest/snapshot@3.1.4':
     dependencies:
       '@vitest/pretty-format': 3.1.4
       magic-string: 0.30.17
       pathe: 2.0.3
+    optional: true
 
   '@vitest/spy@3.1.4':
     dependencies:
       tinyspy: 3.0.2
+    optional: true
 
   '@vitest/ui@3.1.4(vitest@3.1.4)':
     dependencies:
@@ -20451,6 +20366,7 @@ snapshots:
       '@vitest/pretty-format': 3.1.4
       loupe: 3.1.3
       tinyrainbow: 2.0.0
+    optional: true
 
   '@volar/language-core@2.4.14':
     dependencies:
@@ -21083,11 +20999,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  arktype@2.1.20:
-    dependencies:
-      '@ark/schema': 0.46.0
-      '@ark/util': 0.46.0
-
   array-buffer-byte-length@1.0.2:
     dependencies:
       call-bound: 1.0.4
@@ -21151,7 +21062,8 @@ snapshots:
 
   asap@2.0.6: {}
 
-  assertion-error@2.0.1: {}
+  assertion-error@2.0.1:
+    optional: true
 
   ast-kit@1.4.3:
     dependencies:
@@ -21595,6 +21507,7 @@ snapshots:
       deep-eql: 5.0.2
       loupe: 3.1.3
       pathval: 2.0.0
+    optional: true
 
   chalk@2.4.2:
     dependencies:
@@ -21645,7 +21558,8 @@ snapshots:
 
   chardet@0.7.0: {}
 
-  check-error@2.1.1: {}
+  check-error@2.1.1:
+    optional: true
 
   chokidar@3.6.0:
     dependencies:
@@ -22393,7 +22307,8 @@ snapshots:
     optionalDependencies:
       babel-plugin-macros: 3.1.0
 
-  deep-eql@5.0.2: {}
+  deep-eql@5.0.2:
+    optional: true
 
   deep-equal@1.0.1: {}
 
@@ -23393,7 +23308,8 @@ snapshots:
 
   expand-template@2.0.3: {}
 
-  expect-type@1.2.1: {}
+  expect-type@1.2.1:
+    optional: true
 
   expect@29.7.0:
     dependencies:
@@ -25540,78 +25456,6 @@ snapshots:
       - ts-node
       - typescript
 
-  jsx-email@2.7.2(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.2)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.15.21)(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(lightningcss@1.30.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.39.2)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))(typescript@5.8.3):
-    dependencies:
-      '@dot/log': 0.1.5
-      '@jsx-email/doiuse-email': 1.0.4
-      '@jsx-email/plugin-inline': 1.0.1(jsx-email@2.7.2)
-      '@jsx-email/plugin-minify': 1.0.2(jsx-email@2.7.2)
-      '@jsx-email/plugin-pretty': 1.0.0(jsx-email@2.7.2)
-      '@parcel/watcher': 2.5.1
-      '@radix-ui/colors': 3.0.0
-      '@radix-ui/react-collapsible': 1.1.1(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@radix-ui/react-icons': 1.3.2(react@19.1.0)
-      '@radix-ui/react-popover': 1.1.2(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@radix-ui/react-select': 2.2.4(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@radix-ui/react-slot': 1.1.0(@types/react@18.3.21)(react@19.1.0)
-      '@radix-ui/react-toggle-group': 1.1.0(@types/react-dom@19.1.1(@types/react@18.3.21))(@types/react@18.3.21)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@unocss/core': 0.65.4
-      '@unocss/preset-rem-to-px': 0.65.4
-      '@unocss/preset-typography': 0.65.4
-      '@unocss/preset-uno': 0.65.4
-      '@unocss/preset-wind': 0.65.4
-      '@unocss/transformer-compile-class': 0.65.4
-      '@unocss/transformer-variant-group': 0.65.4
-      '@vitejs/plugin-react': 4.4.1(vite@5.4.19(@types/node@22.15.21)(lightningcss@1.30.1)(terser@5.39.2))
-      autoprefixer: 10.4.21(postcss@8.5.3)
-      chalk: 4.1.2
-      classnames: 2.5.1
-      debug: 4.4.0
-      esbuild: 0.24.2
-      find-up: 7.0.0
-      framer-motion: 11.12.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      globby: 14.0.2
-      hash-it: 6.0.0
-      html-to-text: 9.0.5
-      lilconfig: 3.1.3
-      magic-string: 0.30.17
-      md-to-react-email: 5.0.4(react@19.1.0)
-      micromatch: 4.0.8
-      mime-types: 2.1.35
-      mustache: 4.2.0
-      postcss: 8.5.3
-      postcss-var-replace: 1.0.0(postcss@8.5.3)
-      pretty-bytes: 6.1.1
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      react-router-dom: 7.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      rehype: 13.0.2
-      rehype-stringify: 10.0.1
-      shiki: 1.29.2
-      source-map-support: 0.5.21
-      std-env: 3.9.0
-      tailwindcss: 3.4.15(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))
-      titleize: 4.0.0
-      unist-util-visit: 5.0.0
-      valibot: 0.42.1(typescript@5.8.3)
-      vite: 5.4.19(@types/node@22.15.21)(lightningcss@1.30.1)(terser@5.39.2)
-      yargs-parser: 21.1.1
-    transitivePeerDependencies:
-      - '@emotion/is-prop-valid'
-      - '@types/node'
-      - '@types/react'
-      - '@types/react-dom'
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - ts-node
-      - typescript
-
   junk@4.0.1: {}
 
   jwa@1.4.2:
@@ -25987,7 +25831,8 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  loupe@3.1.3: {}
+  loupe@3.1.3:
+    optional: true
 
   lower-case-first@1.0.2:
     dependencies:
@@ -27772,7 +27617,8 @@ snapshots:
 
   pathe@2.0.3: {}
 
-  pathval@2.0.0: {}
+  pathval@2.0.0:
+    optional: true
 
   pbf@3.3.0:
     dependencies:
@@ -27910,14 +27756,6 @@ snapshots:
     optionalDependencies:
       postcss: 8.5.3
       ts-node: 10.9.2(@types/node@22.15.21)(typescript@5.8.2)
-
-  postcss-load-config@4.0.2(postcss@8.5.3)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3)):
-    dependencies:
-      lilconfig: 3.1.3
-      yaml: 2.8.0
-    optionalDependencies:
-      postcss: 8.5.3
-      ts-node: 10.9.2(@types/node@22.15.21)(typescript@5.8.3)
 
   postcss-merge-longhand@7.0.5(postcss@8.5.3):
     dependencies:
@@ -29390,7 +29228,8 @@ snapshots:
       side-channel-map: 1.0.1
       side-channel-weakmap: 1.0.2
 
-  siginfo@2.0.0: {}
+  siginfo@2.0.0:
+    optional: true
 
   signal-exit@3.0.7: {}
 
@@ -29540,7 +29379,8 @@ snapshots:
     dependencies:
       escape-string-regexp: 2.0.0
 
-  stackback@0.0.2: {}
+  stackback@0.0.2:
+    optional: true
 
   stackframe@1.3.4: {}
 
@@ -29822,33 +29662,6 @@ snapshots:
     transitivePeerDependencies:
       - ts-node
 
-  tailwindcss@3.4.15(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3)):
-    dependencies:
-      '@alloc/quick-lru': 5.2.0
-      arg: 5.0.2
-      chokidar: 3.6.0
-      didyoumean: 1.2.2
-      dlv: 1.1.3
-      fast-glob: 3.3.3
-      glob-parent: 6.0.2
-      is-glob: 4.0.3
-      jiti: 1.21.7
-      lilconfig: 2.1.0
-      micromatch: 4.0.8
-      normalize-path: 3.0.0
-      object-hash: 3.0.0
-      picocolors: 1.1.1
-      postcss: 8.5.3
-      postcss-import: 15.1.0(postcss@8.5.3)
-      postcss-js: 4.0.1(postcss@8.5.3)
-      postcss-load-config: 4.0.2(postcss@8.5.3)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))
-      postcss-nested: 6.2.0(postcss@8.5.3)
-      postcss-selector-parser: 6.1.2
-      resolve: 1.22.10
-      sucrase: 3.35.0
-    transitivePeerDependencies:
-      - ts-node
-
   tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.2)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
@@ -29999,7 +29812,8 @@ snapshots:
 
   tiny-invariant@1.3.3: {}
 
-  tinybench@2.9.0: {}
+  tinybench@2.9.0:
+    optional: true
 
   tinycolor2@1.6.0: {}
 
@@ -30017,13 +29831,16 @@ snapshots:
       '@types/tinycolor2': 1.4.6
       tinycolor2: 1.6.0
 
-  tinypool@1.0.2: {}
+  tinypool@1.0.2:
+    optional: true
 
   tinyqueue@2.0.3: {}
 
-  tinyrainbow@2.0.0: {}
+  tinyrainbow@2.0.0:
+    optional: true
 
-  tinyspy@3.0.2: {}
+  tinyspy@3.0.2:
+    optional: true
 
   title-case@2.1.1:
     dependencies:
@@ -30297,6 +30114,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  typescript@5.3.3: {}
+
   typescript@5.6.3: {}
 
   typescript@5.8.2: {}
@@ -30304,8 +30123,6 @@ snapshots:
   typescript@5.8.3: {}
 
   uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/6609a88ffa9a16ac5158046761356ce03250a0df: {}
-
-  uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/cfc9a40d8132a34881813cec3d5f8e3a185b3ce3: {}
 
   uWebSockets.js@https://github.com/uNetworking/uWebSockets.js/archive/refs/tags/v20.51.0.tar.gz: {}
 
@@ -30342,30 +30159,6 @@ snapshots:
       tseep: 1.3.1
       type-is: 1.6.18
       uWebSockets.js: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/6609a88ffa9a16ac5158046761356ce03250a0df
-      vary: 1.1.2
-
-  ultimate-express@2.0.4:
-    dependencies:
-      '@types/express': 4.17.21
-      accepts: 1.3.8
-      acorn: 8.14.1
-      bytes: 3.1.2
-      cookie: 1.0.2
-      cookie-signature: 1.2.2
-      encodeurl: 2.0.0
-      etag: 1.8.1
-      fast-querystring: 1.1.2
-      fast-zlib: 2.0.1
-      fresh: 0.5.2
-      mime-types: 2.1.35
-      ms: 2.1.3
-      proxy-addr: 2.0.7
-      qs: 6.14.0
-      range-parser: 1.2.1
-      statuses: 2.0.1
-      tseep: 1.3.1
-      type-is: 2.0.1
-      uWebSockets.js: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/cfc9a40d8132a34881813cec3d5f8e3a185b3ce3
       vary: 1.1.2
 
   ultrahtml@1.6.0: {}
@@ -30781,10 +30574,6 @@ snapshots:
     optionalDependencies:
       typescript: 5.8.2
 
-  valibot@0.42.1(typescript@5.8.3):
-    optionalDependencies:
-      typescript: 5.8.3
-
   valibot@1.1.0(typescript@5.8.2):
     optionalDependencies:
       typescript: 5.8.2
@@ -30882,6 +30671,7 @@ snapshots:
       - terser
       - tsx
       - yaml
+    optional: true
 
   vite-plugin-checker@0.9.3(eslint@9.26.0(jiti@2.4.2))(optionator@0.9.4)(typescript@5.8.2)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.2)):
     dependencies:
@@ -31024,6 +30814,7 @@ snapshots:
       - terser
       - tsx
       - yaml
+    optional: true
 
   vlq@1.0.1: {}
 
@@ -31223,6 +31014,7 @@ snapshots:
     dependencies:
       siginfo: 2.0.0
       stackback: 0.0.2
+    optional: true
 
   wide-align@1.1.5:
     dependencies:
