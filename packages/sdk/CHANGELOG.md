@@ -1,5 +1,11 @@
 # @the-forgebase/sdk
 
+## 0.0.9
+
+### Patch Changes
+
+- [`426f58f`](https://github.com/The-ForgeBase/forgebase-ts/commit/426f58f43f7765a3e97179e1aa6f92b7ae3e9994) Thanks [@SOG-web](https://github.com/SOG-web)! - added cross-fetch support to sdk
+
 ## 0.0.8
 
 ### Patch Changes
