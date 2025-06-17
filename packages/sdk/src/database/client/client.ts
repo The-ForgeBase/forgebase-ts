@@ -205,9 +205,13 @@ export interface AuthInterceptors {
 
 export class DatabaseSDK {
   private baseUrl: string;
-  private axiosInstance?: AxiosInstance;
-  private fetch?: typeof fetch;
-  private headers: Record<string, string> = {};
+  public axiosInstance?: AxiosInstance;
+  public headers: Record<string, string> = {};
+  public httpClient: "axios" | "fetch" = "fetch";
+  public fetchOptions?: {
+    responseInterceptor?: (response: Response) => Promise<Response>;
+    requestInterceptor?: (request: Request) => Promise<Request>;
+  };
 
   /**
    * Create a new DatabaseSDK instance
@@ -220,38 +224,52 @@ export class DatabaseSDK {
    */
   constructor(options: {
     baseUrl: string;
-    axiosInstance?: AxiosInstance;
+    useAxios?: boolean;
+    axiosOptions?: {
+      axiosInstance?: AxiosInstance;
     axiosConfig?: AxiosRequestConfig;
     authInterceptors?: AuthInterceptors;
-    customFetch?: typeof fetch;
+    }
+    useFetch?: boolean;
+    fetchOptions?: {
+      responseInterceptor?: (response: Response) => Promise<Response>;
+      requestInterceptor?: (request: Request) => Promise<Request>;
+    }
     headers?: Record<string, string>;
   }) {
-    let { baseUrl, axiosInstance, axiosConfig, authInterceptors, customFetch, headers } = options;
+    let { baseUrl, axiosOptions, useAxios, useFetch, headers, fetchOptions } = options;
     this.baseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash if present
 
-    if (customFetch) {
-      this.fetch = customFetch;
-      this.headers = {
-        'Content-Type': 'application/json',
-        ...headers,
-      };
-      this.axiosInstance = undefined;
-    } else {
-      this.fetch = undefined;
-      if (!axiosConfig) {
-        axiosConfig = {};
-      }
-      if (axiosInstance) {
-        this.axiosInstance = axiosInstance;
+    if (useAxios) {
+      this.httpClient = "axios";
+      if (axiosOptions?.axiosInstance) {
+        this.axiosInstance = axiosOptions.axiosInstance;
       } else {
         this.axiosInstance = axios.create({
           baseURL: this.baseUrl,
           withCredentials: true,
-          ...axiosConfig,
+          ...axiosOptions?.axiosConfig,
         });
-        if (authInterceptors) {
-          this.applyAuthInterceptors(authInterceptors);
+        if (axiosOptions?.authInterceptors) {
+          this.applyAuthInterceptors(axiosOptions.authInterceptors);
         }
+      }
+    } else {
+      this.headers = {
+        'Content-Type': 'application/json',
+        ...headers,
+      };
+      this.httpClient = "fetch";
+
+      if (fetchOptions?.requestInterceptor) {
+        this.fetchOptions = {
+          requestInterceptor: fetchOptions.requestInterceptor,
+        };
+      }
+      if (fetchOptions?.responseInterceptor) {
+        this.fetchOptions = {
+          responseInterceptor: fetchOptions.responseInterceptor,
+        };
       }
     }
   }
@@ -260,28 +278,46 @@ export class DatabaseSDK {
     method: 'get' | 'post' | 'put' | 'delete',
     url: string,
     data?: any,
-    axiosConfig?: AxiosRequestConfig
+    httpClientConfig?: AxiosRequestConfig | RequestInit
   }): Promise<D> {
-    if (this.fetch) {
+    const httpClient = this.httpClient;
+    if (httpClient === "fetch") {
+      const httpClientConfig = config.httpClientConfig as RequestInit;
       const options: RequestInit = {
         method: config.method.toUpperCase(),
-        headers: this.headers,
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.headers,
+          ...httpClientConfig.headers,
+        },
+        ...httpClientConfig,
       };
+      
+      let request = new Request(this.baseUrl + config.url, options);  
+      if (this.fetchOptions?.requestInterceptor) {
+        request = await this.fetchOptions.requestInterceptor(request);
+      }
       if (config.data) {
         options.body = JSON.stringify(config.data);
       }
-      const response = await this.fetch(this.baseUrl + config.url, options);
+
+      let response = await fetch(request);
+
+      if (this.fetchOptions?.responseInterceptor) {
+        response = await this.fetchOptions.responseInterceptor(response);
+      }
       const responseData = await response.json();
       if (!response.ok) {
         throw new Error(responseData.error || 'Request failed');
       }
       return responseData;
-    } else if (this.axiosInstance) {
+    } else if (httpClient === "axios" && this.axiosInstance) {
+      const httpClientConfig = config.httpClientConfig as AxiosRequestConfig;
       const response = await this.axiosInstance.request<D>({
         url: config.url,
         method: config.method,
         data: config.data,
-        ...config.axiosConfig
+        ...httpClientConfig
       });
       return response.data;
     } else {
@@ -353,7 +389,7 @@ export class DatabaseSDK {
     tableName: string,
     params: QueryParams<T> = {},
     options: QueryOptions = { execute: true },
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<T>> {
     // If execute is false, return only the parameters
     if (!options.execute) {
@@ -365,7 +401,7 @@ export class DatabaseSDK {
         method: 'post',
         url: `/query/${tableName}`,
         data: { query: params },
-        axiosConfig,
+        httpClientConfig: httpClientConfig,
       });
       return {
         records: responseData,
@@ -391,7 +427,7 @@ export class DatabaseSDK {
   async createRecord<T extends Record<string, any>>(
     tableName: string,
     data: T,
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
@@ -400,7 +436,7 @@ export class DatabaseSDK {
         method: 'post',
         url: `/create/${tableName}`,
         data: { data },
-        axiosConfig,
+        httpClientConfig,
       });
       return {
         records: [responseData],
@@ -427,7 +463,7 @@ export class DatabaseSDK {
     tableName: string,
     id: number | string,
     data: Partial<T>,
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
@@ -436,7 +472,7 @@ export class DatabaseSDK {
         method: 'put',
         url: `/update/${tableName}/${id}`,
         data: { data },
-        axiosConfig,
+        httpClientConfig,
       });
       return {
         records: [responseData],
@@ -465,7 +501,7 @@ export class DatabaseSDK {
     data: Partial<T>,
     params: QueryParams<T> = {},
     options: QueryOptions = { execute: true },
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<any>> {
     try {
       if (!options.execute) {
@@ -476,7 +512,7 @@ export class DatabaseSDK {
         method: 'post',
         url: `/update/${tableName}`,
         data: { query: params, data },
-        axiosConfig,
+        httpClientConfig,
       });
 
       return {
@@ -502,13 +538,13 @@ export class DatabaseSDK {
   async deleteRecord<T extends Record<string, any>>(
     tableName: string,
     id: number | string,
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<any>> {
     try {
       const responseData = await this._request<any[]>({
         method: 'post',
         url: `/del/${tableName}/${id}`,
-        axiosConfig,
+        httpClientConfig,
       });
       return {
         message: "Record deleted successfully",
@@ -535,7 +571,7 @@ export class DatabaseSDK {
     tableName: string,
     params: QueryParams<T> = {},
     options: QueryOptions = { execute: true },
-    axiosConfig: AxiosRequestConfig = {},
+      httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<any>> {
     try {
       if (!options.execute) {
@@ -546,7 +582,7 @@ export class DatabaseSDK {
         method: 'post',
         url: `/del/${tableName}`,
         data: { query: params },
-        axiosConfig,
+        httpClientConfig,
       });
       return {
         message: "Record deleted successfully",
@@ -992,7 +1028,13 @@ class QueryBuilder<T extends Record<string, any>> {
     // Create a new SDK instance for the subquery
     const subquerySdk = new DatabaseSDK({
       baseUrl: this.sdk.getBaseUrl(),
-      axiosInstance: this.sdk.getAxiosInstance(),
+      axiosOptions: {
+        axiosInstance: this.sdk.axiosInstance,
+      },
+      useAxios: this.sdk.httpClient === "axios",
+      headers: this.sdk.headers,
+      fetchOptions: this.sdk.fetchOptions,
+      useFetch: this.sdk.httpClient === "fetch",
     });
 
     // Get the subquery builder
@@ -1034,7 +1076,13 @@ class QueryBuilder<T extends Record<string, any>> {
     // Create a new SDK instance for the subquery
     const subquerySdk = new DatabaseSDK({
       baseUrl: this.sdk.getBaseUrl(),
-      axiosInstance: this.sdk.getAxiosInstance(),
+      axiosOptions: {
+        axiosInstance: this.sdk.axiosInstance,
+      },
+      useAxios: this.sdk.httpClient === "axios",
+      headers: this.sdk.headers,
+      fetchOptions: this.sdk.fetchOptions,
+      useFetch: this.sdk.httpClient === "fetch",
     });
 
     // Build the subquery
@@ -1156,12 +1204,12 @@ class QueryBuilder<T extends Record<string, any>> {
    * @param axiosConfig Optional axios config to be used for this request
    * @returns Promise with the query results
    */
-  async query(axiosConfig: AxiosRequestConfig = {}): Promise<ApiResponse<T>> {
+    async query(httpClientConfig: AxiosRequestConfig | RequestInit = {}): Promise<ApiResponse<T>> {
     const response = await this.sdk.getRecords<T>(
       this.tableName,
       this.params,
       { execute: true },
-      axiosConfig,
+      httpClientConfig,
     );
 
     if (this.params.transforms && response.records) {
@@ -1179,9 +1227,9 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   async create(
     data: T,
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<T>> {
-    return this.sdk.createRecord<T>(this.tableName, data, axiosConfig);
+    return this.sdk.createRecord<T>(this.tableName, data, httpClientConfig);
   }
 
   /**
@@ -1194,9 +1242,9 @@ class QueryBuilder<T extends Record<string, any>> {
   async update(
     id: number | string,
     data: Partial<T>,
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<T>> {
-    return this.sdk.updateRecord<T>(this.tableName, id, data, axiosConfig);
+    return this.sdk.updateRecord<T>(this.tableName, id, data, httpClientConfig);
   }
 
   /**
@@ -1207,14 +1255,14 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   async advanceUpdate(
     data: Partial<T>,
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<any>> {
     return this.sdk.advanceUpdateRecord(
       this.tableName,
       data,
       this.params,
       { execute: true },
-      axiosConfig,
+      httpClientConfig,
     );
   }
 
@@ -1226,9 +1274,9 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   async delete(
     id: number | string,
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<any>> {
-    return this.sdk.deleteRecord(this.tableName, id, axiosConfig);
+    return this.sdk.deleteRecord(this.tableName, id, httpClientConfig);
   }
 
   /**
@@ -1237,13 +1285,13 @@ class QueryBuilder<T extends Record<string, any>> {
    * @returns Promise with the deletion result
    */
   async advanceDelete(
-    axiosConfig: AxiosRequestConfig = {},
+    httpClientConfig: AxiosRequestConfig | RequestInit = {},
   ): Promise<ApiResponse<any>> {
     return this.sdk.advanceDeleteRecord(
       this.tableName,
       this.params,
       { execute: true },
-      axiosConfig,
+      httpClientConfig,
     );
   }
 
