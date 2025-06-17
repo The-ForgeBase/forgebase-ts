@@ -1,5 +1,11 @@
 # @the-forgebase/sdk
 
+## 0.0.10
+
+### Patch Changes
+
+- [`58770ee`](https://github.com/The-ForgeBase/forgebase-ts/commit/58770ee9833a80eddd19a8a45d6b439aab9a9b76) Thanks [@SOG-web](https://github.com/SOG-web)! - proper fetch
+
 ## 0.0.9
 
 ### Patch Changes
