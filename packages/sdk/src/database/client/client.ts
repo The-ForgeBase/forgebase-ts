@@ -1,5 +1,6 @@
 /* eslint-disable prefer-const */
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import fetch from 'cross-fetch';
 
 type FieldKeys<T> = keyof T;
 
@@ -204,7 +205,9 @@ export interface AuthInterceptors {
 
 export class DatabaseSDK {
   private baseUrl: string;
-  private axiosInstance: AxiosInstance;
+  private axiosInstance?: AxiosInstance;
+  private fetch?: typeof fetch;
+  private headers: Record<string, string> = {};
 
   /**
    * Create a new DatabaseSDK instance
@@ -212,34 +215,77 @@ export class DatabaseSDK {
    * @param axiosInstance Optional custom axios instance (e.g., from ForgebaseAuth)
    * @param axiosConfig Optional axios configuration
    * @param authInterceptors Optional auth interceptors to apply to the axios instance
+   * @param customFetch Optional custom fetch implementation to use instead of axios
+   * @param headers Optional headers to include in every request (used with fetch)
    */
   constructor(options: {
     baseUrl: string;
     axiosInstance?: AxiosInstance;
     axiosConfig?: AxiosRequestConfig;
     authInterceptors?: AuthInterceptors;
+    customFetch?: typeof fetch;
+    headers?: Record<string, string>;
   }) {
-    let { baseUrl, axiosInstance, axiosConfig, authInterceptors } = options;
+    let { baseUrl, axiosInstance, axiosConfig, authInterceptors, customFetch, headers } = options;
     this.baseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash if present
 
-    if (!axiosConfig) {
-      axiosConfig = {};
-    }
-
-    // Use the provided axios instance or create a new one
-    if (axiosInstance) {
-      this.axiosInstance = axiosInstance;
+    if (customFetch) {
+      this.fetch = customFetch;
+      this.headers = {
+        'Content-Type': 'application/json',
+        ...headers,
+      };
+      this.axiosInstance = undefined;
     } else {
-      this.axiosInstance = axios.create({
-        baseURL: this.baseUrl,
-        withCredentials: true,
-        ...axiosConfig,
-      });
-
-      // Apply auth interceptors if provided
-      if (authInterceptors) {
-        this.applyAuthInterceptors(authInterceptors);
+      this.fetch = undefined;
+      if (!axiosConfig) {
+        axiosConfig = {};
       }
+      if (axiosInstance) {
+        this.axiosInstance = axiosInstance;
+      } else {
+        this.axiosInstance = axios.create({
+          baseURL: this.baseUrl,
+          withCredentials: true,
+          ...axiosConfig,
+        });
+        if (authInterceptors) {
+          this.applyAuthInterceptors(authInterceptors);
+        }
+      }
+    }
+  }
+
+  private async _request<D>(config: {
+    method: 'get' | 'post' | 'put' | 'delete',
+    url: string,
+    data?: any,
+    axiosConfig?: AxiosRequestConfig
+  }): Promise<D> {
+    if (this.fetch) {
+      const options: RequestInit = {
+        method: config.method.toUpperCase(),
+        headers: this.headers,
+      };
+      if (config.data) {
+        options.body = JSON.stringify(config.data);
+      }
+      const response = await this.fetch(this.baseUrl + config.url, options);
+      const responseData = await response.json();
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Request failed');
+      }
+      return responseData;
+    } else if (this.axiosInstance) {
+      const response = await this.axiosInstance.request<D>({
+        url: config.url,
+        method: config.method,
+        data: config.data,
+        ...config.axiosConfig
+      });
+      return response.data;
+    } else {
+      throw new Error('HTTP client not configured');
     }
   }
 
@@ -259,7 +305,7 @@ export class DatabaseSDK {
     this.baseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash if present
 
     // Update the axios instance baseURL if it was created by this class
-    if (this.axiosInstance.defaults.baseURL) {
+    if (this.axiosInstance && this.axiosInstance.defaults.baseURL) {
       this.axiosInstance.defaults.baseURL = this.baseUrl;
     }
   }
@@ -268,7 +314,7 @@ export class DatabaseSDK {
    * Get the axios instance used for API requests
    * @returns The axios instance
    */
-  getAxiosInstance(): AxiosInstance {
+  getAxiosInstance(): AxiosInstance | undefined {
     return this.axiosInstance;
   }
 
@@ -286,10 +332,10 @@ export class DatabaseSDK {
    */
   applyAuthInterceptors(authInterceptors: AuthInterceptors): void {
     // Add request interceptor
-    this.axiosInstance.interceptors.request.use(authInterceptors.request);
+    this.axiosInstance?.interceptors.request.use(authInterceptors.request);
 
     // Add response interceptors
-    this.axiosInstance.interceptors.response.use(
+    this.axiosInstance?.interceptors.response.use(
       authInterceptors.response.onFulfilled,
       authInterceptors.response.onRejected,
     );
@@ -300,7 +346,7 @@ export class DatabaseSDK {
    * @param tableName The name of the table to query
    * @param params Query parameters including filters and pagination
    * @param options Query options
-   * @param axiosConfig Custom axios config for this specific request
+   * @param axiosConfig Custom axios config for this specific request (only used if SDK is initialized with axios)
    * @returns Promise containing the fetched records
    */
   async getRecords<T extends Record<string, any>>(
@@ -314,44 +360,26 @@ export class DatabaseSDK {
       return { params: params };
     }
 
-    const url = `/query/${tableName}`;
-
     try {
-      const response = await this.axiosInstance.post<ApiResponse<T>>(
-        url,
-        { query: params },
+      const responseData = await this._request<T[]>({
+        method: 'post',
+        url: `/query/${tableName}`,
+        data: { query: params },
         axiosConfig,
-      );
+      });
       return {
-        records: response.data as T[],
+        records: responseData,
         params: params,
         message: "Records fetched successfully",
         error: undefined,
       };
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error || error.message);
+      if (error instanceof Error) {
+        throw new Error(error.message);
       }
       throw error;
     }
   }
-
-  // private serializeQueryParams<T extends Record<string, any>>(
-  //   params: QueryParams<T>
-  // ): Record<string, string> {
-  //   const serialized: Record<string, string> = {};
-
-  //   // any param that is type of object should be serialized to JSON
-  //   Object.entries(params).forEach(([key, value]) => {
-  //     if (typeof value === 'object') {
-  //       serialized[key] = JSON.stringify(value);
-  //     } else {
-  //       serialized[key] = value.toString();
-  //     }
-  //   });
-
-  //   return serialized;
-  // }
 
   /**
    * Creates a new record in the specified table
@@ -368,19 +396,20 @@ export class DatabaseSDK {
     this.validateData(data);
 
     try {
-      const response = await this.axiosInstance.post<ApiResponse<T>>(
-        `/create/${tableName}`,
-        { data },
+      const responseData = await this._request<T>({
+        method: 'post',
+        url: `/create/${tableName}`,
+        data: { data },
         axiosConfig,
-      );
+      });
       return {
-        records: [response.data as T],
+        records: [responseData],
         message: "Record created successfully",
         error: undefined,
       };
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error || error.message);
+      if (error instanceof Error) {
+        throw new Error(error.message);
       }
       throw error;
     }
@@ -403,19 +432,20 @@ export class DatabaseSDK {
     this.validateData(data);
 
     try {
-      const response = await this.axiosInstance.put<ApiResponse<T>>(
-        `/update/${tableName}/${id}`,
-        { data },
+      const responseData = await this._request<T>({
+        method: 'put',
+        url: `/update/${tableName}/${id}`,
+        data: { data },
         axiosConfig,
-      );
+      });
       return {
-        records: [response.data as T],
+        records: [responseData],
         message: "Record updated successfully",
         error: undefined,
       };
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error || error.message);
+      if (error instanceof Error) {
+        throw new Error(error.message);
       }
       throw error;
     }
@@ -442,19 +472,21 @@ export class DatabaseSDK {
         return { params: params };
       }
 
-      const response = await this.axiosInstance.post<ApiResponse<never>>(
-        `/update/${tableName}`,
-        { query: params, data },
+      const responseData = await this._request<T[]>({
+        method: 'post',
+        url: `/update/${tableName}`,
+        data: { query: params, data },
         axiosConfig,
-      );
+      });
+
       return {
         message: "Records updated successfully",
         error: undefined,
-        records: response.data as T[],
+        records: responseData,
       };
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error || error.message);
+      if (error instanceof Error) {
+        throw new Error(error.message);
       }
       throw error;
     }
@@ -473,19 +505,19 @@ export class DatabaseSDK {
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
     try {
-      const response = await this.axiosInstance.post<ApiResponse<never>>(
-        `/del/${tableName}/${id}`,
-        {},
+      const responseData = await this._request<any[]>({
+        method: 'post',
+        url: `/del/${tableName}/${id}`,
         axiosConfig,
-      );
+      });
       return {
         message: "Record deleted successfully",
         error: undefined,
-        records: response.data as any[],
+        records: responseData,
       };
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error || error.message);
+      if (error instanceof Error) {
+        throw new Error(error.message);
       }
       throw error;
     }
@@ -510,19 +542,20 @@ export class DatabaseSDK {
         return { params: params };
       }
 
-      const response = await this.axiosInstance.post<ApiResponse<never>>(
-        `/del/${tableName}`,
-        { query: params },
+      const responseData = await this._request<any[]>({
+        method: 'post',
+        url: `/del/${tableName}`,
+        data: { query: params },
         axiosConfig,
-      );
+      });
       return {
         message: "Record deleted successfully",
         error: undefined,
-        records: response.data as any[],
+        records: responseData,
       };
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error || error.message);
+      if (error instanceof Error) {
+        throw new Error(error.message);
       }
       throw error;
     }
@@ -957,7 +990,10 @@ class QueryBuilder<T extends Record<string, any>> {
     }
 
     // Create a new SDK instance for the subquery
-    const subquerySdk = new DatabaseSDK({ baseUrl: this.sdk.getBaseUrl() });
+    const subquerySdk = new DatabaseSDK({
+      baseUrl: this.sdk.getBaseUrl(),
+      axiosInstance: this.sdk.getAxiosInstance(),
+    });
 
     // Get the subquery builder
     const subquery = subqueryBuilder(subquerySdk);
@@ -996,7 +1032,10 @@ class QueryBuilder<T extends Record<string, any>> {
     }
 
     // Create a new SDK instance for the subquery
-    const subquerySdk = new DatabaseSDK({ baseUrl: this.sdk.getBaseUrl() });
+    const subquerySdk = new DatabaseSDK({
+      baseUrl: this.sdk.getBaseUrl(),
+      axiosInstance: this.sdk.getAxiosInstance(),
+    });
 
     // Build the subquery
     const subQueryBuilder = subquerySdk.table(tableName);
@@ -1274,37 +1313,3 @@ class QueryBuilder<T extends Record<string, any>> {
     return this;
   }
 }
-
-// Example usage functions
-// function demonstrateComplexQueries() {
-//   const db = new DatabaseSDK("https://api.example.com");
-
-//   // Complex grouped conditions
-//   db.table<User>("users")
-//     .where("status", "active")
-//     .andWhere((query) => {
-//       query.where("role", "admin").orWhere((subQuery) => {
-//         subQuery.where("role", "manager").where("department", "IT");
-//       });
-//     })
-//     .query();
-
-//   // Using exists with raw SQL
-//   db.table<Order>("orders")
-//     .whereExists(
-//       "SELECT 1 FROM order_items WHERE order_items.order_id = orders.id AND quantity > ?",
-//       [10]
-//     )
-//     .query();
-
-//   // Aggregations with grouping
-//   db.table<Order>("orders")
-//     .groupBy("customer_id", "status")
-//     .having("total_amount", ">", 1000)
-//     .sum("amount", "total_amount")
-//     .count("id", "order_count")
-//     .avg("amount", "average_amount")
-//     .query();
-
-//   // Raw expressions removed for security reasons
-// }
