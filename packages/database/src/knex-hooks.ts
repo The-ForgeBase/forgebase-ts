@@ -142,7 +142,7 @@ class KnexHooks {
     context?: HookContext,
   ): Promise<void> {
     // Example: Enforce permissions here
-    console.log(`[Before ${mutationType}] On ${tableName}:`, data);
+    // console.log(`[Before ${mutationType}] On ${tableName}:`, data);
   }
 
   async afterMutation(
