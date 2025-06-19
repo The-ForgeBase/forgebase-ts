@@ -317,7 +317,7 @@ export interface ForgeDatabaseEndpoints {
       trx?: Knex.Transaction,
     ) => Promise<
       | {
-          data: any;
+          data: any[];
           status: boolean;
         }
       | BaseError
@@ -329,7 +329,7 @@ export interface ForgeDatabaseEndpoints {
       trx?: Knex.Transaction,
     ) => Promise<
       | {
-          data: any;
+          data: any[];
           status: boolean;
         }
       | BaseError
@@ -341,7 +341,7 @@ export interface ForgeDatabaseEndpoints {
       trx?: Knex.Transaction,
     ) => Promise<
       | {
-          data: any;
+          data: any[];
           status: boolean;
         }
       | BaseError
@@ -351,7 +351,13 @@ export interface ForgeDatabaseEndpoints {
       user?: UserContext,
       isSystem?: boolean,
       trx?: Knex.Transaction,
-    ) => Promise<any>;
+    ) => Promise<
+      | {
+          data: number;
+          status: boolean;
+        }
+      | BaseError
+    >;
     advanceDelete: (
       params: AdvanceDataDeleteParams,
       user?: UserContext,
@@ -359,7 +365,7 @@ export interface ForgeDatabaseEndpoints {
       trx?: Knex.Transaction,
     ) => Promise<
       | {
-          data: any;
+          data: number;
           status: boolean;
         }
       | BaseError
