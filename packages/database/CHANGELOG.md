@@ -1,5 +1,11 @@
 # @the-forgebase/database
 
+## 0.0.8
+
+### Patch Changes
+
+- [`17c7860`](https://github.com/The-ForgeBase/forgebase-ts/commit/17c7860ae7678600458498ca8dbd1e5b8c58a4fb) Thanks [@SOG-web](https://github.com/SOG-web)! - resolve advance delete and update error
+
 ## 0.0.7
 
 ### Patch Changes
