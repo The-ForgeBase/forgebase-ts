@@ -1,5 +1,12 @@
 # @the-forgebase/sdk
 
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [[`dd731ff`](https://github.com/The-ForgeBase/forgebase-ts/commit/dd731fffd00bba0de60e088866ba92cefaa60470)]:
+  - @the-forgebase/database@0.0.7
+
 ## 0.0.10
 
 ### Patch Changes

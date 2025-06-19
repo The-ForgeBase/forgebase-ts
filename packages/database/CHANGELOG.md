@@ -1,5 +1,11 @@
 # @the-forgebase/database
 
+## 0.0.7
+
+### Patch Changes
+
+- [`dd731ff`](https://github.com/The-ForgeBase/forgebase-ts/commit/dd731fffd00bba0de60e088866ba92cefaa60470) Thanks [@SOG-web](https://github.com/SOG-web)! - updated error handling
+
 ## 0.0.6
 
 ### Patch Changes
