@@ -886,7 +886,7 @@ export class ForgeDatabase {
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
           return this.transaction(async (newTrx) => {
-            return await this.endpoints.data.update(
+            return await this.endpoints.data.advanceUpdate(
               params,
               user as UserContext,
               isSystem,
@@ -898,6 +898,7 @@ export class ForgeDatabase {
         const { query, tableName, data } = params;
 
         const queryParams = this.parseQueryParams(query);
+        const sl = queryParams.select ? [...queryParams.select] : ["*"];
 
         if (!this.config.enforceRls || isSystem) {
           const result = await this.hooks.mutate(
@@ -907,7 +908,7 @@ export class ForgeDatabase {
               this.queryHandler
                 .buildQuery(queryParams, query)
                 .update(data)
-                .returning("*"),
+                .returning(sl),
             { ...data },
             undefined,
             trx,
@@ -959,7 +960,7 @@ export class ForgeDatabase {
               this.queryHandler
                 .buildQuery(queryParams, query)
                 .update(data)
-                .returning("*"),
+                .returning(sl),
             { ...data },
             queryParams,
             trx,
@@ -1001,7 +1002,7 @@ export class ForgeDatabase {
             this.queryHandler
               .buildQuery(queryParams, query)
               .update(data)
-              .returning("*"),
+              .returning(sl),
           { ...data },
           queryParams,
           trx,
@@ -1172,6 +1173,7 @@ export class ForgeDatabase {
         const { query, tableName } = params;
 
         const queryParams = this.parseQueryParams(query);
+        const sl = queryParams.select ? [...queryParams.select] : ["*"];
 
         if (!this.config.enforceRls || isSystem) {
           const result = await this.hooks.mutate(
@@ -1180,7 +1182,7 @@ export class ForgeDatabase {
             async (query) =>
               this.queryHandler
                 .buildQuery(queryParams, query)
-                .del(["id"], { includeTriggerModifications: true }),
+                .del(sl, { includeTriggerModifications: true }),
             undefined,
             queryParams,
             trx,
@@ -1230,7 +1232,7 @@ export class ForgeDatabase {
             async (query) =>
               this.queryHandler
                 .buildQuery(queryParams, query)
-                .del(["id"], { includeTriggerModifications: true }),
+                .del(sl, { includeTriggerModifications: true }),
             undefined,
             queryParams,
             trx,
@@ -1270,7 +1272,7 @@ export class ForgeDatabase {
           async (query) =>
             this.queryHandler
               .buildQuery(queryParams, query)
-              .del(["id"], { includeTriggerModifications: true }),
+              .del(sl, { includeTriggerModifications: true }),
           undefined,
           queryParams,
           trx,
