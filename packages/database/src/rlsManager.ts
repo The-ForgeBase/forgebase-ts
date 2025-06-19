@@ -86,7 +86,7 @@ export async function evaluatePermission(
         if (rule.fieldCheck) {
           const { field, operator, valueType, value } = rule.fieldCheck;
           const dataValue = row[field];
-          console.log("Data value:", dataValue);
+          // console.log("Data value:", dataValue);
           const comparisonValue =
             valueType === "userContext"
               ? userContext[value as UserContextFields]
@@ -151,7 +151,7 @@ export async function evaluatePermission(
               },
             );
 
-            console.log(`Executing custom SQL: ${parsedSql}`);
+            // console.log(`Executing custom SQL: ${parsedSql}`);
 
             // Execute the SQL query
             const result = await knex.raw(parsedSql);
@@ -414,7 +414,7 @@ export async function enforcePermissions(
       }
       return {
         row: result,
-        status: result.length > 0,
+        status: true, // this should be true, since we are returning the rows that passed the field check
         hasFieldCheck: false,
         hasCustomFunction: false,
         message:

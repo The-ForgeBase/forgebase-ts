@@ -2,7 +2,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import fetch from 'cross-fetch';
 
-type FieldKeys<T> = keyof T;
+type FieldKeys<T> = keyof T | "*";
 
 export type WhereOperator =
   | "="
@@ -1020,7 +1020,7 @@ class QueryBuilder<T extends Record<string, any>> {
    *   )
    *   .execute();
    */
-  whereExists(subqueryBuilder: (qb: DatabaseSDK) => QueryBuilder<any>): this {
+  whereExists(subqueryBuilder: (qb: DatabaseSDK) => QueryBuilder<T>): this {
     if (!this.params.whereExists) {
       this.params.whereExists = [];
     }
@@ -1066,7 +1066,7 @@ class QueryBuilder<T extends Record<string, any>> {
   whereExistsJoin(
     tableName: string,
     leftField: FieldKeys<T>,
-    rightField: string,
+    rightField:  FieldKeys<T>,
     additionalConditions?: (qb: QueryBuilder<any>) => void,
   ): this {
     if (!this.params.whereExists) {
@@ -1100,7 +1100,7 @@ class QueryBuilder<T extends Record<string, any>> {
       joinCondition: {
         leftField: leftField as string,
         operator: "=",
-        rightField,
+        rightField: rightField as string,
       },
     });
 
@@ -1121,7 +1121,7 @@ class QueryBuilder<T extends Record<string, any>> {
   /**
    * Group by clause
    */
-  groupBy(...fields: string[]): this {
+  groupBy(...fields:  FieldKeys<T>[]): this {
     if (!this.params.groupBy) {
       this.params.groupBy = [];
     }
@@ -1132,7 +1132,7 @@ class QueryBuilder<T extends Record<string, any>> {
   /**
    * Having clause for grouped queries
    */
-  having(field: string, operator: WhereOperator, value: any): this {
+  having(field:  FieldKeys<T>, operator: WhereOperator, value: any): this {
     if (!this.params.having) {
       this.params.having = [];
     }
@@ -1353,7 +1353,7 @@ class QueryBuilder<T extends Record<string, any>> {
    *   .select("id", "name", "email")
    *   .execute();
    */
-  select(...fields: string[]): this {
+  select(...fields: FieldKeys<T>[]): this {
     if (!this.params.select) {
       this.params.select = [];
     }
@@ -1361,3 +1361,18 @@ class QueryBuilder<T extends Record<string, any>> {
     return this;
   }
 }
+
+// interface User {
+//   id: number;
+//   name: string;
+//   email: string;
+// }
+
+// const db = new DatabaseSDK({
+//   baseUrl: "https://api.example.com",
+// });
+
+// db.table<User>("users")
+//   .select("id", "name", "email")
+//   .where("id", "=", 1)
+//   .query();

@@ -221,55 +221,80 @@ export interface PermissionInitializationReport {
   errors: Array<{ table: string; error: string }>;
 }
 
+export interface BaseError {
+  status: boolean;
+  message?: string;
+}
+
+export interface SchemaOperationResult extends BaseError {
+  tablename: string;
+  action: string;
+}
+
 export interface ForgeDatabaseEndpoints {
   schema: {
-    get: () => Promise<DatabaseSchema>;
+    get: () => Promise<DatabaseSchema | BaseError>;
     create: (
       params: SchemaCreateParams,
       trx?: Knex.Transaction,
-    ) => Promise<{
-      message: string;
-      tablename: string;
-      action: string;
-    }>;
+    ) => Promise<SchemaOperationResult>;
     delete: (
       tableName: string,
       trx?: Knex.Transaction,
-    ) => Promise<{
-      message: string;
-      tablename: string;
-      action: string;
-    }>;
+    ) => Promise<SchemaOperationResult>;
     modify: (
       params: ModifySchemaParams,
       trx?: Knex.Transaction,
-    ) => Promise<any>;
+    ) => Promise<SchemaOperationResult>;
     addForeingKey: (
       params: AddForeignKeyParams,
       trx?: Knex.Transaction,
-    ) => Promise<any>;
+    ) => Promise<SchemaOperationResult>;
     dropForeignKey: (
       params: DropForeignKeyParams,
       trx?: Knex.Transaction,
-    ) => Promise<any>;
-    truncateTable: (tableName: string, trx?: Knex.Transaction) => Promise<any>;
-    getTables: () => Promise<string[]>;
-    getTableSchema: (tableName: string) => Promise<{
-      name: string;
-      info: TableInfo;
-    }>;
+    ) => Promise<SchemaOperationResult>;
+    truncateTable: (
+      tableName: string,
+      trx?: Knex.Transaction,
+    ) => Promise<SchemaOperationResult>;
+    getTables: () => Promise<
+      | {
+          tables: string[];
+          status: boolean;
+        }
+      | BaseError
+    >;
+    getTableSchema: (tableName: string) => Promise<
+      | {
+          name: string;
+          info: TableInfo;
+          status: boolean;
+        }
+      | BaseError
+    >;
     getTablePermissions: (
       tableName: string,
       trx?: Knex.Transaction,
-    ) => Promise<TablePermissions>;
+    ) => Promise<
+      | {
+          permissions: TablePermissions;
+          status: boolean;
+        }
+      | BaseError
+    >;
     getTableSchemaWithPermissions: (
       tableName: string,
       trx?: Knex.Transaction,
-    ) => Promise<{
-      name: string;
-      info: TableInfo;
-      permissions: TablePermissions;
-    }>;
+    ) => Promise<
+      | {
+          name: string;
+          info: TableInfo;
+          permissions: TablePermissions;
+          status: boolean;
+        }
+      | BaseError
+    >;
   };
   data: {
     query: <T>(
@@ -278,25 +303,49 @@ export interface ForgeDatabaseEndpoints {
       user?: UserContext,
       isSystem?: boolean,
       trx?: Knex.Transaction,
-    ) => Promise<T[]>;
+    ) => Promise<
+      | {
+          data: T[];
+          status: boolean;
+        }
+      | BaseError
+    >;
     create: (
       params: DataMutationParams,
       user?: UserContext,
       isSystem?: boolean,
       trx?: Knex.Transaction,
-    ) => Promise<any>;
+    ) => Promise<
+      | {
+          data: any;
+          status: boolean;
+        }
+      | BaseError
+    >;
     update: (
       params: DataMutationParams,
       user?: UserContext,
       isSystem?: boolean,
       trx?: Knex.Transaction,
-    ) => Promise<any>;
+    ) => Promise<
+      | {
+          data: any;
+          status: boolean;
+        }
+      | BaseError
+    >;
     advanceUpdate: (
       params: AdvanceDataMutationParams,
       user?: UserContext,
       isSystem?: boolean,
       trx?: Knex.Transaction,
-    ) => Promise<any>;
+    ) => Promise<
+      | {
+          data: any;
+          status: boolean;
+        }
+      | BaseError
+    >;
     delete: (
       params: DataDeleteParams,
       user?: UserContext,
@@ -308,13 +357,34 @@ export interface ForgeDatabaseEndpoints {
       user?: UserContext,
       isSystem?: boolean,
       trx?: Knex.Transaction,
-    ) => Promise<any>;
+    ) => Promise<
+      | {
+          data: any;
+          status: boolean;
+        }
+      | BaseError
+    >;
   };
   permissions: {
     get: (
       params: PermissionParams,
       trx?: Knex.Transaction,
-    ) => Promise<TablePermissions | undefined>;
-    set: (params: PermissionParams, trx?: Knex.Transaction) => Promise<any>;
+    ) => Promise<
+      | {
+          permissions: TablePermissions;
+          status: boolean;
+        }
+      | BaseError
+    >;
+    set: (
+      params: PermissionParams,
+      trx?: Knex.Transaction,
+    ) => Promise<
+      | {
+          permission: TablePermissions;
+          status: boolean;
+        }
+      | BaseError
+    >;
   };
 }

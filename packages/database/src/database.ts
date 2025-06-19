@@ -4,11 +4,6 @@ import { enforcePermissions } from "./rlsManager";
 import { DBInspector, type DatabaseSchema } from "./utils/inspector";
 import { KnexHooks } from "./knex-hooks";
 import {
-  AuthenticationRequiredError,
-  ExcludedTableError,
-  PermissionDeniedError,
-} from "./errors";
-import {
   FG_PERMISSION_TABLE,
   type AddForeignKeyParams,
   type DataDeleteParams,
@@ -208,35 +203,31 @@ export class ForgeDatabase {
      * @returns Schema endpoints
      */
     schema: {
-      get: async (trx?: Knex.Transaction): Promise<DatabaseSchema> => {
+      get: async (trx?: Knex.Transaction) => {
         return await this.dbInspector.getDatabaseSchema(this.excludedTables);
       },
       create: async (payload: SchemaCreateParams, trx?: Knex.Transaction) => {
-        // If no transaction is provided, create one internally
-        // if (!trx) {
-        //   return this.transaction(async (newTrx) => {
-        //     return await this.endpoints.schema.create(payload, newTrx);
-        //   });
-        // }
-
         const { tableName, columns } = payload;
 
         if (!tableName) {
-          throw new Error("Invalid request body");
+          return {
+            status: false,
+            message: "Invalid request body",
+            tablename: tableName,
+            action: "create",
+          };
         }
 
         const hasTable = await this.hooks
           .getKnexInstance()
           .schema.hasTable(tableName);
         if (hasTable) {
-          console.log("Table already exists");
-          throw new Error("Table already exists");
-          // await this.hooks
-          //   .getKnexInstance()
-          //   .schema.dropTableIfExists(tableName);
-          // console.log("Table dropped");
-          // await this.permissionService.deletePermissionsForTable(tableName);
-          // console.log("Permissions deleted");
+          return {
+            status: false,
+            message: "Table already exists",
+            tablename: tableName,
+            action: "create",
+          };
         }
 
         // Use transaction if provided, otherwise use the knex instance
@@ -258,11 +249,17 @@ export class ForgeDatabase {
           message: "Table created successfully",
           tablename: tableName,
           action: "create",
+          status: true,
         };
       },
       delete: async (tableName: string, trx?: Knex.Transaction) => {
         if (this.excludedTables.includes(tableName)) {
-          throw new ExcludedTableError(tableName);
+          return {
+            status: false,
+            message: `Table ${tableName} is excluded from operations`,
+            tablename: tableName,
+            action: "delete",
+          };
         }
         // Use transaction if provided, otherwise use the knex instance
         const schemaBuilder = trx
@@ -276,24 +273,50 @@ export class ForgeDatabase {
           message: "Table deleted successfully",
           tablename: tableName,
           action: "delete",
+          status: true,
         };
       },
       modify: async (payload: ModifySchemaParams, trx?: Knex.Transaction) => {
         if (this.excludedTables.includes(payload.tableName)) {
-          throw new ExcludedTableError(payload.tableName);
+          return {
+            status: false,
+            message: `Table ${payload.tableName} is excluded from operations`,
+            tablename: payload.tableName,
+            action: "modify",
+          };
         }
-        return await modifySchema(this.hooks.getKnexInstance(), payload, trx);
+        const result = await modifySchema(
+          this.hooks.getKnexInstance(),
+          payload,
+          trx,
+        );
+        return {
+          ...result,
+          tablename: payload.tableName,
+          action: "modify",
+          status: true,
+        };
       },
       addForeingKey: async (
         payload: AddForeignKeyParams,
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(payload.tableName)) {
-          throw new ExcludedTableError(payload.tableName);
+          return {
+            status: false,
+            message: `Table ${payload.tableName} is excluded from operations`,
+            tablename: payload.tableName,
+            action: "addForeingKey",
+          };
         }
 
         if (this.excludedTables.includes(payload.foreignTableName)) {
-          throw new ExcludedTableError(payload.foreignTableName);
+          return {
+            status: false,
+            message: `Table ${payload.foreignTableName} is excluded from operations`,
+            tablename: payload.foreignTableName,
+            action: "addForeingKey",
+          };
         }
 
         // If no transaction is provided, create one internally
@@ -303,25 +326,55 @@ export class ForgeDatabase {
           });
         }
         // Use transaction if provided, otherwise use the knex instance
-        return await addForeignKey(payload, this.hooks.getKnexInstance(), trx);
+        const result = await addForeignKey(
+          payload,
+          this.hooks.getKnexInstance(),
+          trx,
+        );
+        return {
+          ...result,
+          tablename: payload.tableName,
+          action: "addForeingKey",
+          status: true,
+        };
       },
       dropForeignKey: async (
         payload: DropForeignKeyParams,
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(payload.tableName)) {
-          throw new ExcludedTableError(payload.tableName);
+          return {
+            status: false,
+            message: `Table ${payload.tableName} is excluded from operations`,
+            tablename: payload.tableName,
+            action: "dropForeignKey",
+          };
         }
         if (!trx) {
           return this.transaction(async (newTrx) => {
             return await this.endpoints.schema.dropForeignKey(payload, newTrx);
           });
         }
-        return await dropForeignKey(payload, this.hooks.getKnexInstance(), trx);
+        const result = await dropForeignKey(
+          payload,
+          this.hooks.getKnexInstance(),
+          trx,
+        );
+        return {
+          ...result,
+          tablename: payload.tableName,
+          action: "dropForeignKey",
+          status: true,
+        };
       },
       truncateTable: async (tableName: string, trx?: Knex.Transaction) => {
         if (this.excludedTables.includes(tableName)) {
-          throw new ExcludedTableError(tableName);
+          return {
+            status: false,
+            message: `Table ${tableName} is excluded from operations`,
+            tablename: tableName,
+            action: "truncateTable",
+          };
         }
 
         if (!trx) {
@@ -329,33 +382,51 @@ export class ForgeDatabase {
             return await this.endpoints.schema.truncateTable(tableName, newTrx);
           });
         }
-        return await truncateTable(
+        const result = await truncateTable(
           tableName,
           this.hooks.getKnexInstance(),
           trx,
         );
+        return {
+          ...result,
+          tablename: tableName,
+          action: "truncateTable",
+          status: true,
+        };
       },
       getTableSchema: async (tableName: string, trx?: Knex.Transaction) => {
         if (this.excludedTables.includes(tableName)) {
-          throw new ExcludedTableError(tableName);
+          return {
+            status: false,
+            message: `Table ${tableName} is excluded from operations`,
+            tablename: tableName,
+            action: "getTableSchema",
+          };
         }
         const tableInfo = await this.dbInspector.getTableInfo(tableName);
         return {
           name: tableName,
           info: tableInfo,
+          status: true,
         };
       },
       getTables: async (trx?: Knex.Transaction) => {
         let tables = await this.dbInspector.getTables();
         tables = tables.filter((t) => !this.excludedTables.includes(t));
-        return tables;
+        return {
+          tables,
+          status: true,
+        };
       },
       getTablePermissions: async (
         tableName: string,
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(tableName)) {
-          throw new ExcludedTableError(tableName);
+          return {
+            status: false,
+            message: `Table ${tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally
         if (!trx) {
@@ -366,17 +437,24 @@ export class ForgeDatabase {
             );
           });
         }
-        return await this.permissionService.getPermissionsForTable(
+        const permissions = await this.permissionService.getPermissionsForTable(
           tableName,
           trx,
         );
+        return {
+          permissions,
+          status: true,
+        };
       },
       getTableSchemaWithPermissions: async (
         tableName: string,
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(tableName)) {
-          throw new ExcludedTableError(tableName);
+          return {
+            status: false,
+            message: `Table ${tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally
         if (!trx) {
@@ -397,6 +475,7 @@ export class ForgeDatabase {
           name: tableName,
           info: tableInfo,
           permissions,
+          status: true,
         };
       },
     },
@@ -414,7 +493,10 @@ export class ForgeDatabase {
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(tableName)) {
-          throw new ExcludedTableError(tableName);
+          return {
+            status: false,
+            message: `Table ${tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
@@ -432,18 +514,23 @@ export class ForgeDatabase {
         const queryParams = this.parseQueryParams(params);
 
         if (!this.config.enforceRls || isSystem) {
-          return this.hooks.query(
+          const records = await this.hooks.query(
             tableName,
             (query) => this.queryHandler.buildQuery(queryParams, query),
             queryParams,
             trx,
           );
+          return {
+            data: records as any,
+            status: true,
+          };
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new AuthenticationRequiredError(
-            "Authentication required to query records",
-          );
+          return {
+            status: false,
+            message: "Authentication required to query records",
+          };
         }
 
         const {
@@ -464,9 +551,10 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new PermissionDeniedError(
-            `User does not have permission to query table "${tableName}"`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to query table "${tableName}"`,
+          };
         }
 
         const records = await this.hooks.query(
@@ -478,7 +566,10 @@ export class ForgeDatabase {
 
         if (initialStatus) {
           // If the user has permission to query, proceed with the query
-          return records;
+          return {
+            data: records as any,
+            status: true,
+          };
         }
 
         const { status, row } = await enforcePermissions(
@@ -491,12 +582,16 @@ export class ForgeDatabase {
         );
 
         if (!status) {
-          throw new PermissionDeniedError(
-            `User does not have permission to query table "${tableName}"`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to query table "${tableName}"`,
+          };
         }
 
-        return row as any;
+        return {
+          data: row as any,
+          status: true,
+        };
       },
 
       create: async (
@@ -506,7 +601,10 @@ export class ForgeDatabase {
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
-          throw new ExcludedTableError(params.tableName);
+          return {
+            status: false,
+            message: `Table ${params.tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
@@ -536,12 +634,15 @@ export class ForgeDatabase {
               typeof record === "object" && Object.keys(record).length > 0,
           )
         ) {
-          console.log("Invalid request body", records);
-          throw new Error("Invalid request body");
+          // console.log("Invalid request body", records);
+          return {
+            status: false,
+            message: "Invalid request body",
+          };
         }
 
         if (!this.config.enforceRls || isSystem) {
-          return this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "create",
             async (query) => query.insert(records).returning("*"),
@@ -549,12 +650,17 @@ export class ForgeDatabase {
             undefined,
             trx,
           );
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new AuthenticationRequiredError(
-            "Authentication required to create records",
-          );
+          return {
+            status: false,
+            message: "Authentication required to create records",
+          };
         }
 
         const {
@@ -575,14 +681,15 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new PermissionDeniedError(
-            `User does not have permission to create record in table "${tableName}"`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to create record in table "${tableName}"`,
+          };
         }
 
         if (initialStatus) {
           // If the user has permission to create, proceed with the creation
-          return this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "create",
             async (query) => query.insert(records).returning("*"),
@@ -590,6 +697,10 @@ export class ForgeDatabase {
             undefined,
             trx,
           );
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         const { status, row } = await enforcePermissions(
@@ -602,18 +713,20 @@ export class ForgeDatabase {
         );
 
         if (!status) {
-          throw new Error(
-            `User does not have permission to create record in table "${tableName}"`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to create record in table "${tableName}"`,
+          };
         }
 
         if (!row || (Array.isArray(row) && row.length === 0)) {
-          throw new PermissionDeniedError(
-            `User does not have permission to create this record in table "${tableName}"`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to create record in table "${tableName}"`,
+          };
         }
 
-        const result = this.hooks.mutate(
+        const result = await this.hooks.mutate(
           tableName,
           "create",
           async (query) => query.insert(row).returning("*"),
@@ -622,7 +735,10 @@ export class ForgeDatabase {
           trx,
         );
 
-        return result;
+        return {
+          data: result,
+          status: true,
+        };
       },
 
       update: async (
@@ -632,7 +748,10 @@ export class ForgeDatabase {
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
-          throw new ExcludedTableError(params.tableName);
+          return {
+            status: false,
+            message: `Table ${params.tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
@@ -649,7 +768,7 @@ export class ForgeDatabase {
         const { id, tableName, data } = params;
 
         if (!this.config.enforceRls || isSystem) {
-          const result = this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "update",
             async (query) => query.where({ id }).update(data).returning("*"),
@@ -658,13 +777,17 @@ export class ForgeDatabase {
             trx,
           );
 
-          return result;
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new AuthenticationRequiredError(
-            "Authentication required to update records",
-          );
+          return {
+            status: false,
+            message: "Authentication required to update records",
+          };
         }
 
         const {
@@ -685,14 +808,15 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new Error(
-            `User does not have permission to delete record with id ${id}`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to delete record with id ${id}`,
+          };
         }
 
         if (initialStatus) {
           // If the user has permission to delete, proceed with the deletion
-          const result = this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "update",
             async (query) => query.where({ id }).update(data).returning("*"),
@@ -701,7 +825,10 @@ export class ForgeDatabase {
             trx,
           );
 
-          return result;
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         const record = await this.hooks.query(
@@ -723,12 +850,13 @@ export class ForgeDatabase {
         );
 
         if (!status) {
-          throw new PermissionDeniedError(
-            `User does not have permission to update record with id ${id}`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to update record with id ${id}`,
+          };
         }
 
-        const result = this.hooks.mutate(
+        const result = await this.hooks.mutate(
           tableName,
           "update",
           async (query) => query.where({ id }).update(data).returning("*"),
@@ -737,7 +865,10 @@ export class ForgeDatabase {
           trx,
         );
 
-        return result;
+        return {
+          data: result,
+          status: true,
+        };
       },
 
       advanceUpdate: async (
@@ -747,7 +878,10 @@ export class ForgeDatabase {
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
-          throw new ExcludedTableError(params.tableName);
+          return {
+            status: false,
+            message: `Table ${params.tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
@@ -766,7 +900,7 @@ export class ForgeDatabase {
         const queryParams = this.parseQueryParams(query);
 
         if (!this.config.enforceRls || isSystem) {
-          const result = this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "update",
             async (query) =>
@@ -779,13 +913,17 @@ export class ForgeDatabase {
             trx,
           );
 
-          return result;
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new AuthenticationRequiredError(
-            "Authentication required to update records",
-          );
+          return {
+            status: false,
+            message: "Authentication required to update records",
+          };
         }
 
         const {
@@ -806,14 +944,15 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new Error(
-            "User does not have permission to update this records",
-          );
+          return {
+            status: false,
+            message: "User does not have permission to update this records",
+          };
         }
 
         if (initialStatus) {
           // If the user has permission to delete, proceed with the deletion
-          const result = this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "update",
             async (query) =>
@@ -826,7 +965,10 @@ export class ForgeDatabase {
             trx,
           );
 
-          return result;
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         const records = await this.hooks.query(
@@ -846,12 +988,13 @@ export class ForgeDatabase {
         );
 
         if (!status) {
-          throw new PermissionDeniedError(
-            "User does not have permission to update this records",
-          );
+          return {
+            status: false,
+            message: "User does not have permission to update this records",
+          };
         }
 
-        const result = this.hooks.mutate(
+        const result = await this.hooks.mutate(
           tableName,
           "update",
           async (query) =>
@@ -864,7 +1007,10 @@ export class ForgeDatabase {
           trx,
         );
 
-        return result;
+        return {
+          data: result,
+          status: true,
+        };
       },
 
       delete: async (
@@ -874,7 +1020,10 @@ export class ForgeDatabase {
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
-          throw new ExcludedTableError(params.tableName);
+          return {
+            status: false,
+            message: `Table ${params.tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
@@ -891,7 +1040,7 @@ export class ForgeDatabase {
         const { id, tableName } = params;
 
         if (!this.config.enforceRls || isSystem) {
-          return this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "delete",
             async (query) =>
@@ -902,12 +1051,18 @@ export class ForgeDatabase {
             undefined,
             trx,
           );
+
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new AuthenticationRequiredError(
-            "Authentication required to delete records",
-          );
+          return {
+            status: false,
+            message: "Authentication required to delete records",
+          };
         }
 
         const {
@@ -928,14 +1083,15 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new PermissionDeniedError(
-            `User does not have permission to delete record with id ${id}`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to delete record with id ${id}`,
+          };
         }
 
         if (initialStatus) {
           // If the user has permission to delete, proceed with the deletion
-          return this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "delete",
             async (query) => query.where({ id }).delete(),
@@ -943,6 +1099,10 @@ export class ForgeDatabase {
             undefined,
             trx,
           );
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         // get the record to enforce permissions
@@ -964,12 +1124,13 @@ export class ForgeDatabase {
           this.hooks.getKnexInstance(),
         );
         if (!status) {
-          throw new PermissionDeniedError(
-            `User does not have permission to delete record with id ${id}`,
-          );
+          return {
+            status: false,
+            message: `User does not have permission to delete record with id ${id}`,
+          };
         }
 
-        return this.hooks.mutate(
+        const result = await this.hooks.mutate(
           tableName,
           "delete",
           async (query) => query.where({ id }).delete(),
@@ -977,6 +1138,11 @@ export class ForgeDatabase {
           undefined,
           trx,
         );
+
+        return {
+          data: result,
+          status: true,
+        };
       },
 
       advanceDelete: async (
@@ -986,7 +1152,10 @@ export class ForgeDatabase {
         trx?: Knex.Transaction,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
-          throw new ExcludedTableError(params.tableName);
+          return {
+            status: false,
+            message: `Table ${params.tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
@@ -1005,7 +1174,7 @@ export class ForgeDatabase {
         const queryParams = this.parseQueryParams(query);
 
         if (!this.config.enforceRls || isSystem) {
-          return this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "delete",
             async (query) =>
@@ -1016,12 +1185,17 @@ export class ForgeDatabase {
             queryParams,
             trx,
           );
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         if (!user && !isSystem && this.config.enforceRls) {
-          throw new AuthenticationRequiredError(
-            "Authentication required to delete records",
-          );
+          return {
+            status: false,
+            message: "Authentication required to delete records",
+          };
         }
 
         const {
@@ -1042,14 +1216,15 @@ export class ForgeDatabase {
           !initialHasFieldCheck &&
           !initialHasCustomFunction
         ) {
-          throw new PermissionDeniedError(
-            "User does not have permission to delete this records",
-          );
+          return {
+            status: false,
+            message: "User does not have permission to delete this records",
+          };
         }
 
         if (initialStatus) {
           // If the user has permission to delete, proceed with the deletion
-          return this.hooks.mutate(
+          const result = await this.hooks.mutate(
             tableName,
             "delete",
             async (query) =>
@@ -1060,6 +1235,10 @@ export class ForgeDatabase {
             queryParams,
             trx,
           );
+          return {
+            data: result,
+            status: true,
+          };
         }
 
         // get the record to enforce permissions
@@ -1079,12 +1258,13 @@ export class ForgeDatabase {
           this.hooks.getKnexInstance(),
         );
         if (!status) {
-          throw new PermissionDeniedError(
-            "User does not have permission to delete this records",
-          );
+          return {
+            status: false,
+            message: "User does not have permission to delete this records",
+          };
         }
 
-        return this.hooks.mutate(
+        const result = await this.hooks.mutate(
           tableName,
           "delete",
           async (query) =>
@@ -1095,6 +1275,11 @@ export class ForgeDatabase {
           queryParams,
           trx,
         );
+
+        return {
+          data: result,
+          status: true,
+        };
       },
     },
 
@@ -1105,7 +1290,10 @@ export class ForgeDatabase {
     permissions: {
       get: async (params: PermissionParams, trx?: Knex.Transaction) => {
         if (this.excludedTables.includes(params.tableName)) {
-          throw new ExcludedTableError(params.tableName);
+          return {
+            status: false,
+            message: `Table ${params.tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally
         if (!trx) {
@@ -1115,12 +1303,23 @@ export class ForgeDatabase {
         }
 
         const { tableName } = params;
-        return this.permissionService.getPermissionsForTable(tableName, trx);
+        const permissions = await this.permissionService.getPermissionsForTable(
+          tableName,
+          trx,
+        );
+
+        return {
+          permissions,
+          status: true,
+        };
       },
 
       set: async (params: PermissionParams, trx?: Knex.Transaction) => {
         if (this.excludedTables.includes(params.tableName)) {
-          throw new ExcludedTableError(params.tableName);
+          return {
+            status: false,
+            message: `Table ${params.tableName} is excluded from operations`,
+          };
         }
         // If no transaction is provided, create one internally and manage it
         if (!trx) {
@@ -1132,14 +1331,22 @@ export class ForgeDatabase {
         const { tableName, permissions } = params;
 
         if (!permissions) {
-          throw new Error("Permissions object is required");
+          return {
+            status: false,
+            message: "Permissions object is required",
+          };
         }
 
-        return this.permissionService.setPermissionsForTable(
+        const result = await this.permissionService.setPermissionsForTable(
           tableName,
           permissions,
           trx,
         );
+
+        return {
+          permission: result,
+          status: true,
+        };
       },
     },
   };

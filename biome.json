@@ -27,10 +27,14 @@
       "style": {
         "useImportType": "off",
         "noParameterAssign": "off",
-        "noUselessElse": "off"
+        "noUselessElse": "off",
+        "noUnusedTemplateLiteral": "off",
+        "noNonNullAssertion": "off"
       },
       "complexity": {
-        "noForEach": "off"
+        "noForEach": "off",
+        "useLiteralKeys": "off",
+        "useOptionalChain": "off"
       }
     }
   },
