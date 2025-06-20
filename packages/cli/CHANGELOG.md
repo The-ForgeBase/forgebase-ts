@@ -1,5 +1,11 @@
 # @the-forgebase/cli
 
+## 0.0.6
+
+### Patch Changes
+
+- [`b71cc45`](https://github.com/The-ForgeBase/forgebase-ts/commit/b71cc45f73dbcf088fdfb0dedc51e119ddbad4cc) Thanks [@SOG-web](https://github.com/SOG-web)! - fix build issue
+
 ## 0.0.5
 
 ### Patch Changes
