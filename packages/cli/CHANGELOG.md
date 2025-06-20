@@ -1,5 +1,11 @@
 # @the-forgebase/cli
 
+## 0.0.5
+
+### Patch Changes
+
+- [`65401c9`](https://github.com/The-ForgeBase/forgebase-ts/commit/65401c91ed5772618c83cb1d8c57131dd3f8854d) Thanks [@SOG-web](https://github.com/SOG-web)! - adjust date types
+
 ## 0.0.4
 
 ### Patch Changes
