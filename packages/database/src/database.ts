@@ -572,6 +572,13 @@ export class ForgeDatabase {
           };
         }
 
+        if (records.length === 0) {
+          return {
+            data: records as any,
+            status: true,
+          };
+        }
+
         const { status, row } = await enforcePermissions(
           tableName,
           "SELECT",
