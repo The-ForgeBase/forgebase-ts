@@ -86,7 +86,10 @@ const sqlToColumnType = new Map<string, ColumnType>([
 
 function generateInterface(tableName: string, columns: Column[]): string {
   const properties = columns.map((column) => {
-    const tsType = sqlToTypeScriptType.get(column.data_type) || "any";
+    let tsType = sqlToTypeScriptType.get(column.data_type) || "any";
+    if (tsType === "Date") {
+      tsType = "string";
+    }
     const nullable = column.is_nullable ? "?" : "";
     return `  ${column.name}${nullable}: ${tsType};`;
   });
