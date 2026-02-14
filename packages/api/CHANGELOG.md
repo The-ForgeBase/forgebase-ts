@@ -1,5 +1,16 @@
 # @the-forgebase/api
 
+## 1.0.0
+
+### Major Changes
+
+- [`8d104fb`](https://github.com/The-ForgeBase/forgebase-ts/commit/8d104fb107f6282f1bc61fab6a7773c9b810c115) Thanks [@SOG-web](https://github.com/SOG-web)! - switch to kysely
+
+### Patch Changes
+
+- Updated dependencies [[`8d104fb`](https://github.com/The-ForgeBase/forgebase-ts/commit/8d104fb107f6282f1bc61fab6a7773c9b810c115)]:
+  - @the-forgebase/database@1.0.0
+
 ## 1.0.0-alpha.2
 
 ### Major Changes
