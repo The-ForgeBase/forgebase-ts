@@ -1,5 +1,5 @@
 import { BaaSConfig } from '../types';
-import knex from 'knex';
+import { Kysely } from 'kysely';
 import {
   AdvanceDataDeleteParams,
   AdvanceDataMutationParams,
@@ -9,7 +9,7 @@ import {
   DataQueryParams,
   ForeignKey,
   ForgeDatabase,
-  KnexHooks,
+  KyselyHooks,
   PermissionService,
   TableInfo,
   TablePermissions,
@@ -31,8 +31,8 @@ export class DatabaseService {
     });
   }
 
-  getDbInstance(): knex.Knex {
-    return this.forgeDatabase.getKnexInstance();
+  getDbInstance(): Kysely<any> {
+    return this.forgeDatabase.getDbInstance();
   }
 
   getPermissionService(): PermissionService {
@@ -43,7 +43,7 @@ export class DatabaseService {
     return this.forgeDatabase;
   }
 
-  getHookableDB(): KnexHooks {
+  getHookableDB(): KyselyHooks {
     return this.forgeDatabase.getHooksDb();
   }
 
@@ -69,7 +69,7 @@ export class DatabaseService {
     isSystem = false,
   ): Promise<any> {
     try {
-      console.log('Inserting data', data, { ...data, tableName });
+      // console.log('Inserting data', data, { ...data, tableName });
       const records = await this.forgeDatabase.endpoints.data.create(
         { ...data, tableName },
         userContext,
