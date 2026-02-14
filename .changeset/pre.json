@@ -2,24 +2,12 @@
   "mode": "pre",
   "tag": "alpha",
   "initialVersions": {
-    "web": "0.1.0",
     "@the-forgebase/api": "0.1.0-alpha.0",
-    "@the-forgebase/auth": "0.1.0-alpha.0",
     "@the-forgebase/common": "0.1.0-alpha.0",
     "@the-forgebase/database": "0.1.0-alpha.0",
-    "@repo/eslint-config": "0.0.1",
-    "@the-forgebase/react-native-auth": "0.0.0-alpha.22",
     "@the-forgebase/real-time": "0.0.0-alpha.22",
     "@the-forgebase/sdk": "0.1.0-alpha.0",
-    "@the-forgebase/storage": "0.1.0-alpha.0",
-    "@the-forgebase/typescript-config": "0.0.0",
-    "@repo/ui": "0.0.0-alpha.22",
-    "@the-forgebase/web-auth": "0.0.0-alpha.22"
+    "@the-forgebase/storage": "0.1.0-alpha.0"
   },
-  "changesets": [
-    "dirty-socks-kneel",
-    "light-snakes-dress",
-    "rotten-clowns-sniff",
-    "strong-clocks-glow"
-  ]
+  "changesets": []
 }
