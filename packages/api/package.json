@@ -26,21 +26,6 @@
       "import": "./dist/esm/core/nest/index.js",
       "require": "./dist/cjs/core/nest/index.js"
     },
-    "./core/web": {
-      "types": "./dist/esm/core/web/index.d.ts",
-      "import": "./dist/esm/core/web/index.js",
-      "require": "./dist/cjs/core/web/index.js"
-    },
-    "./core/express": {
-      "types": "./dist/esm/core/express/index.d.ts",
-      "import": "./dist/esm/core/express/index.js",
-      "require": "./dist/cjs/core/express/index.js"
-    },
-    "./core/ultimate-express": {
-      "types": "./dist/esm/core/ultimate-express/index.d.ts",
-      "import": "./dist/esm/core/ultimate-express/index.js",
-      "require": "./dist/cjs/core/ultimate-express/index.js"
-    },
     "./core": {
       "types": "./dist/esm/core/index.d.ts",
       "import": "./dist/esm/core/index.js",
@@ -52,20 +37,8 @@
       ".": [
         "./dist/esm/index.d.ts"
       ],
-      "frameworks": [
-        "./dist/esm/frameworks/index.d.ts"
-      ],
-      "frameworks/nest": [
-        "./dist/esm/frameworks/nest/index.d.ts"
-      ],
       "core/nest": [
         "./dist/esm/core/nest/index.d.ts"
-      ],
-      "core/hono": [
-        "./dist/esm/core/hono/index.d.ts"
-      ],
-      "core/web": [
-        "./dist/esm/core/web/index.d.ts"
       ],
       "core": [
         "./dist/esm/core/index.d.ts"
