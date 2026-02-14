@@ -22,13 +22,13 @@ The ForgeBase-TS project is organized into several libraries and applications:
 
 ### Libraries
 
-- **@the-forgebase/api**: Core API functionality and framework adapters
-- **@the-forgebase/auth**: Authentication and authorization
-- **@the-forgebase/database**: Database access and query building
-- **@the-forgebase/storage**: File storage abstraction
-- **@the-forgebase/common**: Shared utilities
-- **@the-forgebase/sdk**: Client and server SDK
-- **@the-forgebase/real-time**: Real-time communication
+- **@forgebase/api**: Core API functionality and framework adapters
+- **@forgebase/auth**: Authentication and authorization
+- **@forgebase/database**: Database access and query building
+- **@forgebase/storage**: File storage abstraction
+- **@forgebase/common**: Shared utilities
+- **@forgebase/sdk**: Client and server SDK
+- **@forgebase/real-time**: Real-time communication
 
 ### Applications
 

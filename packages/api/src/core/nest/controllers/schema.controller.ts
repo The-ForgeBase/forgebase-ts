@@ -12,7 +12,7 @@ import type {
   ColumnDefinition,
   ForeignKey,
   UpdateColumnDefinition,
-} from '@the-forgebase/database';
+} from '@forgebase/database';
 
 @Controller('schema')
 export class SchemaController {

@@ -5,7 +5,7 @@ import express from 'express';
 import { createServer, Server } from 'http';
 import { AddressInfo } from 'net';
 import { ForgeDatabase } from './database';
-import { DatabaseSDK } from '@the-forgebase/sdk/client';
+import { DatabaseSDK } from '@forgebase/sdk/client';
 import type { UserContext, TablePermissions } from './types';
 
 /**

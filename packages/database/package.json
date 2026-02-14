@@ -1,6 +1,6 @@
 {
-  "name": "@the-forgebase/database",
-  "version": "1.0.0",
+  "name": "@forgebase/database",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -35,6 +35,9 @@
     "package.json",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "crossws": "^0.3.4",
     "kysely": "^0.28.11",
@@ -44,14 +47,14 @@
   },
   "peerDependencies": {
     "@libsql/client": "^0.17.0",
-    "@the-forgebase/sdk": "workspace:*",
+    "@forgebase/sdk": "workspace:*",
     "better-sqlite3": "^11.10.0",
     "express": "^4.21.2",
     "pg": "^8.18.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
-    "@the-forgebase/typescript-config": "workspace:*",
+    "@forgebase/typescript-config": "workspace:*",
     "@types/better-sqlite3": "^7.6.12",
     "@types/express": "^5.0.6",
     "@types/lodash.isnil": "^4.0.9",

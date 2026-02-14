@@ -1,192 +1,116 @@
 # ForgeBase TypeScript SDK
 
-A powerful, type-safe TypeScript SDK for interacting with ForgeBase services, providing comprehensive database operations, real-time features, and advanced query capabilities.
+A powerful, type-safe TypeScript SDK for interacting with ForgeBase services, providing comprehensive database operations, advanced query capabilities, and type safety.
 
 ## Core Features
 
 - **Type-Safe Query Builder**:
-
   - Fluent API design
-  - Advanced filtering
+  - Advanced filtering (`where`, `whereIn`, `whereExists`, etc.)
   - Complex joins and relations
-  - Aggregations and window functions
-  - Transaction support
-  - Raw query support
-  - Query optimization
+  - Aggregations (`count`, `sum`, `avg`, `min`, `max`)
+  - Window functions (`rowNumber`, `rank`, `lag`, `lead`)
+  - Recursive CTEs
+  - Result transformations (`pivot`, `compute`)
 
 - **Database Operations**:
-
-  - CRUD operations
+  - CRUD operations (`create`, `update`, `delete`)
   - Batch operations
-  - Pagination
-  - Sorting
-  - Custom queries
-  - Schema validation
-  - Error handling
+  - Pagination (`limit`, `offset`)
+  - Sorting (`orderBy`)
 
-- **Security Features**:
-
-  <!-- - JWKS support
-  - Token validation
-  - Request signing -->
-
-  - Input sanitization
-  - Type validation
-  - Error boundaries
-  <!-- - Rate limiting -->
-
-- **Advanced Querying**:
-
-  - Window functions
-  - Common Table Expressions (CTEs)
-  - Recursive queries
-  - Complex filtering
-  - Advanced joins
-  - Subqueries
-  - Aggregations
-
-<!-- - **Real-time Features**:
-
-  - Live queries
-  - Change notifications
-  - WebSocket integration
-  - Presence tracking
-  - Subscription management
-  - Connection handling
-  - Event buffering -->
-
-<!-- - **Performance Features**:
-  - Query caching
-  - Connection pooling
-  - Batch operations
-  - Lazy loading
-  - Query optimization
-  - Result transformation
-  - Memory management -->
+- **Security & Validation**:
+  - Input validation
+  - Type inference from your interfaces
 
 ## Installation
 
 ```bash
-npm install @the-forgebase/sdk
+npm install @forgebase/sdk
 # or
-yarn add @the-forgebase/sdk
+yarn add @forgebase/sdk
 # or
-pnpm add @the-forgebase/sdk
+pnpm add @forgebase/sdk
 ```
 
 ## Basic Usage
 
+### Initialization
+
+```typescript
+import { DatabaseSDK } from '@forgebase/sdk/client';
+
+// Initialize with your API URL
+const db = new DatabaseSDK({
+  baseUrl: 'http://localhost:3000',
+  axiosConfig: {
+    withCredentials: true,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  },
+});
+```
+
 ### Database Operations
 
 ```typescript
-import { DatabaseSDK } from '@the-forgebase/sdk/client';
+// Define your entity type
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'inactive';
+}
 
-// Initialize with your API URL
-const db = new DatabaseSDK('http://localhost:3000', {
-  credentials: 'include',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Basic CRUD Operations
-const users = await db
-  .table('users')
-  .select('id', 'name', 'email')
-  .where('status', 'active')
-  .execute({
-    headers: {
-      'some-stuff': 'true',
-    },
-  });
+// simple query
+const users = await db.table<User>('users').select('id', 'name', 'email').where('status', 'active').query();
 
 // Create a new record
-const newUser = await db.table('users').create({
+const newUser = await db.table<User>('users').create({
   name: 'John Doe',
   email: 'john@example.com',
   role: 'user',
+  status: 'active',
 });
 
-// Update a record
-await db.table('users').update(1, {
+// Update a record by ID
+await db.table<User>('users').update(1, {
   status: 'inactive',
 });
 
-// Delete a record
-await db.table('users').delete(1);
+// Delete a record by ID
+await db.table<User>('users').delete(1);
 ```
 
 ### Advanced Queries
 
 ```typescript
-// Complex filtering with type safety
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  salary: number;
-}
-
+// Complex filtering
 const results = await db
   .table<User>('users')
   .where('status', 'active')
   .andWhere((query) => {
-    query.where('role', 'manager').where('department', 'IT').orWhere('salary', '>', 100000);
+    query.where('role', 'admin').orWhere('email', 'like', '%@company.com');
   })
   .orderBy('name', 'asc')
   .limit(10)
-  .execute();
+  .query();
 
 // Aggregations
-const stats = await db.table<User>('users').groupBy('department').select('department').count('id', 'total_users').avg('salary', 'avg_salary').having('total_users', '>', 5).execute();
+const stats = await db.table('orders').groupBy('status').sum('amount', 'total_amount').count('id', 'order_count').having('total_amount', '>', 5000).query();
 
 // Window Functions
 const rankedUsers = await db
-  .table<User>('users')
+  .table('users')
   .select('name', 'department', 'salary')
-  .window('rank', 'salary_rank', {
-    partitionBy: ['department'],
-    orderBy: [{ field: 'salary', direction: 'desc' }],
-  })
-  .execute();
+  .rank('salary_rank', ['department'], [{ field: 'salary', direction: 'desc' }])
+  .query();
 
-// Advanced Window Functions
-const analysis = await db
-  .table<User>('users')
-  .windowAdvanced('sum', 'running_total', {
-    field: 'salary',
-    over: {
-      partitionBy: ['department'],
-      orderBy: [{ field: 'hire_date', direction: 'asc' }],
-      frame: {
-        type: 'ROWS',
-        start: 'UNBOUNDED PRECEDING',
-        end: 'CURRENT ROW',
-      },
-    },
-  })
-  .execute();
-```
-
-### CTEs and Recursive Queries
-
-```typescript
-// Simple CTE
-const highPaidUsers = db.table<User>('users').where('salary', '>', 100000);
-
-const result = await db.table<User>('users').with('high_paid', highPaidUsers).execute();
-
-// Recursive CTE
-interface Category {
-  id: number;
-  parent_id: number | null;
-  name: string;
-}
-
+// Recursive CTEs (e.g., for hierarchical data)
 const categories = await db
-  .table<Category>('categories')
+  .table('categories')
   .withRecursive(
     'category_tree',
     // Initial query
@@ -195,199 +119,42 @@ const categories = await db
     db.table('categories').join('category_tree', 'parent_id', 'id'),
     { unionAll: true },
   )
-  .execute();
+  .query();
 ```
 
-<!-- ### Real-time Subscriptions
+### Transformations
+
+You can transform the result set on the client side using `pivot` or `compute`.
 
 ```typescript
-// Subscribe to changes
-const unsubscribe = await db
-  .table<User>('users')
-  .where('department', 'IT')
-  .subscribe({
-    onAdd: (user) => console.log('New user:', user),
-    onChange: (user) => console.log('User updated:', user),
-    onDelete: (id) => console.log('User deleted:', id),
-  });
+// Pivot data
+const pivoted = await db.table('sales').pivot('month', ['Jan', 'Feb', 'Mar'], { type: 'sum', field: 'amount' }).query();
 
-// Later: cleanup subscription
-unsubscribe();
-``` -->
-
-<!-- ### Security Features
-
-```typescript
-// JWKS Configuration
-const db = new DatabaseSDK('http://localhost:3000', {
-  auth: {
-    jwksUrl: '/.well-known/jwks.json',
-    audience: 'your-api',
-    issuer: 'your-auth-server',
-  },
-});
-
-// Request Signing
-const db = new DatabaseSDK('http://localhost:3000', {
-  security: {
-    signRequests: true,
-    privateKey: 'your-private-key',
-    keyId: 'your-key-id',
-  },
-});
-
-// Rate Limiting
-const db = new DatabaseSDK('http://localhost:3000', {
-  rateLimit: {
-    maxRequests: 100,
-    windowMs: 60000, // 1 minute
-  },
-});
-``` -->
+// Compute new fields
+const computed = await db
+  .table('employees')
+  .compute({
+    fullName: (row) => `${row.firstName} ${row.lastName}`,
+    tax: (row) => row.salary * 0.2,
+  })
+  .query();
+```
 
 ## Error Handling
 
+The SDK throws standard errors that you can catch and handle.
+
 ```typescript
 try {
-  const result = await db.table('users').where('id', 1).execute();
+  await db.table('users').create(data);
 } catch (error) {
-  if (error instanceof QueryError) {
-    // Handle query-related errors
-    console.error('Query Error:', error.message);
-  } else if (error instanceof ValidationError) {
-    // Handle validation errors
-    console.error('Validation Error:', error.details);
-  } else if (error instanceof AuthorizationError) {
-    // Handle authorization errors
-    console.error('Authorization Error:', error.message);
-  } else {
-    // Handle other errors
-    console.error('Unknown Error:', error);
-  }
+  console.error('Failed to create user:', error.message);
 }
 ```
 
-<!--
-## Advanced Configuration
+## Real-time Updates
 
-```typescript
-const db = new DatabaseSDK('http://localhost:3000', {
-  // Authentication
-  credentials: 'include',
-  headers: {
-    Authorization: 'Bearer your-token',
-  },
-
-  // Query Options
-  queryConfig: {
-    maxLimit: 1000,
-    defaultLimit: 50,
-    maxComplexity: 10,
-  },
-
-  // Cache Configuration
-  cache: {
-    enabled: true,
-    ttl: 300, // 5 minutes
-    maxSize: 100, // Maximum number of cached queries
-  },
-
-  // Real-time Configuration
-  realtime: {
-    enabled: true,
-    reconnectDelay: 1000,
-    maxRetries: 5,
-  },
-
-  // Performance Tuning
-  performance: {
-    batchSize: 1000,
-    poolSize: 10,
-    timeout: 5000,
-  },
-});
-``` -->
-
-## Type Safety
-
-The SDK provides full TypeScript support with generic types:
-
-```typescript
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
-
-interface Order {
-  id: number;
-  userId: number;
-  total: number;
-  status: string;
-}
-
-// Type-safe queries
-const users = await db.table<User>('users').select('id', 'name', 'email').where('role', 'admin').execute();
-
-// Type-safe joins
-const orders = await db.table<Order>('orders').join<User>('users', 'userId', 'id').select('orders.id', 'users.name', 'orders.total').execute();
-```
-
-## Performance Optimization
-
-### Query Optimization
-
-```typescript
-// Use select to limit returned fields
-const users = await db.table('users').select('id', 'name').where('active', true).execute();
-
-// Use indexes effectively
-const result = await db
-  .table('users')
-  .where('email', 'user@example.com') // Assuming email is indexed
-  .first()
-  .execute();
-
-// Batch operations (WIP*)
-await db.table('users').createMany([
-  { name: 'User 1', email: 'user1@example.com' },
-  { name: 'User 2', email: 'user2@example.com' },
-]);
-```
-
-<!-- ### Caching
-
-```typescript
-// Enable caching for specific queries
-const users = await db
-  .table('users')
-  .cache({
-    ttl: 300, // 5 minutes
-    tags: ['users'],
-  })
-  .execute();
-
-// Invalidate cache
-await db.invalidateCache('users');
-``` -->
-
-## Building
-
-Run `nx build sdk` to build the library.
-
-## Running Tests
-
-```bash
-# Run unit tests
-nx test sdk
-
-# Run integration tests
-nx test sdk --config=integration
-
-# Run tests with coverage
-nx test sdk --coverage
-```
+> ⚠️ **Note**: Real-time features (WebSockets/SSE) are currently experimental and under active development. They are not yet fully documented or recommended for production use.
 
 ## License
 

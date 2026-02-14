@@ -1,4 +1,4 @@
-# @the-forgebase/database
+# @forgebase/database
 
 ## 1.0.0
 
@@ -9,7 +9,7 @@
 ### Patch Changes
 
 - Updated dependencies [[`8d104fb`](https://github.com/The-ForgeBase/forgebase-ts/commit/8d104fb107f6282f1bc61fab6a7773c9b810c115)]:
-  - @the-forgebase/sdk@1.0.0
+  - @forgebase/sdk@1.0.0
 
 ## 1.0.0-alpha.2
 
@@ -20,7 +20,7 @@
 ### Patch Changes
 
 - Updated dependencies [[`e7c6e19`](https://github.com/The-ForgeBase/forgebase-ts/commit/e7c6e1927c7e46a50a469bfce201632d5e410b3a)]:
-  - @the-forgebase/sdk@1.0.0-alpha.2
+  - @forgebase/sdk@1.0.0-alpha.2
 
 ## 0.1.0-alpha.1
 

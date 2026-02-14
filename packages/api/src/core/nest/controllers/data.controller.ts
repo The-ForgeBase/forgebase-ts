@@ -13,7 +13,7 @@ import type {
   AdvanceDataMutationParams,
   DataMutationParams,
   DataQueryParams,
-} from '@the-forgebase/database';
+} from '@forgebase/database';
 
 @Controller('data')
 export class DataController {

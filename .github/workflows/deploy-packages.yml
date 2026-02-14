@@ -100,7 +100,7 @@ jobs:
       - name: Setup npm authentication
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-          echo "@the-forgebase:registry=https://registry.npmjs.org/" >> ~/.npmrc
+          echo "@forgebase:registry=https://registry.npmjs.org/" >> ~/.npmrc
 
       # Publish packages in correct order
       - name: Publish packages
@@ -109,14 +109,14 @@ jobs:
           CURRENT_VERSION=$(cat packages/common/package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
 
           # Check if version exists on npm
-          if npm view @the-forgebase/common@$CURRENT_VERSION version 2>/dev/null; then
+          if npm view @forgebase/common@$CURRENT_VERSION version 2>/dev/null; then
             echo "Version $CURRENT_VERSION already exists on npm. Skipping publish."
             exit 0
           fi
 
           # Publish packages in correct order
           for pkg in common database auth api storage sdk web-auth; do
-            echo "Publishing @the-forgebase/$pkg..."
+            echo "Publishing @forgebase/$pkg..."
             cd "packages/$pkg"
             if [ -f "package.json" ]; then
               pnpm publish --no-git-checks --access public

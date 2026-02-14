@@ -1,5 +1,5 @@
 {
-  "extends": "@the-forgebase/typescript-config/base.json",
+  "extends": "@forgebase/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",

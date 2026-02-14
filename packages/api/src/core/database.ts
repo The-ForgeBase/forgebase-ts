@@ -15,7 +15,7 @@ import {
   TablePermissions,
   UpdateColumnDefinition,
   UserContext,
-} from '@the-forgebase/database';
+} from '@forgebase/database';
 
 export class DatabaseService {
   private config: BaaSConfig['services']['db'];

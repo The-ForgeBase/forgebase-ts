@@ -1,6 +1,7 @@
 {
-  "name": "@the-forgebase/real-time",
+  "name": "@forgebase/real-time",
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -44,7 +45,7 @@
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
-    "@the-forgebase/typescript-config": "workspace:*",
+    "@forgebase/typescript-config": "workspace:*",
     "@types/deno": "^2.2.0",
     "@types/bun": "^1.2.10",
     "@types/node": "~18.16.9",

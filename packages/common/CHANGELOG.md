@@ -1,4 +1,4 @@
-# @the-forgebase/common
+# @forgebase/common
 
 ## 0.1.0
 

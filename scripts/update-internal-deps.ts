@@ -4,17 +4,17 @@ import { readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 
 const NEW_VERSION = process.env.NEW_VERSION || '0.0.0-alpha.17';
-const PKG_NAME = process.env.PKG_NAME || '@the-forgebase';
+const PKG_NAME = process.env.PKG_NAME || '@forgebase';
 const PACKAGES_TO_UPDATE = [
-  '@the-forgebase/auth',
-  '@the-forgebase/common',
-  '@the-forgebase/database',
-  '@the-forgebase/real-time',
-  '@the-forgebase/storage',
-  '@the-forgebase/sdk',
-  '@the-forgebase/api',
-  '@the-forgebase/web-auth',
-  '@the-forgebase/react-native-auth',
+  '@forgebase/auth',
+  '@forgebase/common',
+  '@forgebase/database',
+  '@forgebase/real-time',
+  '@forgebase/storage',
+  '@forgebase/sdk',
+  '@forgebase/api',
+  '@forgebase/web-auth',
+  '@forgebase/react-native-auth',
 ];
 
 function updateDeps(obj: Record<string, any> | undefined) {
@@ -32,9 +32,9 @@ function updatePkgName(obj: Record<string, any> | undefined) {
   const updates: Record<string, any> = {};
 
   for (const [key, value] of Object.entries(obj)) {
-    if (key.startsWith('@the-forgebase')) {
-      // if PKG_NAME is "@the-forgebase" then remove the quotes from the key
-      const newKey = key.replace('@the-forgebase', `${PKG_NAME}`);
+    if (key.startsWith('@forgebase')) {
+      // if PKG_NAME is "@forgebase" then remove the quotes from the key
+      const newKey = key.replace('@forgebase', `${PKG_NAME}`);
       updates[newKey] = value;
       delete obj[key];
     }

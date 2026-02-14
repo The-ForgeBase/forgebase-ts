@@ -1,1 +1,1 @@
-export { KyselyQueryHandler as QueryHandler } from '@the-forgebase/database';
+export { KyselyQueryHandler as QueryHandler } from '@forgebase/database';

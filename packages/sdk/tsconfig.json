@@ -1,10 +1,12 @@
 {
-  "extends": "@the-forgebase/typescript-config/base.json",
+  "extends": "@forgebase/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
     "composite": true,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
   "include": ["src"],
   "exclude": [

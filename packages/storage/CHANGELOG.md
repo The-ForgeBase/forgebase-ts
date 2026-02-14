@@ -1,4 +1,4 @@
-# @the-forgebase/storage
+# @forgebase/storage
 
 ## 0.1.0
 

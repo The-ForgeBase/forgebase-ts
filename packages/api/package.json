@@ -1,6 +1,6 @@
 {
-  "name": "@the-forgebase/api",
-  "version": "1.0.0",
+  "name": "@forgebase/api",
+  "version": "0.0.1",
   "private": false,
   "type": "module",
   "main": "./dist/cjs/index.js",
@@ -55,7 +55,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@the-forgebase/database": "workspace:*"
+    "@forgebase/database": "workspace:*"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.1.13",
@@ -67,7 +67,7 @@
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
-    "@the-forgebase/typescript-config": "workspace:*",
+    "@forgebase/typescript-config": "workspace:*",
     "@types/node": "~18.16.9",
     "tslib": "^2.8.1",
     "typescript": "5.8.2"

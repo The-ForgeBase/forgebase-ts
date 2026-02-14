@@ -1,6 +1,0 @@
-title: Database
-icon: lucide:database
-navigation.redirect: /database/introduction
-navBadges:
-  - value: New
-    type: lime

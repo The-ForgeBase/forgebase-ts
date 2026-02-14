@@ -291,7 +291,7 @@ export class DatabaseSDK {
     // Add response interceptors
     this.axiosInstance.interceptors.response.use(
       authInterceptors.response.onFulfilled,
-      authInterceptors.response.onRejected
+      authInterceptors.response.onRejected,
     );
   }
 
@@ -307,7 +307,7 @@ export class DatabaseSDK {
     tableName: string,
     params: QueryParams<T> = {},
     options: QueryOptions = { execute: true },
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
     // If execute is false, return only the parameters
     if (!options.execute) {
@@ -320,7 +320,7 @@ export class DatabaseSDK {
       const response = await this.axiosInstance.post<ApiResponse<T>>(
         url,
         { query: params },
-        axiosConfig
+        axiosConfig,
       );
       return {
         records: response.data as T[],
@@ -363,7 +363,7 @@ export class DatabaseSDK {
   async createRecord<T extends Record<string, any>>(
     tableName: string,
     data: T,
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
@@ -371,7 +371,7 @@ export class DatabaseSDK {
       const response = await this.axiosInstance.post<ApiResponse<T>>(
         `/create/${tableName}`,
         { data },
-        axiosConfig
+        axiosConfig,
       );
       return {
         records: [response.data as T],
@@ -398,7 +398,7 @@ export class DatabaseSDK {
     tableName: string,
     id: number | string,
     data: Partial<T>,
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
@@ -406,7 +406,7 @@ export class DatabaseSDK {
       const response = await this.axiosInstance.put<ApiResponse<T>>(
         `/update/${tableName}/${id}`,
         { data },
-        axiosConfig
+        axiosConfig,
       );
       return {
         records: [response.data as T],
@@ -435,7 +435,7 @@ export class DatabaseSDK {
     data: Partial<T>,
     params: QueryParams<T> = {},
     options: QueryOptions = { execute: true },
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
     try {
       if (!options.execute) {
@@ -445,7 +445,7 @@ export class DatabaseSDK {
       const response = await this.axiosInstance.post<ApiResponse<never>>(
         `/update/${tableName}`,
         { query: params, data },
-        axiosConfig
+        axiosConfig,
       );
       return {
         message: 'Records updated successfully',
@@ -470,13 +470,13 @@ export class DatabaseSDK {
   async deleteRecord<T extends Record<string, any>>(
     tableName: string,
     id: number | string,
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
     try {
       const response = await this.axiosInstance.post<ApiResponse<never>>(
         `/del/${tableName}/${id}`,
         {},
-        axiosConfig
+        axiosConfig,
       );
       return {
         message: 'Record deleted successfully',
@@ -503,7 +503,7 @@ export class DatabaseSDK {
     tableName: string,
     params: QueryParams<T> = {},
     options: QueryOptions = { execute: true },
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
     try {
       if (!options.execute) {
@@ -513,7 +513,7 @@ export class DatabaseSDK {
       const response = await this.axiosInstance.post<ApiResponse<never>>(
         `/del/${tableName}`,
         { query: params },
-        axiosConfig
+        axiosConfig,
       );
       return {
         message: 'Record deleted successfully',
@@ -554,7 +554,10 @@ class QueryBuilder<T extends Record<string, any>> {
   private currentGroup?: WhereGroup<T>;
   private ctes: Map<string, CTE<T>> = new Map();
 
-  constructor(private sdk: DatabaseSDK, private tableName: string) {}
+  constructor(
+    private sdk: DatabaseSDK,
+    private tableName: string,
+  ) {}
 
   /**
    * Add a recursive CTE
@@ -563,7 +566,7 @@ class QueryBuilder<T extends Record<string, any>> {
     name: string,
     initialQuery: QueryBuilder<T>,
     recursiveQuery: QueryBuilder<T>,
-    options: { unionAll?: boolean; columns?: string[] } = {}
+    options: { unionAll?: boolean; columns?: string[] } = {},
   ): this {
     if (!this.params.recursiveCtes) {
       this.params.recursiveCtes = [];
@@ -588,7 +591,7 @@ class QueryBuilder<T extends Record<string, any>> {
   windowAdvanced(
     type: WindowFunction<T>['type'],
     alias: string,
-    config: Partial<WindowFunctionAdvanced<T>>
+    config: Partial<WindowFunctionAdvanced<T>>,
   ): this {
     if (!this.params.advancedWindows) {
       this.params.advancedWindows = [];
@@ -609,7 +612,7 @@ class QueryBuilder<T extends Record<string, any>> {
   window(
     type: WindowFunction<T>['type'],
     alias: string,
-    config: Partial<Omit<WindowFunction<T>, 'type' | 'alias'>> = {}
+    config: Partial<Omit<WindowFunction<T>, 'type' | 'alias'>> = {},
   ): this {
     if (!this.params.windowFunctions) {
       this.params.windowFunctions = [];
@@ -633,7 +636,7 @@ class QueryBuilder<T extends Record<string, any>> {
   rowNumber(
     alias: string,
     partitionBy?: string[],
-    orderBy?: OrderByClause<T>[]
+    orderBy?: OrderByClause<T>[],
   ): this {
     return this.window('row_number', alias, { partitionBy, orderBy });
   }
@@ -641,7 +644,7 @@ class QueryBuilder<T extends Record<string, any>> {
   rank(
     alias: string,
     partitionBy?: string[],
-    orderBy?: OrderByClause<T>[]
+    orderBy?: OrderByClause<T>[],
   ): this {
     return this.window('rank', alias, { partitionBy, orderBy });
   }
@@ -650,7 +653,7 @@ class QueryBuilder<T extends Record<string, any>> {
     field: string,
     alias: string,
     partitionBy?: string[],
-    orderBy?: OrderByClause<T>[]
+    orderBy?: OrderByClause<T>[],
   ): this {
     return this.window('lag', alias, { field, partitionBy, orderBy });
   }
@@ -659,7 +662,7 @@ class QueryBuilder<T extends Record<string, any>> {
     field: string,
     alias: string,
     partitionBy?: string[],
-    orderBy?: OrderByClause<T>[]
+    orderBy?: OrderByClause<T>[],
   ): this {
     return this.window('lead', alias, { field, partitionBy, orderBy });
   }
@@ -670,7 +673,7 @@ class QueryBuilder<T extends Record<string, any>> {
   with(
     name: string,
     queryOrCallback: QueryBuilder<T> | ((query: QueryBuilder<T>) => void),
-    columns?: FieldKeys<T>[]
+    columns?: FieldKeys<T>[],
   ): this {
     let query: QueryBuilder<T>;
 
@@ -712,7 +715,7 @@ class QueryBuilder<T extends Record<string, any>> {
   pivot(
     column: string,
     values: string[],
-    aggregate: AggregateOptions<T>
+    aggregate: AggregateOptions<T>,
   ): this {
     return this.transform({
       pivot: {
@@ -758,7 +761,7 @@ class QueryBuilder<T extends Record<string, any>> {
   where(
     fieldOrConditions: FieldKeys<T> | Record<FieldKeys<T>, any>,
     operatorOrValue?: WhereOperator | any,
-    value?: any
+    value?: any,
   ): this {
     if (typeof fieldOrConditions === 'object') {
       this.params.filter = {
@@ -838,13 +841,13 @@ class QueryBuilder<T extends Record<string, any>> {
   orderBy(
     field: FieldKeys<T>,
     direction?: 'asc' | 'desc',
-    nulls?: 'first' | 'last'
+    nulls?: 'first' | 'last',
   ): this;
   orderBy(options: OrderByClause<T>): this;
   orderBy(
     fieldOrOptions: FieldKeys<T> | OrderByClause<T>,
     direction?: 'asc' | 'desc',
-    nulls?: 'first' | 'last'
+    nulls?: 'first' | 'last',
   ): this {
     if (!this.params.orderBy) {
       this.params.orderBy = [];
@@ -893,7 +896,7 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   private whereGroup(
     operator: GroupOperator,
-    callback: (query: QueryBuilder<T>) => void
+    callback: (query: QueryBuilder<T>) => void,
   ): this {
     // Create a new builder for the group to collect clauses
     const groupBuilder = new QueryBuilder<T>(this.sdk, this.tableName);
@@ -985,7 +988,7 @@ class QueryBuilder<T extends Record<string, any>> {
     tableName: string,
     leftField: FieldKeys<T>,
     rightField: string,
-    additionalConditions?: (qb: QueryBuilder<any>) => void
+    additionalConditions?: (qb: QueryBuilder<any>) => void,
   ): this {
     if (!this.params.whereExists) {
       this.params.whereExists = [];
@@ -1055,7 +1058,7 @@ class QueryBuilder<T extends Record<string, any>> {
   aggregate(
     type: AggregateOptions<T>['type'],
     field: FieldKeys<T>,
-    alias?: string
+    alias?: string,
   ): this {
     if (!this.params.aggregates) {
       this.params.aggregates = [];
@@ -1117,7 +1120,7 @@ class QueryBuilder<T extends Record<string, any>> {
       this.tableName,
       this.params,
       { execute: true },
-      axiosConfig
+      axiosConfig,
     );
 
     if (this.params.transforms && response.records) {
@@ -1135,7 +1138,7 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   async create(
     data: T,
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
     return this.sdk.createRecord<T>(this.tableName, data, axiosConfig);
   }
@@ -1150,7 +1153,7 @@ class QueryBuilder<T extends Record<string, any>> {
   async update(
     id: number | string,
     data: Partial<T>,
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
     return this.sdk.updateRecord<T>(this.tableName, id, data, axiosConfig);
   }
@@ -1163,14 +1166,14 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   async advanceUpdate(
     data: Partial<T>,
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
     return this.sdk.advanceUpdateRecord(
       this.tableName,
       data,
       this.params,
       { execute: true },
-      axiosConfig
+      axiosConfig,
     );
   }
 
@@ -1182,7 +1185,7 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   async delete(
     id: number | string,
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
     return this.sdk.deleteRecord(this.tableName, id, axiosConfig);
   }
@@ -1193,13 +1196,13 @@ class QueryBuilder<T extends Record<string, any>> {
    * @returns Promise with the deletion result
    */
   async advanceDelete(
-    axiosConfig: AxiosRequestConfig = {}
+    axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
     return this.sdk.advanceDeleteRecord(
       this.tableName,
       this.params,
       { execute: true },
-      axiosConfig
+      axiosConfig,
     );
   }
 
@@ -1216,7 +1219,7 @@ class QueryBuilder<T extends Record<string, any>> {
             ...acc,
             [key]: fn(row),
           }),
-          {}
+          {},
         ),
       }));
     }
@@ -1244,7 +1247,7 @@ class QueryBuilder<T extends Record<string, any>> {
 
   private pivotResults(
     records: T[],
-    pivot: TransformConfig<T>['pivot']
+    pivot: TransformConfig<T>['pivot'],
   ): any[] {
     // Implementation of pivot logic
     return records;

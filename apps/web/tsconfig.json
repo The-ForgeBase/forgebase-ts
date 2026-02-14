@@ -1,5 +1,5 @@
 {
-  "extends": "@the-forgebase/typescript-config/nextjs.json",
+  "extends": "@forgebase/typescript-config/nextjs.json",
   "compilerOptions": {
     "plugins": [
       {

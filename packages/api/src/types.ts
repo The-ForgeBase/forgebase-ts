@@ -1,6 +1,6 @@
 import type { DatabaseService } from './core/database';
 
-import { ForgeDatabaseConfig, UserContext } from '@the-forgebase/database';
+import { ForgeDatabaseConfig, UserContext } from '@forgebase/database';
 
 export interface BaaSConfig {
   prefix: string;

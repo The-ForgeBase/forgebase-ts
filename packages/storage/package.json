@@ -1,7 +1,7 @@
 {
-  "name": "@the-forgebase/storage",
+  "name": "@forgebase/storage",
   "version": "0.1.0",
-  "private": false,
+  "private": true,
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
-    "@the-forgebase/typescript-config": "workspace:*",
+    "@forgebase/typescript-config": "workspace:*",
     "@types/node": "~18.16.9"
   }
 }
