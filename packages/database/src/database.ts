@@ -1,8 +1,8 @@
-import type { Knex } from 'knex';
+import { Kysely, type Transaction, type CreateTableBuilder } from 'kysely';
 import { PermissionService } from './permissionService';
-import { enforcePermissions } from './rlsManager';
+import { enforcePermissions, evaluateFieldCheckForRow } from './rlsManager';
 import { DBInspector, type DatabaseSchema } from './utils/inspector';
-import { KnexHooks } from './knex-hooks';
+import { KyselyHooks } from './kysely-hooks';
 import {
   AuthenticationRequiredError,
   ExcludedTableError,
@@ -27,6 +27,7 @@ import type {
   AdvanceDataDeleteParams,
   AdvanceDataMutationParams,
   UserContext,
+  Row,
 } from './types';
 import { createColumn } from './utils/column-utils';
 import {
@@ -35,17 +36,19 @@ import {
   modifySchema,
   truncateTable,
 } from './schema';
-import { QueryHandler } from './sdk/server';
+import { KyselyQueryHandler } from './sdk/server';
 import { WebSocketManager } from './websocket/WebSocketManager';
 import { SSEManager } from './websocket/SSEManager';
 import { RealtimeAdapter } from './websocket/RealtimeAdapter';
 import { initializePermissions } from './utils/permission-initializer';
 
+import { LibsqlDialect } from './libsql';
+
 export class ForgeDatabase {
-  private queryHandler: QueryHandler;
-  private hooks: KnexHooks;
+  private queryHandler: KyselyQueryHandler;
+  private hooks: KyselyHooks;
   private permissionService: PermissionService;
-  private dbInspector: DBInspector;
+  protected dbInspector: DBInspector;
   private defaultPermissions: TablePermissions = {
     operations: {
       SELECT: [
@@ -71,10 +74,20 @@ export class ForgeDatabase {
     },
   };
   public realtimeAdapter?: RealtimeAdapter;
-  private excludedTables: string[] = [FG_PERMISSION_TABLE];
+  protected excludedTables: string[] = [FG_PERMISSION_TABLE];
 
   constructor(private config: ForgeDatabaseConfig = {}) {
-    if (!config.db) throw new Error('Database instance is required');
+    if (!config.db && !config.libsql) {
+      throw new Error(
+        'Either database instance (db) or libsql config is required',
+      );
+    }
+
+    if (!config.db && config.libsql) {
+      this.config.db = new Kysely({
+        dialect: new LibsqlDialect(config.libsql),
+      });
+    }
 
     if (config.excludedTables) {
       this.excludedTables = [...this.excludedTables, ...config.excludedTables];
@@ -98,8 +111,9 @@ export class ForgeDatabase {
         this.realtimeAdapter = new SSEManager(port, this.permissionService);
       }
     }
-    this.hooks = config.hooks || new KnexHooks(config.db, this.realtimeAdapter);
-    this.queryHandler = new QueryHandler(this.hooks.getKnexInstance());
+    this.hooks =
+      config.hooks || new KyselyHooks(config.db, this.realtimeAdapter);
+    this.queryHandler = new KyselyQueryHandler(this.hooks.getDbInstance());
 
     // Set default permissions for all tables
     if (config.defaultPermissions) {
@@ -110,6 +124,22 @@ export class ForgeDatabase {
     if (config.initializePermissions) {
       this.initializeTablePermissions();
     }
+  }
+
+  public getDbInspector(): DBInspector {
+    return this.dbInspector;
+  }
+
+  public async ready(): Promise<void> {
+    await this.permissionService.ready();
+  }
+
+  public getExcludedTables(): string[] {
+    return this.excludedTables;
+  }
+
+  getDefaultPermissions(): TablePermissions {
+    return this.defaultPermissions;
   }
 
   /**
@@ -155,7 +185,7 @@ export class ForgeDatabase {
 
     // Start the initialization process
     initializePermissions(
-      this.hooks.getKnexInstance(),
+      this.hooks.getDbInstance(),
       this.permissionService,
       this.dbInspector,
       this.excludedTables,
@@ -179,11 +209,11 @@ export class ForgeDatabase {
    * Get the knex instance
    * @returns Knex instance
    */
-  public getKnexInstance(): Knex {
-    return this.hooks.getKnexInstance();
+  public getDbInstance(): Kysely<any> {
+    return this.hooks.getDbInstance();
   }
 
-  public getHooksDb(): KnexHooks {
+  public getHooksDb(): KyselyHooks {
     return this.hooks;
   }
 
@@ -197,10 +227,10 @@ export class ForgeDatabase {
    * @returns Result of the callback function
    */
   public async transaction<T>(
-    callback: (trx: Knex.Transaction) => Promise<T>,
+    callback: (trx: Transaction<any>) => Promise<T>,
   ): Promise<T> {
     try {
-      return await this.hooks.getKnexInstance().transaction(callback);
+      return await this.hooks.getDbInstance().transaction().execute(callback);
     } catch (error) {
       console.error('Transaction error:', error);
       throw error;
@@ -217,51 +247,46 @@ export class ForgeDatabase {
      * @returns Schema endpoints
      */
     schema: {
-      get: async (trx?: Knex.Transaction): Promise<DatabaseSchema> => {
+      get: async (trx?: Transaction<any>): Promise<DatabaseSchema> => {
         return await this.dbInspector.getDatabaseSchema(this.excludedTables);
       },
-      create: async (payload: SchemaCreateParams, trx?: Knex.Transaction) => {
-        // If no transaction is provided, create one internally
-        // if (!trx) {
-        //   return this.transaction(async (newTrx) => {
-        //     return await this.endpoints.schema.create(payload, newTrx);
-        //   });
-        // }
-
+      create: async (payload: SchemaCreateParams, trx?: Transaction<any>) => {
         const { tableName, columns } = payload;
 
         if (!tableName) {
           throw new Error('Invalid request body');
         }
 
-        const hasTable = await this.hooks
-          .getKnexInstance()
-          .schema.hasTable(tableName);
+        // Efficiently check if table exists
+        const hasTable = await this.dbInspector.hasTable(tableName);
+
         if (hasTable) {
           console.log('Table already exists');
           throw new Error('Table already exists');
-          // await this.hooks
-          //   .getKnexInstance()
-          //   .schema.dropTableIfExists(tableName);
-          // console.log("Table dropped");
-          // await this.permissionService.deletePermissionsForTable(tableName);
-          // console.log("Permissions deleted");
         }
 
-        // Use transaction if provided, otherwise use the knex instance
-        const schemaBuilder = trx
-          ? trx.schema
-          : this.hooks.getKnexInstance().schema;
-        await schemaBuilder.createTable(tableName, (table) => {
-          columns.forEach((col: any) =>
-            createColumn(table, col, this.hooks.getKnexInstance()),
-          );
+        // Use transaction if provided, otherwise use the db instance
+        const builder = trx || this.hooks.getDbInstance();
+
+        // Start creating the table
+        // Start creating the table
+        let tableBuilder = builder.schema.createTable(tableName);
+
+        // Add columns using strict createColumn util
+        columns.forEach((col: any) => {
+          tableBuilder = createColumn(
+            tableBuilder,
+            col,
+            this.hooks.getDbInstance(),
+          ) as CreateTableBuilder<any, any>;
         });
 
-        this.permissionService.setPermissionsForTable(
+        await tableBuilder.execute();
+
+        await this.permissionService.setPermissionsForTable(
           tableName,
           this.defaultPermissions,
-          trx,
+          builder,
         );
         return {
           message: 'Table created successfully',
@@ -269,17 +294,18 @@ export class ForgeDatabase {
           action: 'create',
         };
       },
-      delete: async (tableName: string, trx?: Knex.Transaction) => {
+      delete: async (tableName: string, trx?: Transaction<any>) => {
         if (this.excludedTables.includes(tableName)) {
           throw new ExcludedTableError(tableName);
         }
-        // Use transaction if provided, otherwise use the knex instance
-        const schemaBuilder = trx
-          ? trx.schema
-          : this.hooks.getKnexInstance().schema;
-        await schemaBuilder.dropTableIfExists(tableName);
+        // Use transaction if provided, otherwise use the db instance
+        const builder = trx || this.hooks.getDbInstance();
+        await builder.schema.dropTable(tableName).ifExists().execute();
 
-        await this.permissionService.deletePermissionsForTable(tableName, trx);
+        await this.permissionService.deletePermissionsForTable(
+          tableName,
+          builder,
+        );
 
         return {
           message: 'Table deleted successfully',
@@ -287,15 +313,16 @@ export class ForgeDatabase {
           action: 'delete',
         };
       },
-      modify: async (payload: ModifySchemaParams, trx?: Knex.Transaction) => {
+      modify: async (payload: ModifySchemaParams, trx?: Transaction<any>) => {
         if (this.excludedTables.includes(payload.tableName)) {
           throw new ExcludedTableError(payload.tableName);
         }
-        return await modifySchema(this.hooks.getKnexInstance(), payload, trx);
+        const builder = this.hooks.getDbInstance();
+        return await modifySchema(builder, payload, trx);
       },
       addForeingKey: async (
         payload: AddForeignKeyParams,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(payload.tableName)) {
           throw new ExcludedTableError(payload.tableName);
@@ -305,46 +332,26 @@ export class ForgeDatabase {
           throw new ExcludedTableError(payload.foreignTableName);
         }
 
-        // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.addForeingKey(payload, newTrx);
-          });
-        }
-        // Use transaction if provided, otherwise use the knex instance
-        return await addForeignKey(payload, this.hooks.getKnexInstance(), trx);
+        return await addForeignKey(payload, this.hooks.getDbInstance(), trx);
       },
       dropForeignKey: async (
         payload: DropForeignKeyParams,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(payload.tableName)) {
           throw new ExcludedTableError(payload.tableName);
         }
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.dropForeignKey(payload, newTrx);
-          });
-        }
-        return await dropForeignKey(payload, this.hooks.getKnexInstance(), trx);
+
+        return await dropForeignKey(payload, this.hooks.getDbInstance(), trx);
       },
-      truncateTable: async (tableName: string, trx?: Knex.Transaction) => {
+      truncateTable: async (tableName: string, trx?: Transaction<any>) => {
         if (this.excludedTables.includes(tableName)) {
           throw new ExcludedTableError(tableName);
         }
 
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.truncateTable(tableName, newTrx);
-          });
-        }
-        return await truncateTable(
-          tableName,
-          this.hooks.getKnexInstance(),
-          trx,
-        );
+        return await truncateTable(tableName, this.hooks.getDbInstance(), trx);
       },
-      getTableSchema: async (tableName: string, trx?: Knex.Transaction) => {
+      getTableSchema: async (tableName: string, trx?: Transaction<any>) => {
         if (this.excludedTables.includes(tableName)) {
           throw new ExcludedTableError(tableName);
         }
@@ -354,27 +361,19 @@ export class ForgeDatabase {
           info: tableInfo,
         };
       },
-      getTables: async (trx?: Knex.Transaction) => {
+      getTables: async (trx?: Transaction<any>) => {
         let tables = await this.dbInspector.getTables();
         tables = tables.filter((t) => !this.excludedTables.includes(t));
         return tables;
       },
       getTablePermissions: async (
         tableName: string,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(tableName)) {
           throw new ExcludedTableError(tableName);
         }
-        // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.getTablePermissions(
-              tableName,
-              newTrx,
-            );
-          });
-        }
+
         return await this.permissionService.getPermissionsForTable(
           tableName,
           trx,
@@ -382,19 +381,10 @@ export class ForgeDatabase {
       },
       getTableSchemaWithPermissions: async (
         tableName: string,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(tableName)) {
           throw new ExcludedTableError(tableName);
-        }
-        // If no transaction is provided, create one internally
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.schema.getTableSchemaWithPermissions(
-              tableName,
-              newTrx,
-            );
-          });
         }
 
         const tableInfo = await this.dbInspector.getTableInfo(tableName);
@@ -420,30 +410,22 @@ export class ForgeDatabase {
         params: DataQueryParams,
         user?: UserContext,
         isSystem = false,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(tableName)) {
           throw new ExcludedTableError(tableName);
         }
-        // If no transaction is provided, create one internally and manage it
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.data.query(
-              tableName,
-              params,
-              user,
-              isSystem,
-              newTrx,
-            );
-          });
-        }
 
-        const queryParams = this.parseQueryParams(params);
+        // const queryParams = this.parseQueryParams(params);
+        const queryParams = params; // KyselyQueryHandler handles params object directly
 
         if (!this.config.enforceRls || isSystem) {
           return this.hooks.query(
             tableName,
-            (query) => this.queryHandler.buildQuery(queryParams, query),
+            (db) =>
+              this.queryHandler
+                .buildQuery(queryParams, db.selectFrom(tableName))
+                .execute(),
             queryParams,
             trx,
           );
@@ -459,13 +441,14 @@ export class ForgeDatabase {
           status: initialStatus,
           hasFieldCheck: initialHasFieldCheck,
           hasCustomFunction: initialHasCustomFunction,
+          fieldCheckRules: extractedFieldCheckRules,
         } = await enforcePermissions(
           tableName,
           'SELECT',
           user as UserContext,
           this.permissionService,
           undefined,
-          this.hooks.getKnexInstance(),
+          this.hooks.getDbInstance(),
         );
 
         if (
@@ -478,25 +461,53 @@ export class ForgeDatabase {
           );
         }
 
-        const records = await this.hooks.query(
+        const records = (await this.hooks.query(
           tableName,
-          (query) => this.queryHandler.buildQuery(queryParams, query),
+          (db) =>
+            this.queryHandler
+              .buildQuery(queryParams, db.selectFrom(tableName))
+              .execute(),
           queryParams,
           trx,
-        );
+        )) as Row[];
 
         if (initialStatus) {
-          // If the user has permission to query, proceed with the query
+          // Simple rule matched — return all records
           return records;
         }
 
+        // Fast path: filter rows using pre-extracted fieldCheck rules
+        if (extractedFieldCheckRules?.length) {
+          const filtered: Row[] = [];
+          for (const record of records) {
+            const allowed = await evaluateFieldCheckForRow(
+              extractedFieldCheckRules,
+              user as UserContext,
+              record as Record<string, unknown>,
+              this.hooks.getDbInstance(),
+            );
+            if (allowed) {
+              filtered.push(record);
+            }
+          }
+
+          if (filtered.length === 0) {
+            throw new PermissionDeniedError(
+              `User does not have permission to query table "${tableName}"`,
+            );
+          }
+
+          return filtered as any;
+        }
+
+        // Fallback for customFunction rules
         const { status, row } = await enforcePermissions(
           tableName,
           'SELECT',
           user as UserContext,
           this.permissionService,
           records,
-          this.hooks.getKnexInstance(),
+          this.hooks.getDbInstance(),
         );
 
         if (!status) {
@@ -512,21 +523,10 @@ export class ForgeDatabase {
         params: DataMutationParams,
         user?: UserContext,
         isSystem = false,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
           throw new ExcludedTableError(params.tableName);
-        }
-        // If no transaction is provided, create one internally and manage it
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.data.create(
-              params,
-              user,
-              isSystem,
-              newTrx,
-            );
-          });
         }
 
         const { data, tableName } = params;
@@ -553,7 +553,8 @@ export class ForgeDatabase {
           return this.hooks.mutate(
             tableName,
             'create',
-            async (query) => query.insert(records).returning('*'),
+            async (db) =>
+              db.insertInto(tableName).values(records).returningAll().execute(),
             records,
             undefined,
             trx,
@@ -576,7 +577,7 @@ export class ForgeDatabase {
           user as UserContext,
           this.permissionService,
           undefined,
-          this.hooks.getKnexInstance(),
+          this.hooks.getDbInstance(),
         );
 
         if (
@@ -594,7 +595,8 @@ export class ForgeDatabase {
           return this.hooks.mutate(
             tableName,
             'create',
-            async (query) => query.insert(records).returning('*'),
+            async (db) =>
+              db.insertInto(tableName).values(records).returningAll().execute(),
             records,
             undefined,
             trx,
@@ -607,7 +609,7 @@ export class ForgeDatabase {
           user as UserContext,
           this.permissionService,
           records,
-          this.hooks.getKnexInstance(),
+          this.hooks.getDbInstance(),
         );
 
         if (!status) {
@@ -625,7 +627,8 @@ export class ForgeDatabase {
         const result = this.hooks.mutate(
           tableName,
           'create',
-          async (query) => query.insert(row).returning('*'),
+          async (db) =>
+            db.insertInto(tableName).values(row).returningAll().execute(),
           row,
           undefined,
           trx,
@@ -638,21 +641,10 @@ export class ForgeDatabase {
         params: DataMutationParams,
         user?: UserContext,
         isSystem = false,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
           throw new ExcludedTableError(params.tableName);
-        }
-        // If no transaction is provided, create one internally and manage it
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.data.update(
-              params,
-              user as UserContext,
-              isSystem,
-              newTrx,
-            );
-          });
         }
 
         const { id, tableName, data } = params;
@@ -661,7 +653,13 @@ export class ForgeDatabase {
           const result = this.hooks.mutate(
             tableName,
             'update',
-            async (query) => query.where({ id }).update(data).returning('*'),
+            async (db) =>
+              db
+                .updateTable(tableName)
+                .set(data)
+                .where('id', '=', id)
+                .returningAll()
+                .execute(),
             { id, ...data },
             undefined,
             trx,
@@ -680,13 +678,14 @@ export class ForgeDatabase {
           status: initialStatus,
           hasFieldCheck: initialHasFieldCheck,
           hasCustomFunction: initialHasCustomFunction,
+          fieldCheckRules: extractedFieldCheckRules,
         } = await enforcePermissions(
           tableName,
           'UPDATE',
           user as UserContext,
           this.permissionService,
           undefined,
-          this.hooks.getKnexInstance(),
+          this.hooks.getDbInstance(),
         );
 
         if (
@@ -695,16 +694,22 @@ export class ForgeDatabase {
           !initialHasCustomFunction
         ) {
           throw new Error(
-            `User does not have permission to delete record with id ${id}`,
+            `User does not have permission to update record with id ${id}`,
           );
         }
 
         if (initialStatus) {
-          // If the user has permission to delete, proceed with the deletion
+          // Simple rule matched — proceed directly
           const result = this.hooks.mutate(
             tableName,
             'update',
-            async (query) => query.where({ id }).update(data).returning('*'),
+            async (db) =>
+              db
+                .updateTable(tableName)
+                .set(data)
+                .where('id', '=', id)
+                .returningAll()
+                .execute(),
             { id, ...data },
             undefined,
             trx,
@@ -713,34 +718,62 @@ export class ForgeDatabase {
           return result;
         }
 
+        // fieldCheck/customFunction path — fetch the row then evaluate
         const record = await this.hooks.query(
           tableName,
-          (query) => {
-            return query.where({ id });
+          (db) => {
+            return db
+              .selectFrom(tableName)
+              .where('id', '=', id)
+              .selectAll()
+              .execute();
           },
           { id },
           trx,
         );
 
-        const { status } = await enforcePermissions(
-          tableName,
-          'UPDATE',
-          user as UserContext,
-          this.permissionService,
-          record[0],
-          this.hooks.getKnexInstance(),
-        );
-
-        if (!status) {
-          throw new PermissionDeniedError(
-            `User does not have permission to update record with id ${id}`,
+        // Fast path: use pre-extracted rules instead of full enforcePermissions
+        if (extractedFieldCheckRules?.length) {
+          const allowed = await evaluateFieldCheckForRow(
+            extractedFieldCheckRules,
+            user as UserContext,
+            record[0] as Record<string, unknown>,
+            this.hooks.getDbInstance(),
           );
+
+          if (!allowed) {
+            throw new PermissionDeniedError(
+              `User does not have permission to update record with id ${id}`,
+            );
+          }
+        } else {
+          // Fallback for customFunction rules
+          const { status } = await enforcePermissions(
+            tableName,
+            'UPDATE',
+            user as UserContext,
+            this.permissionService,
+            record[0],
+            this.hooks.getDbInstance(),
+          );
+
+          if (!status) {
+            throw new PermissionDeniedError(
+              `User does not have permission to update record with id ${id}`,
+            );
+          }
         }
 
         const result = this.hooks.mutate(
           tableName,
           'update',
-          async (query) => query.where({ id }).update(data).returning('*'),
+          async (db) =>
+            db
+              .updateTable(tableName)
+              .set(data)
+              .where('id', '=', id)
+              .returningAll()
+              .execute(),
           { id, ...data },
           undefined,
           trx,
@@ -753,36 +786,27 @@ export class ForgeDatabase {
         params: AdvanceDataMutationParams,
         user?: UserContext,
         isSystem = false,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
           throw new ExcludedTableError(params.tableName);
         }
-        // If no transaction is provided, create one internally and manage it
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.data.update(
-              params,
-              user as UserContext,
-              isSystem,
-              newTrx,
-            );
-          });
-        }
 
         const { query, tableName, data } = params;
 
-        const queryParams = this.parseQueryParams(query);
+        // const queryParams = this.parseQueryParams(query);
+        const queryParams = query;
 
         if (!this.config.enforceRls || isSystem) {
           const result = this.hooks.mutate(
             tableName,
             'update',
-            async (query) =>
+            async (db) =>
               this.queryHandler
-                .buildQuery(queryParams, query)
-                .update(data)
-                .returning('*'),
+                .buildQuery(queryParams, db.updateTable(tableName))
+                .set(data)
+                .returningAll()
+                .execute(),
             { ...data },
             undefined,
             trx,
@@ -801,13 +825,14 @@ export class ForgeDatabase {
           status: initialStatus,
           hasFieldCheck: initialHasFieldCheck,
           hasCustomFunction: initialHasCustomFunction,
+          fieldCheckRules: extractedFieldCheckRules,
         } = await enforcePermissions(
           tableName,
           'UPDATE',
           user as UserContext,
           this.permissionService,
           undefined,
-          this.hooks.getKnexInstance(),
+          this.hooks.getDbInstance(),
         );
 
         if (
@@ -821,15 +846,16 @@ export class ForgeDatabase {
         }
 
         if (initialStatus) {
-          // If the user has permission to delete, proceed with the deletion
+          // Simple rule matched — proceed directly
           const result = this.hooks.mutate(
             tableName,
             'update',
-            async (query) =>
+            async (db) =>
               this.queryHandler
-                .buildQuery(queryParams, query)
-                .update(data)
-                .returning('*'),
+                .buildQuery(queryParams, db.updateTable(tableName))
+                .set(data)
+                .returningAll()
+                .execute(),
             { ...data },
             queryParams,
             trx,
@@ -838,36 +864,60 @@ export class ForgeDatabase {
           return result;
         }
 
-        const records = await this.hooks.query(
+        // fieldCheck/customFunction path — fetch matching rows then evaluate
+        const records = (await this.hooks.query(
           tableName,
-          (query) => this.queryHandler.buildQuery(queryParams, query),
+          (db) =>
+            this.queryHandler
+              .buildQuery(queryParams, db.selectFrom(tableName))
+              .selectAll()
+              .execute(),
           queryParams,
           trx,
-        );
+        )) as Row[];
 
-        const { status } = await enforcePermissions(
-          tableName,
-          'UPDATE',
-          user as UserContext,
-          this.permissionService,
-          records,
-          this.hooks.getKnexInstance(),
-        );
-
-        if (!status) {
-          throw new PermissionDeniedError(
-            `User does not have permission to update this records`,
+        // Fast path: use pre-extracted rules instead of full enforcePermissions
+        if (extractedFieldCheckRules?.length) {
+          for (const record of records) {
+            const allowed = await evaluateFieldCheckForRow(
+              extractedFieldCheckRules,
+              user as UserContext,
+              record as Record<string, unknown>,
+              this.hooks.getDbInstance(),
+            );
+            if (!allowed) {
+              throw new PermissionDeniedError(
+                `User does not have permission to update this records`,
+              );
+            }
+          }
+        } else {
+          // Fallback for customFunction rules
+          const { status } = await enforcePermissions(
+            tableName,
+            'UPDATE',
+            user as UserContext,
+            this.permissionService,
+            records,
+            this.hooks.getDbInstance(),
           );
+
+          if (!status) {
+            throw new PermissionDeniedError(
+              `User does not have permission to update this records`,
+            );
+          }
         }
 
         const result = this.hooks.mutate(
           tableName,
           'update',
-          async (query) =>
+          async (db) =>
             this.queryHandler
-              .buildQuery(queryParams, query)
-              .update(data)
-              .returning('*'),
+              .buildQuery(queryParams, db.updateTable(tableName))
+              .set(data)
+              .returningAll()
+              .execute(),
           { ...data },
           queryParams,
           trx,
@@ -880,21 +930,10 @@ export class ForgeDatabase {
         params: DataDeleteParams,
         user?: UserContext,
         isSystem = false,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
           throw new ExcludedTableError(params.tableName);
-        }
-        // If no transaction is provided, create one internally and manage it
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.data.delete(
-              params,
-              user as UserContext,
-              isSystem,
-              newTrx,
-            );
-          });
         }
 
         const { id, tableName } = params;
@@ -903,10 +942,12 @@ export class ForgeDatabase {
           return this.hooks.mutate(
             tableName,
             'delete',
-            async (query) =>
-              query
-                .where({ id })
-                .del(['id'], { includeTriggerModifications: true }),
+            async (db) =>
+              db
+                .deleteFrom(tableName)
+                .where('id', '=', id)
+                .returning('id')
+                .execute(),
             { id },
             undefined,
             trx,
@@ -923,13 +964,14 @@ export class ForgeDatabase {
           status: initialStatus,
           hasFieldCheck: initialHasFieldCheck,
           hasCustomFunction: initialHasCustomFunction,
+          fieldCheckRules: extractedFieldCheckRules,
         } = await enforcePermissions(
           tableName,
           'DELETE',
           user as UserContext,
           this.permissionService,
           undefined,
-          this.hooks.getKnexInstance(),
+          this.hooks.getDbInstance(),
         );
 
         if (
@@ -947,41 +989,63 @@ export class ForgeDatabase {
           return this.hooks.mutate(
             tableName,
             'delete',
-            async (query) => query.where({ id }).delete(),
+            async (db) =>
+              db.deleteFrom(tableName).where('id', '=', id).execute(),
             { id },
             undefined,
             trx,
           );
         }
 
-        // get the record to enforce permissions
-        const record = await this.hooks.query(
+        // fieldCheck/customFunction path — fetch the record then evaluate
+        const record = (await this.hooks.query(
           tableName,
-          (query) => {
-            return query.where({ id });
+          (db) => {
+            return db
+              .selectFrom(tableName)
+              .where('id', '=', id)
+              .selectAll()
+              .execute();
           },
           { id },
           trx,
-        );
+        )) as Row[];
 
-        const { status } = await enforcePermissions(
-          tableName,
-          'DELETE',
-          user as UserContext,
-          this.permissionService,
-          record,
-          this.hooks.getKnexInstance(),
-        );
-        if (!status) {
-          throw new PermissionDeniedError(
-            `User does not have permission to delete record with id ${id}`,
+        // Fast path: use pre-extracted rules instead of full enforcePermissions
+        if (extractedFieldCheckRules?.length) {
+          const allowed = await evaluateFieldCheckForRow(
+            extractedFieldCheckRules,
+            user as UserContext,
+            record[0] as Record<string, unknown>,
+            this.hooks.getDbInstance(),
           );
+
+          if (!allowed) {
+            throw new PermissionDeniedError(
+              `User does not have permission to delete record with id ${id}`,
+            );
+          }
+        } else {
+          // Fallback for customFunction rules
+          const { status } = await enforcePermissions(
+            tableName,
+            'DELETE',
+            user as UserContext,
+            this.permissionService,
+            record,
+            this.hooks.getDbInstance(),
+          );
+          if (!status) {
+            throw new PermissionDeniedError(
+              `User does not have permission to delete record with id ${id}`,
+            );
+          }
         }
 
         return this.hooks.mutate(
           tableName,
           'delete',
-          async (query) => query.where({ id }).delete(),
+          async (db) => db.deleteFrom(tableName).where('id', '=', id).execute(),
           { id },
           undefined,
           trx,
@@ -992,35 +1056,26 @@ export class ForgeDatabase {
         params: AdvanceDataDeleteParams,
         user?: UserContext,
         isSystem = false,
-        trx?: Knex.Transaction,
+        trx?: Transaction<any>,
       ) => {
         if (this.excludedTables.includes(params.tableName)) {
           throw new ExcludedTableError(params.tableName);
         }
-        // If no transaction is provided, create one internally and manage it
-        if (!trx) {
-          return this.transaction(async (newTrx) => {
-            return await this.endpoints.data.advanceDelete(
-              params,
-              user as UserContext,
-              isSystem,
-              newTrx,
-            );
-          });
-        }
 
         const { query, tableName } = params;
 
-        const queryParams = this.parseQueryParams(query);
+        // const queryParams = this.parseQueryParams(query);
+        const queryParams = query;
 
         if (!this.config.enforceRls || isSystem) {
           return this.hooks.mutate(
             tableName,
             'delete',
-            async (query) =>
+            async (db) =>
               this.queryHandler
-                .buildQuery(queryParams, query)
-                .del(['id'], { includeTriggerModifications: true }),
+                .buildQuery(queryParams, db.deleteFrom(tableName))
+                .returningAll()
+                .execute(),
             undefined,
             queryParams,
             trx,
@@ -1037,13 +1092,14 @@ export class ForgeDatabase {
           status: initialStatus,
           hasFieldCheck: initialHasFieldCheck,
           hasCustomFunction: initialHasCustomFunction,
+          fieldCheckRules: extractedFieldCheckRules,
         } = await enforcePermissions(
           tableName,
           'DELETE',
           user as UserContext,
           this.permissionService,
           undefined,
-          this.hooks.getKnexInstance(),
+          this.hooks.getDbInstance(),
         );
 
         if (
@@ -1057,49 +1113,72 @@ export class ForgeDatabase {
         }
 
         if (initialStatus) {
-          // If the user has permission to delete, proceed with the deletion
+          // Simple rule matched — proceed directly
           return this.hooks.mutate(
             tableName,
             'delete',
-            async (query) =>
+            async (db) =>
               this.queryHandler
-                .buildQuery(queryParams, query)
-                .del(['id'], { includeTriggerModifications: true }),
+                .buildQuery(queryParams, db.deleteFrom(tableName))
+                .returningAll()
+                .execute(),
             undefined,
             queryParams,
             trx,
           );
         }
 
-        // get the record to enforce permissions
-        const records = await this.hooks.query(
+        // fieldCheck/customFunction path — fetch matching rows then evaluate
+        const records = (await this.hooks.query(
           tableName,
-          async (query) => this.queryHandler.buildQuery(queryParams, query),
+          async (db) =>
+            this.queryHandler
+              .buildQuery(queryParams, db.selectFrom(tableName))
+              .execute(),
           queryParams,
           trx,
-        );
+        )) as Row[];
 
-        const { status } = await enforcePermissions(
-          tableName,
-          'DELETE',
-          user as UserContext,
-          this.permissionService,
-          records,
-          this.hooks.getKnexInstance(),
-        );
-        if (!status) {
-          throw new PermissionDeniedError(
-            `User does not have permission to delete this records`,
+        // Fast path: use pre-extracted rules instead of full enforcePermissions
+        if (extractedFieldCheckRules?.length) {
+          for (const record of records) {
+            const allowed = await evaluateFieldCheckForRow(
+              extractedFieldCheckRules,
+              user as UserContext,
+              record as Record<string, unknown>,
+              this.hooks.getDbInstance(),
+            );
+            if (!allowed) {
+              throw new PermissionDeniedError(
+                `User does not have permission to delete this records`,
+              );
+            }
+          }
+        } else {
+          // Fallback for customFunction rules
+          const { status } = await enforcePermissions(
+            tableName,
+            'DELETE',
+            user as UserContext,
+            this.permissionService,
+            records,
+            this.hooks.getDbInstance(),
           );
+          if (!status) {
+            throw new PermissionDeniedError(
+              `User does not have permission to delete this records`,
+            );
+          }
         }
 
         return this.hooks.mutate(
           tableName,
           'delete',
-          async (query) =>
+          async (db) =>
             this.queryHandler
-              .buildQuery(queryParams, query)
-              .del(['id'], { includeTriggerModifications: true }),
+              .buildQuery(queryParams, db.deleteFrom(tableName))
+              .returningAll()
+              .execute(),
           undefined,
           queryParams,
           trx,
@@ -1112,7 +1191,7 @@ export class ForgeDatabase {
      * @returns Permissions endpoints
      */
     permissions: {
-      get: async (params: PermissionParams, trx?: Knex.Transaction) => {
+      get: async (params: PermissionParams, trx?: Transaction<any>) => {
         if (this.excludedTables.includes(params.tableName)) {
           throw new ExcludedTableError(params.tableName);
         }
@@ -1127,7 +1206,7 @@ export class ForgeDatabase {
         return this.permissionService.getPermissionsForTable(tableName, trx);
       },
 
-      set: async (params: PermissionParams, trx?: Knex.Transaction) => {
+      set: async (params: PermissionParams, trx?: Transaction<any>) => {
         if (this.excludedTables.includes(params.tableName)) {
           throw new ExcludedTableError(params.tableName);
         }
@@ -1153,7 +1232,7 @@ export class ForgeDatabase {
     },
   };
 
-  private parseQueryParams(params: Record<string, any>): Record<string, any> {
+  parseQueryParams(params: Record<string, any>): Record<string, any> {
     const queryParams: Record<string, any> = {};
 
     Object.entries(params).forEach(([key, value]) => {

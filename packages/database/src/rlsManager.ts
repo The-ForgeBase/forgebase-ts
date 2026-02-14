@@ -5,14 +5,15 @@ import type {
   UserContextFields,
 } from './types';
 import { PermissionService } from './permissionService';
-import type { Knex } from 'knex';
+import type { Kysely } from 'kysely';
+import { sql } from 'kysely';
 import { rlsFunctionRegistry } from './rlsFunctionRegistry';
 
 export async function evaluatePermission(
   rules: PermissionRule[],
   userContext: UserContext,
   row: Record<string, unknown> = {},
-  knex?: Knex,
+  db?: Kysely<any>,
 ): Promise<boolean> {
   for (const rule of rules) {
     switch (rule.allow) {
@@ -90,7 +91,7 @@ export async function evaluatePermission(
         if (rule.fieldCheck) {
           const { field, operator, valueType, value } = rule.fieldCheck;
           const dataValue = row[field];
-          console.log('Data value:', dataValue);
+          // console.log('Data value:', dataValue);
           const comparisonValue =
             valueType === 'userContext'
               ? userContext[value as UserContextFields]
@@ -126,7 +127,7 @@ export async function evaluatePermission(
         continue;
 
       case 'customSql':
-        if (rule.customSql && knex) {
+        if (rule.customSql && db) {
           try {
             // Replace placeholders with userContext values
             const parsedSql = rule.customSql.replace(
@@ -155,23 +156,16 @@ export async function evaluatePermission(
               },
             );
 
-            console.log(`Executing custom SQL: ${parsedSql}`);
+            // console.log(`Executing custom SQL: ${parsedSql}`);
 
             // Execute the SQL query
-            const result = await knex.raw(parsedSql);
+            // Kysely sql.raw returns a builder, we need to execute it.
+            const result = await sql.raw(parsedSql).execute(db);
+            const rows = result.rows;
 
             // Check if the query returned any rows or a truthy value
-            if (Array.isArray(result)) {
-              // For most database drivers, result is an array
-              return result.length > 0 && result[0].length > 0;
-            } else if (result && typeof result === 'object') {
-              // For some drivers, result might be an object with rows property
-              const rows = result.rows || result;
-              return Array.isArray(rows) ? rows.length > 0 : !!rows;
-            }
-
-            // Default to false if we couldn't determine the result
-            return false;
+            // Kysely result.rows is array of rows
+            return rows.length > 0;
           } catch (error) {
             console.error(`Error executing custom SQL:`, error);
             return false;
@@ -193,26 +187,11 @@ export async function evaluatePermission(
               return false;
             }
 
-            // console.log(
-            //   `Executing custom RLS function "${rule.customFunction}" with userContext:`,
-            //   userContext,
-            //   'and row data:',
-            //   row
-            // );
-
             // Execute the custom function with userContext and row data
             const result = await Promise.resolve(
-              customFn(userContext, row, knex),
+              customFn(userContext, row, db),
             );
 
-            // console.log(
-            //   `Custom RLS function "${rule.customFunction}" returned:`,
-            //   !!result,
-            //   'for userContext:',
-            //   userContext,
-            //   'and row data:',
-            //   row
-            // );
             return !!result;
           } catch (error) {
             console.error(
@@ -230,6 +209,26 @@ export async function evaluatePermission(
   return false;
 }
 
+/**
+ * Fast path: evaluate pre-extracted fieldCheck rules against a single row.
+ * Avoids the full enforcePermissions overhead (permission lookup, rule
+ * classification, array handling) when we already know we need a fieldCheck
+ * evaluation for one specific record.
+ */
+export async function evaluateFieldCheckForRow(
+  fieldCheckRules: PermissionRule[],
+  userContext: UserContext,
+  row: Record<string, unknown>,
+  db?: Kysely<any>,
+): Promise<boolean> {
+  for (const rule of fieldCheckRules) {
+    if (await evaluatePermission([rule], userContext, row, db)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const CHUNK_SIZE = 1000;
 
 type Row = Record<string, unknown>;
@@ -240,17 +239,23 @@ export async function enforcePermissions(
   userContext: UserContext,
   permissionService: PermissionService,
   rows?: Row | Row[],
-  knex?: Knex,
+  db?: Kysely<any>,
 ): Promise<{
   row?: Row | Row[];
   status: boolean;
   message?: string;
   hasFieldCheck: boolean;
   hasCustomFunction: boolean;
+  fieldCheckRules?: PermissionRule[];
+  customFunctionRules?: PermissionRule[];
 }> {
-  const tablePermissions = (await permissionService.getPermissionsForTable(
+  // Try sync cache lookup first to avoid async overhead on cache hits
+  const tablePermissions = (permissionService.getPermissionsForTableSync(
     tableName,
-  )) as TablePermissions;
+  ) ??
+    (await permissionService.getPermissionsForTable(
+      tableName,
+    ))) as TablePermissions;
 
   if (!tablePermissions) {
     return {
@@ -284,20 +289,21 @@ export async function enforcePermissions(
     };
   }
 
-  // Separate rules into different types
-  const fieldCheckRules = rules.filter((rule) => rule.allow === 'fieldCheck');
-  const customFunctionRules = rules.filter(
-    (rule) => rule.allow === 'customFunction',
-  );
-  const simpleRules = rules.filter(
-    (rule) => rule.allow !== 'fieldCheck' && rule.allow !== 'customFunction',
-  );
+  // Single-pass rule classification (avoids 3× Array.filter)
+  const fieldCheckRules: PermissionRule[] = [];
+  const customFunctionRules: PermissionRule[] = [];
+  const simpleRules: PermissionRule[] = [];
+  for (const rule of rules) {
+    if (rule.allow === 'fieldCheck') fieldCheckRules.push(rule);
+    else if (rule.allow === 'customFunction') customFunctionRules.push(rule);
+    else simpleRules.push(rule);
+  }
 
   // First check simple rules that don't need row data
   if (simpleRules.length > 0) {
     // Check each rule and find the first one that grants access
     for (const rule of simpleRules) {
-      const hasAccess = await evaluatePermission([rule], userContext, {}, knex);
+      const hasAccess = await evaluatePermission([rule], userContext, {}, db);
       if (hasAccess) {
         return {
           row: rows,
@@ -319,6 +325,8 @@ export async function enforcePermissions(
         status: false,
         hasFieldCheck: false,
         hasCustomFunction: true,
+        fieldCheckRules,
+        customFunctionRules,
         message: 'Custom function check required, please provide row data',
       };
     }
@@ -337,7 +345,7 @@ export async function enforcePermissions(
               [rule],
               userContext,
               row,
-              knex,
+              db,
             );
             if (hasAccess) {
               filteredChunk.push(row);
@@ -364,7 +372,7 @@ export async function enforcePermissions(
           [rule],
           userContext,
           rows,
-          knex,
+          db,
         );
         if (hasAccess) {
           return {
@@ -388,6 +396,8 @@ export async function enforcePermissions(
         status: false,
         hasFieldCheck: true,
         hasCustomFunction: false,
+        fieldCheckRules,
+        customFunctionRules,
         message: 'Field-level check required, please provide row data',
       };
     }
@@ -406,7 +416,7 @@ export async function enforcePermissions(
               [rule],
               userContext,
               row,
-              knex,
+              db,
             );
             if (hasAccess) {
               filteredChunk.push(row);
@@ -431,12 +441,7 @@ export async function enforcePermissions(
     // Handle single row
     let hasFieldAccess = false;
     for (const rule of fieldCheckRules) {
-      hasFieldAccess = await evaluatePermission(
-        [rule],
-        userContext,
-        rows,
-        knex,
-      );
+      hasFieldAccess = await evaluatePermission([rule], userContext, rows, db);
       if (hasFieldAccess) break;
     }
 

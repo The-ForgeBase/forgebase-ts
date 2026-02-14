@@ -11,7 +11,8 @@
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
     "dev": "tsc -p tsconfig.esm.json --watch",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -35,20 +36,29 @@
     "README.md"
   ],
   "dependencies": {
-    "lodash.flatten": "^4.4.0",
-    "knex": "^3.1.0",
-    "lru-cache": "^11.0.2",
-    "express": "^4.21.2",
     "crossws": "^0.3.4",
-    "typescript": "5.8.2",
+    "kysely": "^0.28.11",
+    "lodash.flatten": "^4.4.0",
+    "lru-cache": "^11.0.2",
     "uWebSockets.js": "https://github.com/uNetworking/uWebSockets.js/archive/refs/tags/v20.51.0.tar.gz"
+  },
+  "peerDependencies": {
+    "@libsql/client": "^0.17.0",
+    "@the-forgebase/sdk": "workspace:*",
+    "better-sqlite3": "^11.10.0",
+    "express": "^4.21.2",
+    "pg": "^8.18.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@the-forgebase/typescript-config": "workspace:*",
     "@types/better-sqlite3": "^7.6.12",
-    "@types/lodash.flatten": "^4.4.9",
+    "@types/express": "^5.0.6",
     "@types/lodash.isnil": "^4.0.9",
-    "tslib": "^2.8.1"
+    "@types/node": "^25.2.3",
+    "pg-mem": "^3.0.12",
+    "tslib": "^2.8.1",
+    "vitest": "^4.0.18",
+    "typescript": "5.8.2"
   }
 }

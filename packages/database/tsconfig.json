@@ -5,7 +5,8 @@
     "rootDir": "src",
     "noImplicitAny": false,
     "strict": false,
-    "composite": true
+    "composite": true,
+    "esModuleInterop": true
   },
   "include": ["src"],
   "exclude": [

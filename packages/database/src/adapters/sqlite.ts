@@ -1,4 +1,3 @@
-import type { Knex } from 'knex';
 import { type DatabaseAdapter, DatabaseFeature } from './base';
 import { WindowFunction, OrderByClause } from '../sdk/server';
 
@@ -26,20 +25,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
 
   buildOrderByClause(
     clauses: OrderByClause[],
-    knex: Knex
   ): { column: string; order: 'asc' | 'desc'; null?: 'first' | 'last' }[] {
-    // SQLite doesn't support NULLS FIRST/LAST directly, use CASE statement
-    // return clauses.map(({ field, direction, nulls }) => ({
-    //   column: nulls
-    //     ? knex.raw(
-    //         `CASE WHEN ?? IS NULL THEN ${nulls === "first" ? 0 : 1} ELSE ${
-    //           nulls === "first" ? 1 : 0
-    //         } END, ??`,
-    //         [field, field]
-    //       )
-    //     : field,
-    //   order: direction || "asc",
-    // }));
     return clauses.map(({ field, direction, nulls }) => ({
       column: field,
       order: direction || 'asc',

@@ -1,31 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Knex } from 'knex';
-import type { KnexHooks } from './knex-hooks';
+import type { ColumnDataType, Kysely, Transaction } from 'kysely';
+// import type { KnexHooks } from './knex-hooks'; // Removed
+import type { KyselyHooks } from './kysely-hooks';
 import type { PermissionService } from './permissionService';
 import type { DatabaseSchema, TableInfo } from './utils/inspector';
 import { QueryParams } from './sdk/server';
+import { LibsqlDialectConfig } from './libsql';
+export type { QueryParams } from './sdk/server';
 
 export const FG_PERMISSION_TABLE = 'fg_table_permissions';
 
+export type Row = Record<string, any>;
+
 // Column definition for schema operations
-export type ColumnType =
-  | 'increments'
-  | 'string'
-  | 'text'
-  | 'integer'
-  | 'bigInteger'
-  | 'boolean'
-  | 'decimal'
-  | 'float'
-  | 'datetime'
-  | 'date'
-  | 'time'
-  | 'timestamp'
-  | 'binary'
-  | 'json'
-  | 'jsonb'
-  | 'enum'
-  | 'uuid';
+export type ColumnType = ColumnDataType | 'increments' | 'enum';
 
 export interface ColumnDefinition {
   name: string;
@@ -61,7 +49,7 @@ export interface ForeignKey {
 export type CustomRlsFunction = (
   userContext: UserContext,
   row: Record<string, unknown>,
-  knex?: Knex
+  db?: Kysely<any>,
 ) => Promise<boolean> | boolean;
 
 export type PermissionRule = {
@@ -118,8 +106,9 @@ export type TablePermissions = {
 export type RealtimeAdapterType = 'websocket' | 'sse';
 
 export interface ForgeDatabaseConfig {
-  db?: Knex;
-  hooks?: KnexHooks;
+  db?: Kysely<any>;
+  libsql?: LibsqlDialectConfig;
+  hooks?: KyselyHooks;
   permissionsService?: PermissionService;
   prefix?: string;
   enforceRls?: boolean;
@@ -233,7 +222,7 @@ export interface ForgeDatabaseEndpoints {
     get: () => Promise<DatabaseSchema>;
     create: (
       params: SchemaCreateParams,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<{
       message: string;
       tablename: string;
@@ -241,7 +230,7 @@ export interface ForgeDatabaseEndpoints {
     }>;
     delete: (
       tableName: string,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<{
       message: string;
       tablename: string;
@@ -249,17 +238,17 @@ export interface ForgeDatabaseEndpoints {
     }>;
     modify: (
       params: ModifySchemaParams,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<any>;
     addForeingKey: (
       params: AddForeignKeyParams,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<any>;
     dropForeignKey: (
       params: DropForeignKeyParams,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<any>;
-    truncateTable: (tableName: string, trx?: Knex.Transaction) => Promise<any>;
+    truncateTable: (tableName: string, trx?: Transaction<any>) => Promise<any>;
     getTables: () => Promise<string[]>;
     getTableSchema: (tableName: string) => Promise<{
       name: string;
@@ -267,11 +256,11 @@ export interface ForgeDatabaseEndpoints {
     }>;
     getTablePermissions: (
       tableName: string,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<TablePermissions>;
     getTableSchemaWithPermissions: (
       tableName: string,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<{
       name: string;
       info: TableInfo;
@@ -284,44 +273,44 @@ export interface ForgeDatabaseEndpoints {
       params: DataQueryParams,
       user?: UserContext,
       isSystem?: boolean,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<T[]>;
     create: (
       params: DataMutationParams,
       user?: UserContext,
       isSystem?: boolean,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<any>;
     update: (
       params: DataMutationParams,
       user?: UserContext,
       isSystem?: boolean,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<any>;
     advanceUpdate: (
       params: AdvanceDataMutationParams,
       user?: UserContext,
       isSystem?: boolean,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<any>;
     delete: (
       params: DataDeleteParams,
       user?: UserContext,
       isSystem?: boolean,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<any>;
     advanceDelete: (
       params: AdvanceDataDeleteParams,
       user?: UserContext,
       isSystem?: boolean,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<any>;
   };
   permissions: {
     get: (
       params: PermissionParams,
-      trx?: Knex.Transaction
+      trx?: Transaction<any>,
     ) => Promise<TablePermissions | undefined>;
-    set: (params: PermissionParams, trx?: Knex.Transaction) => Promise<any>;
+    set: (params: PermissionParams, trx?: Transaction<any>) => Promise<any>;
   };
 }

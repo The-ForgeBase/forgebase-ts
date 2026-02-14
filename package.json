@@ -19,7 +19,6 @@
     "typescript": "5.8.2",
     "unbuild": "^3.5.0"
   },
-  "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=18"
   }

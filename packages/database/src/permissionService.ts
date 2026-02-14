@@ -1,50 +1,86 @@
-import type { Knex } from 'knex';
+import { Kysely, sql, Transaction } from 'kysely';
 import { FG_PERMISSION_TABLE, type TablePermissions } from './types';
 import { LRUCache } from 'lru-cache';
 
-class PermissionService {
+export class PermissionService {
   private cache: LRUCache<string, TablePermissions>;
-  constructor(private knex: Knex) {
+  // @ts-ignore
+  private db: Kysely<any>;
+  private initPromise: Promise<void>;
+
+  constructor(db: Kysely<any>) {
+    this.db = db;
     this.cache = new LRUCache({
-      max: 500, // Maximum number of items in the cache
+      max: 500,
       ttl: 5 * 60 * 1000, // 5 minutes TTL
       allowStale: false,
       updateAgeOnGet: true,
-    });
-    this.initializeDatabase();
+    } as any);
+    this.initPromise = this.initializeDatabase();
+  }
+
+  async ready(): Promise<void> {
+    return this.initPromise;
   }
 
   private async initializeDatabase() {
-    const hasTable = await this.knex.schema.hasTable(FG_PERMISSION_TABLE);
-    if (!hasTable) {
-      await this.knex.schema.createTable(FG_PERMISSION_TABLE, (table) => {
-        table.string('table_name').primary().unique().notNullable();
-        table.json('permissions').notNullable();
-        table.timestamps(true, true);
-      });
+    try {
+      const adapterName = this.db.getExecutor().adapter.constructor.name;
+      const isSqlite =
+        adapterName.includes('Sqlite') || adapterName.includes('Libsql');
+      const now = isSqlite ? sql`CURRENT_TIMESTAMP` : sql`now()`;
+
+      await this.db.schema
+        .createTable(FG_PERMISSION_TABLE)
+        .ifNotExists()
+        .addColumn('table_name', 'varchar(255)', (col) =>
+          col.primaryKey().notNull(),
+        )
+        .addColumn('permissions', 'json', (col) => col.notNull())
+        .addColumn('created_at', 'timestamp', (col) => col.defaultTo(now))
+        .addColumn('updated_at', 'timestamp', (col) => col.defaultTo(now))
+        .execute();
+    } catch (e) {
+      console.warn('Permission table initialization warning:', e);
     }
+  }
+
+  /**
+   * Sync-only lookup: returns cached permissions or undefined if not cached.
+   * Avoids async overhead when the permission is already in the LRU cache.
+   */
+  getPermissionsForTableSync(tableName: string): TablePermissions | undefined {
+    return this.cache.get(tableName);
   }
 
   async getPermissionsForTable(
     tableName: string,
-    trx?: Knex.Transaction
+    trx?: Transaction<any> | Kysely<any>,
   ): Promise<TablePermissions | any> {
-    // Check cache first
     const cachedPermissions = this.cache.get(tableName);
     if (cachedPermissions) {
       return cachedPermissions;
     }
 
-    // If not in cache, fetch from database
-    // Use transaction if provided, otherwise use the knex instance
-    const queryBuilder = trx ? trx : this.knex;
-    const result = await queryBuilder(FG_PERMISSION_TABLE)
-      .where({ table_name: tableName })
-      .first();
+    const executor = trx || this.db;
+    const result = await executor
+      .selectFrom(FG_PERMISSION_TABLE)
+      .where('table_name', '=', tableName)
+      .selectAll()
+      .executeTakeFirst();
 
     if (!result) return {};
 
-    const permissions = JSON.parse(result.permissions);
+    let permissions = result.permissions;
+
+    if (typeof permissions === 'string') {
+      try {
+        permissions = JSON.parse(permissions);
+      } catch (e) {
+        // ignore
+      }
+    }
+
     this.cache.set(tableName, permissions);
     return permissions;
   }
@@ -52,33 +88,44 @@ class PermissionService {
   async setPermissionsForTable(
     tableName: string,
     permissions: TablePermissions,
-    trx?: Knex.Transaction
+    trx?: Transaction<any> | Kysely<any>,
   ): Promise<TablePermissions> {
-    // Use transaction if provided, otherwise use the knex instance
-    const queryBuilder = trx ? trx : this.knex;
-    await queryBuilder(FG_PERMISSION_TABLE)
-      .insert({
+    const executor = trx || this.db;
+    const permissionsJson = JSON.stringify(permissions);
+
+    const adapterName = this.db.getExecutor().adapter.constructor.name;
+    const isSqlite =
+      adapterName.includes('Sqlite') || adapterName.includes('Libsql');
+    const now = isSqlite ? sql`CURRENT_TIMESTAMP` : sql`now()`;
+
+    await executor
+      .insertInto(FG_PERMISSION_TABLE)
+      .values({
         table_name: tableName,
-        permissions: JSON.stringify(permissions),
+        permissions: permissionsJson,
+        updated_at: now,
       })
-      .onConflict('table_name')
-      .merge();
+      .onConflict((oc: any) =>
+        oc.column('table_name').doUpdateSet({
+          permissions: permissionsJson,
+          updated_at: now,
+        }),
+      )
+      .execute();
 
-    // Update cache
     this.cache.set(tableName, permissions);
-
     return permissions;
   }
 
   async deletePermissionsForTable(
     tableName: string,
-    trx?: Knex.Transaction
+    trx?: Transaction<any> | Kysely<any>,
   ): Promise<void> {
-    // Use transaction if provided, otherwise use the knex instance
-    const queryBuilder = trx ? trx : this.knex;
-    await queryBuilder(FG_PERMISSION_TABLE)
-      .where({ table_name: tableName })
-      .delete();
+    const executor = trx || this.db;
+    await executor
+      .deleteFrom(FG_PERMISSION_TABLE)
+      .where('table_name', '=', tableName)
+      .execute();
 
     // Remove from cache
     this.cache.delete(tableName);
@@ -89,6 +136,3 @@ class PermissionService {
     this.cache.clear();
   }
 }
-
-// Don't export the instance directly, we'll initialize it in index.ts
-export { PermissionService };

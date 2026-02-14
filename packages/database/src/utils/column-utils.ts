@@ -1,172 +1,185 @@
-import type { Knex } from 'knex';
+import {
+  Kysely,
+  sql,
+  type CreateTableBuilder,
+  type AlterTableBuilder,
+  type AlterTableColumnAlteringBuilder,
+  type ColumnDefinitionBuilder,
+  type ColumnDataType,
+  type Expression,
+  type Transaction,
+} from 'kysely';
 import type { ColumnDefinition, UpdateColumnDefinition } from '../types';
-import { SchemaInspector } from '../knex-schema-inspector/lib/index';
+// import { SchemaInspector } from '../knex-schema-inspector/lib/index'; // Removed
+import { DBInspector } from './inspector'; // Use our new inspector
+import { uuid } from './db';
+
+// DataTypeExpression is not exported from Kysely index, so we define it here
+type DataTypeExpression = ColumnDataType | Expression<any>;
+
+// Helper type for builders that support addColumn
+type SchemaBuilder =
+  | CreateTableBuilder<any, any>
+  | AlterTableBuilder
+  | AlterTableColumnAlteringBuilder;
 
 export function createColumn(
-  table: Knex.TableBuilder,
+  builder: SchemaBuilder, // CreateTableBuilder or AlterTableBuilder
   columnDef: ColumnDefinition,
-  knex: Knex
+  db: Kysely<any>, // We need db instance for sql helper
 ) {
-  let column;
+  const { name, type } = columnDef;
+  let dataType: DataTypeExpression = 'text'; // Default to text to satisfy type, will be overwritten
+  let constraints: any[] = [];
 
-  switch (columnDef.type) {
+  // Map Knex types to Kysely/SQL types
+  switch (type) {
     case 'increments':
-      column = table.increments(columnDef.name);
-      break;
-    case 'string':
-      column = table.string(columnDef.name);
-      break;
-    case 'text':
-      column = table.text(columnDef.name, 'longtext');
-      break;
-    case 'integer':
-      column = table.integer(columnDef.name);
-      break;
-    case 'bigInteger':
-      column = table.bigInteger(columnDef.name);
-      break;
-    case 'boolean':
-      column = table.boolean(columnDef.name);
-      break;
-    case 'decimal':
-      column = table.decimal(columnDef.name);
-      break;
-    case 'float':
-      column = table.float(columnDef.name);
-      break;
-    case 'datetime':
-      column = table.datetime(columnDef.name);
-      break;
-    case 'date':
-      column = table.date(columnDef.name);
-      break;
-    case 'time':
-      column = table.time(columnDef.name);
-      break;
-    case 'timestamp':
-      column = table.timestamp(columnDef.name);
-      break;
-    case 'binary':
-      column = table.binary(columnDef.name);
-      break;
-    case 'json':
-      column = table.json(columnDef.name);
-      break;
-    case 'jsonb':
-      column = table.jsonb(columnDef.name);
+      dataType = 'integer';
       break;
     case 'enum':
+      // Enum handling in Kysely is dialect constants usually or separate createType
+      // For simplicity, we might fall back to text with check constraint or native enum if created
+      // adhering to existing logic:
       if (!columnDef.enumValues) {
         throw new Error('Enum values are required');
       }
-      column = table.enum(columnDef.name, columnDef.enumValues);
+      // For now, treat as text/varchar for SQLite compatibility or handle specifically
+      // Kysely doesnt have a direct 'enum' method on column builder that works everywhere without createType
+      dataType = 'text';
+      constraints.push((col: ColumnDefinitionBuilder) =>
+        col.check(
+          sql`${sql.ref(name)} in (${sql.join(columnDef.enumValues!)})`,
+        ),
+      );
       break;
     case 'uuid':
-      if (
-        ['Client_SQLite3', 'Client_BetterSQLite3', 'Client_Libsql'].includes(
-          knex.client.constructor.name
-        )
-      ) {
-        column = table.string(columnDef.name, 36);
-        break;
-      } else {
-        column = table.uuid(columnDef.name);
-        break;
-      }
+      // Basic uuid handling
+      dataType = 'uuid';
+      // We might need dialect check here if we want to support SQLite specifically as text(36)
+      break;
     default:
-      throw new Error(`Unsupported column type: ${columnDef.type}`);
+      // Try passing raw strings
+      dataType = type as DataTypeExpression;
   }
 
-  // add createdAt and updatedAt columns
-  if (knex) {
-    try {
-      if (columnDef.name === 'created_at') column.defaultTo(knex.fn.now());
-      if (columnDef.name === 'updated_at') column.defaultTo(knex.fn.now());
-      if (
-        columnDef.name === 'id' &&
-        columnDef.type === 'uuid' &&
-        !['Client_SQLite3', 'Client_BetterSQLite3', 'Client_Libsql'].includes(
-          knex.client.constructor.name
-        )
-      )
-        column.defaultTo(knex.fn.uuid());
-    } catch (error) {
-      console.log(error);
+  // SQLite uuid callback override simulation
+  // if (['Client_SQLite3', ...].includes(...)) ... -> Kysely: db.introspection.getMetadata() ...
+  // For now assuming standard types or relying on driver translation
+
+  return builder.addColumn(name, dataType, (col: ColumnDefinitionBuilder) => {
+    let c = col;
+
+    // Apply collected constraints (like enum checks)
+    for (const constraint of constraints) {
+      c = constraint(c);
     }
-  }
 
-  // Apply modifiers
-  if (columnDef.primary) column.primary();
-  if (columnDef.unique) column.unique();
-  // console.log("Nullable", columnDef.nullable);
-  if (columnDef.nullable === false) column.notNullable();
-  if (columnDef.default !== undefined) column.defaultTo(columnDef.default);
+    if (columnDef.unique) c = c.unique();
+    if (columnDef.nullable === false) c = c.notNull();
 
-  // Foregn key
-  if (columnDef.foreignKeys) {
-    table
-      .foreign(columnDef.foreignKeys.columnName)
-      .references(`${columnDef.foreignKeys.references.columnName}`)
-      .inTable(`${columnDef.foreignKeys.references.tableName}`);
-  }
+    if (columnDef.default !== undefined) {
+      c = c.defaultTo(columnDef.default);
+    }
 
-  return column;
+    // Auto timestamps
+    if (columnDef.name === 'created_at' || columnDef.name === 'updated_at') {
+      c = c.defaultTo(sql`now()`);
+    }
+
+    if (columnDef.type === 'uuid') {
+      const adapter = db.getExecutor().adapter;
+      const adapterName = adapter.constructor.name;
+
+      if (adapterName.includes('Postgres')) {
+        c = c.defaultTo(sql`gen_random_uuid()`);
+      } else if (adapterName.includes('Sqlite')) {
+        c = c.defaultTo(uuid);
+      }
+    }
+
+    if (columnDef.type === 'increments') {
+      c = c.autoIncrement();
+    }
+
+    if (columnDef.primary) c = c.primaryKey();
+
+    if (columnDef.foreignKeys) {
+      c = c.references(
+        `${columnDef.foreignKeys.references.tableName}.${columnDef.foreignKeys.references.columnName}`,
+      );
+    }
+
+    return c;
+  });
 }
 
 // Helper function to check for foreign keys
+
 async function dropExistingForeignKeys(
-  knex: Knex,
+  db: Kysely<any>,
   tableName: string,
   columnName: string,
-  trx?: Knex.Transaction
 ) {
-  const inspector = SchemaInspector(knex);
-  // Get foreign key constraints
-  const foreignKeys = await inspector.foreignKeys(tableName);
+  const inspector = new DBInspector(db);
+  const tableInfo = await inspector.getTableInfo(tableName);
 
-  for (const fk of foreignKeys) {
-    if (fk.column === columnName) {
-      // Use transaction if provided, otherwise use the knex instance
-      const schemaBuilder = trx ? trx.schema : knex.schema;
-      await schemaBuilder.alterTable(tableName, (table) => {
-        table.dropForeign(fk.column);
-      });
+  // Find FKs where the *source* column is the one we are modifying
+  // The inspector returns FKs for the table, showing which column points to what.
+  const fks = tableInfo.foreignKeys.filter((fk) => fk.column === columnName);
+
+  for (const fk of fks) {
+    if (fk.constraintName) {
+      await db.schema
+        .alterTable(tableName)
+        .dropConstraint(fk.constraintName)
+        .execute();
+    } else {
+      console.warn(
+        `Could not drop FK for ${tableName}.${columnName} because constraint name is missing.`,
+      );
     }
   }
 }
 
 // Update column function using drop and recreate approach
 export async function updateColumn(
-  knex: Knex,
+  db: Kysely<any>,
   tableName: string,
   columnDef: UpdateColumnDefinition,
-  trx?: Knex.Transaction
+  trx?: Transaction<any>, // Transaction
 ) {
-  // First, check and drop any existing foreign keys
-  await dropExistingForeignKeys(knex, tableName, columnDef.currentName, trx);
+  // Use transaction if provided, otherwise use the db instance
+  const executor = trx || db;
 
-  // Then do all modifications in a single alter table call
-  // Use transaction if provided, otherwise use the knex instance
-  const schemaBuilder = trx ? trx.schema : knex.schema;
-  await schemaBuilder.alterTable(tableName, (table) => {
-    // Drop the existing column
-    table.dropColumn(columnDef.currentName);
+  // 1. Check and drop existing FKs
+  // We use the 'db' instance for inspection even if inside a transaction for reading metadata if needed,
+  // but better to use executor if inspector supported it. Inspector currently takes 'Kysely<any>'.
+  // If 'trx' is passed, we might face issues if inspector expects Kysely instance.
+  // Ideally DBInspector should accept Kysely | Transaction.
+  // For now, we use 'db' for inspection as schema read usually doesn't need to be in the same trx unless strictly isolatedDDL.
+  await dropExistingForeignKeys(db, tableName, columnDef.currentName);
 
-    // Recreate the column with new definition
-    const column = createColumn(
-      table,
-      {
-        name: columnDef.newName || columnDef.currentName,
-        type: columnDef.type || columnDef.currentType,
-        nullable: columnDef.nullable ?? true,
-        primary: columnDef.primary,
-        unique: columnDef.unique,
-        foreignKeys: columnDef.foreignKeys,
-        default: columnDef.default,
-      },
-      knex
-    );
+  // 2. Drop existing column
+  await executor.schema
+    .alterTable(tableName)
+    .dropColumn(columnDef.currentName)
+    .execute();
 
-    return column;
-  });
+  // 3. Recreate column
+  let alterBuilder = executor.schema.alterTable(tableName);
+
+  // We need to map UpdateColumnDefinition to ColumnDefinition for createColumn
+  const newColDef: ColumnDefinition = {
+    name: columnDef.newName || columnDef.currentName,
+    type: columnDef.type || columnDef.currentType,
+    nullable: columnDef.nullable ?? true,
+    primary: columnDef.primary,
+    unique: columnDef.unique,
+    foreignKeys: columnDef.foreignKeys,
+    default: columnDef.default,
+    enumValues: undefined, // Not present in UpdateColumnDefinition?
+  };
+
+  createColumn(alterBuilder, newColDef, db).execute();
 }

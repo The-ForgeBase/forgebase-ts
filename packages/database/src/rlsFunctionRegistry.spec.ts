@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { rlsFunctionRegistry } from './rlsFunctionRegistry';
 import type { UserContext } from './types';
 
@@ -64,7 +65,7 @@ describe('RLS Function Registry', () => {
   test('should warn when overwriting an existing function', () => {
     // Mock console.warn
     const originalWarn = console.warn;
-    console.warn = jest.fn();
+    console.warn = vi.fn();
     
     rlsFunctionRegistry.register('duplicateFunction', () => true);
     rlsFunctionRegistry.register('duplicateFunction', () => false);
@@ -84,16 +85,16 @@ describe('RLS Function Registry', () => {
     };
     
     const testRow = { id: 1, name: 'Test' };
-    const mockKnex = {} as any;
+    const mockKysely = {} as any;
     
-    const testFn = jest.fn().mockReturnValue(true);
+    const testFn = vi.fn().mockReturnValue(true);
     rlsFunctionRegistry.register('execTest', testFn);
     
     const fn = rlsFunctionRegistry.get('execTest');
-    const result = fn!(testUser, testRow, mockKnex);
+    const result = fn!(testUser, testRow, mockKysely);
     
     expect(result).toBe(true);
-    expect(testFn).toHaveBeenCalledWith(testUser, testRow, mockKnex);
+    expect(testFn).toHaveBeenCalledWith(testUser, testRow, mockKysely);
   });
 
   test('should handle async functions', async () => {
