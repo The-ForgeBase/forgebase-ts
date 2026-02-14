@@ -66,13 +66,13 @@ jobs:
       # Build packages using Turborepo
       - name: Build packages
         run: |
-          pnpm turbo run build --filter=./packages/common
+          # pnpm turbo run build --filter=./packages/common
           pnpm turbo run build --filter=./packages/database
-          pnpm turbo run build --filter=./packages/auth
+          # pnpm turbo run build --filter=./packages/auth
           pnpm turbo run build --filter=./packages/api
-          pnpm turbo run build --filter=./packages/storage
+          # pnpm turbo run build --filter=./packages/storage
           pnpm turbo run build --filter=./packages/sdk
-          pnpm turbo run build --filter=./packages/web-auth
+          # pnpm turbo run build --filter=./packages/web-auth
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
