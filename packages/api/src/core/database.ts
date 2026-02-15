@@ -23,12 +23,17 @@ export class DatabaseService {
 
   constructor(config?: BaaSConfig['services']['db']) {
     this.config = config;
-    this.forgeDatabase = new ForgeDatabase({
-      db: this.config.config.db,
-      hooks: this.config.config.hooks,
-      permissionsService: this.config.config.permissionsService,
-      ...this.config.config,
-    });
+
+    if (this.config.db) {
+      this.forgeDatabase = this.config.db;
+    } else {
+      this.forgeDatabase = new ForgeDatabase({
+        db: this.config.config.db,
+        hooks: this.config.config.hooks,
+        permissionsService: this.config.config.permissionsService,
+        ...this.config.config,
+      });
+    }
   }
 
   getDbInstance(): Kysely<any> {

@@ -1,6 +1,10 @@
 import type { DatabaseService } from './core/database';
 
-import { ForgeDatabaseConfig, UserContext } from '@forgebase/database';
+import {
+  ForgeDatabase,
+  ForgeDatabaseConfig,
+  UserContext,
+} from '@forgebase/database';
 
 export interface BaaSConfig {
   prefix: string;
@@ -19,8 +23,9 @@ export interface BaaSConfig {
     //     | CloudinaryStorageConfig;
     // };
     db: {
-      provider: 'sqlite' | 'postgres' | 'libsql';
-      config: ForgeDatabaseConfig;
+      db?: ForgeDatabase;
+      provider?: 'sqlite' | 'postgres' | 'libsql';
+      config?: ForgeDatabaseConfig;
     };
   };
   api?: {
