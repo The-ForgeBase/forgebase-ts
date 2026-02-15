@@ -1,6 +1,6 @@
 {
   "name": "@forgebase/sdk",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": false,
   "type": "module",
   "main": "./dist/index.cjs",
@@ -69,6 +69,16 @@
   "publishConfig": {
     "access": "public"
   },
+  "homepage": "https://github.com/The-ForgeBase/forgebase-ts/tree/main/packages/sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-ForgeBase/forgebase-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/The-ForgeBase/forgebase-ts/issues"
+  },
+  "author": "SOG-web",
+  "license": "MIT",
   "dependencies": {
     "@forgebase/database": "workspace:*",
     "axios": "^1.7.9",

@@ -1,6 +1,6 @@
 {
   "name": "@forgebase/cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": false,
   "type": "module",
   "description": "CLI tool for ForgeBase",
@@ -27,6 +27,14 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "homepage": "https://github.com/The-ForgeBase/forgebase-ts/tree/main/packages/cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-ForgeBase/forgebase-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/The-ForgeBase/forgebase-ts/issues"
   },
   "author": "SOG-web",
   "license": "MIT",

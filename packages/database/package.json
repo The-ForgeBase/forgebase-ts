@@ -1,6 +1,6 @@
 {
   "name": "@forgebase/database",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -43,6 +43,16 @@
   "publishConfig": {
     "access": "public"
   },
+  "homepage": "https://github.com/The-ForgeBase/forgebase-ts/tree/main/packages/database#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-ForgeBase/forgebase-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/The-ForgeBase/forgebase-ts/issues"
+  },
+  "author": "SOG-web",
+  "license": "MIT",
   "dependencies": {
     "crossws": "^0.3.4",
     "kysely": "^0.28.11",
