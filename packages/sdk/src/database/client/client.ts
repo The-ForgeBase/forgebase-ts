@@ -205,6 +205,7 @@ export interface AuthInterceptors {
 export class DatabaseSDK<Schema extends Record<string, any> = any> {
   private baseUrl: string;
   private axiosInstance: AxiosInstance;
+  private customFetch?: typeof fetch;
 
   /**
    * Create a new DatabaseSDK instance
@@ -218,9 +219,17 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
     axiosInstance?: AxiosInstance;
     axiosConfig?: AxiosRequestConfig;
     authInterceptors?: AuthInterceptors;
+    fetch?: typeof fetch;
   }) {
-    let { baseUrl, axiosInstance, axiosConfig, authInterceptors } = options;
+    let {
+      baseUrl,
+      axiosInstance,
+      axiosConfig,
+      authInterceptors,
+      fetch: customFetch,
+    } = options;
     this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+    this.customFetch = customFetch;
 
     if (!axiosConfig) {
       axiosConfig = {};
@@ -281,6 +290,49 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
   }
 
   /**
+   * Internal helper to execute a request using custom fetch
+   */
+  private async executeFetch(
+    url: string,
+    method: string,
+    payload: any,
+    axiosConfig: AxiosRequestConfig,
+  ): Promise<any> {
+    if (!this.customFetch) return null;
+
+    const { headers, signal, withCredentials } = axiosConfig;
+
+    const fetchOptions: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(headers as any),
+      },
+      body: payload ? JSON.stringify(payload) : undefined,
+    };
+
+    if (withCredentials) {
+      fetchOptions.credentials = 'include';
+    }
+
+    if (signal) {
+      fetchOptions.signal = signal as AbortSignal;
+    }
+
+    const response = await this.customFetch(url, fetchOptions);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || response.statusText);
+    }
+
+    return data;
+  }
+
+  /**
+   * Apply auth interceptors to the axios instance
+
+  /**
    * Apply auth interceptors to the axios instance
    * @param authInterceptors The auth interceptors to apply
    */
@@ -314,12 +366,28 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
       return { params: params };
     }
 
-    const url = `/query/${tableName}`;
+    const payload = { query: params };
 
     try {
+      if (this.customFetch) {
+        const data = await this.executeFetch(
+          `${this.baseUrl}/query/${tableName}`,
+          'POST',
+          payload,
+          axiosConfig,
+        );
+
+        return {
+          records: data as T[],
+          params: params,
+          message: 'Records fetched successfully',
+          error: undefined,
+        };
+      }
+
       const response = await this.axiosInstance.post<ApiResponse<T>>(
-        url,
-        { query: params },
+        `/query/${tableName}`,
+        payload,
         axiosConfig,
       );
       return {
@@ -350,10 +418,27 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
+    const payload = { data };
+
     try {
+      if (this.customFetch) {
+        const responseData = await this.executeFetch(
+          `${this.baseUrl}/create/${tableName}`,
+          'POST',
+          payload,
+          axiosConfig,
+        );
+
+        return {
+          records: [responseData as T],
+          message: 'Record created successfully',
+          error: undefined,
+        };
+      }
+
       const response = await this.axiosInstance.post<ApiResponse<T>>(
         `/create/${tableName}`,
-        { data },
+        payload,
         axiosConfig,
       );
       return {
@@ -385,10 +470,27 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
 
+    const payload = { data };
+
     try {
+      if (this.customFetch) {
+        const responseData = await this.executeFetch(
+          `${this.baseUrl}/update/${tableName}/${id}`,
+          'PUT',
+          payload,
+          axiosConfig,
+        );
+
+        return {
+          records: [responseData as T],
+          message: 'Record updated successfully',
+          error: undefined,
+        };
+      }
+
       const response = await this.axiosInstance.put<ApiResponse<T>>(
         `/update/${tableName}/${id}`,
-        { data },
+        payload,
         axiosConfig,
       );
       return {
@@ -420,14 +522,31 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
     options: QueryOptions = { execute: true },
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
+    const payload = { query: params, data };
+
     try {
       if (!options.execute) {
         return { params: params };
       }
 
+      if (this.customFetch) {
+        const responseData = await this.executeFetch(
+          `${this.baseUrl}/update/${tableName}`,
+          'POST',
+          payload,
+          axiosConfig,
+        );
+
+        return {
+          message: 'Records updated successfully',
+          error: undefined,
+          records: responseData as T[],
+        };
+      }
+
       const response = await this.axiosInstance.post<ApiResponse<never>>(
         `/update/${tableName}`,
-        { query: params, data },
+        payload,
         axiosConfig,
       );
       return {
@@ -455,7 +574,24 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
     id: number | string,
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
+    const url = `${this.baseUrl}/del/${tableName}/${id}`;
+
     try {
+      if (this.customFetch) {
+        const responseData = await this.executeFetch(
+          `${this.baseUrl}/del/${tableName}/${id}`,
+          'POST',
+          {},
+          axiosConfig,
+        );
+
+        return {
+          message: 'Record deleted successfully',
+          error: undefined,
+          records: responseData as any[],
+        };
+      }
+
       const response = await this.axiosInstance.post<ApiResponse<never>>(
         `/del/${tableName}/${id}`,
         {},
@@ -488,14 +624,31 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
     options: QueryOptions = { execute: true },
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
+    const payload = { query: params };
+
     try {
       if (!options.execute) {
         return { params: params };
       }
 
+      if (this.customFetch) {
+        const responseData = await this.executeFetch(
+          `${this.baseUrl}/del/${tableName}`,
+          'POST',
+          payload,
+          axiosConfig,
+        );
+
+        return {
+          message: 'Record deleted successfully',
+          error: undefined,
+          records: responseData as any[],
+        };
+      }
+
       const response = await this.axiosInstance.post<ApiResponse<never>>(
         `/del/${tableName}`,
-        { query: params },
+        payload,
         axiosConfig,
       );
       return {

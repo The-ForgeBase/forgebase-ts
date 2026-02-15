@@ -74,6 +74,35 @@ const db = new DatabaseSDK<Schema>({
 });
 ```
 
+### Advanced Configuration
+
+#### Custom Fetch Implementation
+
+You can provide a custom `fetch` implementation to handle specific environments (like edge functions) or complex authentication requirements.
+
+```typescript
+import { DatabaseSDK } from '@forgebase/sdk/client';
+import { authClient } from '@/lib/auth-client'; // Assuming authClient is an instance of Better-auth
+
+const db = new DatabaseSDK<Schema>({
+  baseUrl: 'http://localhost:3000',
+  // Provide a custom fetch wrapper
+  fetch: async (input, init) => {
+    const cookies = authClient.getCookie();
+
+    return fetch(input, {
+      ...init,
+      headers: {
+        ...init?.headers,
+        Cookie: cookies,
+      },
+      // Avoid interference with manual cookie headers
+      credentials: 'omit',
+    });
+  },
+});
+```
+
 ### Database Operations
 
 The SDK automatically infers types based on your Schema.
