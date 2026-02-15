@@ -10,6 +10,7 @@ interface User {
   hireDate: Date;
   status: string;
   experience: number;
+  firstName: string;
   lastName: string;
 }
 
@@ -20,6 +21,7 @@ interface Order {
   status: string;
   createdAt: Date;
   revenue: number;
+  department: string;
 }
 
 interface Product {
@@ -222,7 +224,7 @@ async function advancedFiltering() {
   const usersWithOrders = await db
     .table<User>('users')
     .whereExists((subquery) =>
-      subquery.table('orders').where('total', '>', 1000)
+      subquery.table('orders').where('total', '>', 1000),
     )
     .query();
 
@@ -230,7 +232,7 @@ async function advancedFiltering() {
   const usersWithExpensiveOrders = await db
     .table<User>('users')
     .whereExistsJoin('orders', 'id', 'user_id', (qb) =>
-      qb.where('total', '>', 1000)
+      qb.where('total', '>', 1000),
     )
     .query();
 

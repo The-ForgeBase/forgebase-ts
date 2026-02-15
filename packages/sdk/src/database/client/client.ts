@@ -1028,7 +1028,11 @@ class QueryBuilder<
   /**
    * Having clause for grouped queries
    */
-  having(field: FieldKeys<T>, operator: WhereOperator, value: any): this {
+  having(
+    field: FieldKeys<T> | string,
+    operator: WhereOperator,
+    value: any,
+  ): this {
     if (!this.params.having) {
       this.params.having = [];
     }

@@ -1,0 +1,29 @@
+{
+  "name": "integration-test",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start:server": "tsx src/server.ts",
+    "generate:schema": "node ../../packages/cli/dist/esm/index.js database --url http://localhost:3333/schema --output src/schema.ts -y",
+    "start:client": "tsx src/client.ts",
+    "test:full": "pnpm start:server & PID=$! && sleep 5 && pnpm generate:schema && pnpm start:client && kill $PID"
+  },
+  "dependencies": {
+    "@forgebase/api": "workspace:*",
+    "@forgebase/cli": "workspace:*",
+    "@forgebase/database": "workspace:*",
+    "@forgebase/sdk": "workspace:*",
+    "@libsql/client": "^0.17.0",
+    "express": "^4.18.2",
+    "kysely": "^0.28.11",
+    "pg": "^8.18.0",
+    "pg-mem": "^2.6.13",
+    "tsx": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

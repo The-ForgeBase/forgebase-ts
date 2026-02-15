@@ -91,10 +91,12 @@ export function createColumn(
       const adapter = db.getExecutor().adapter;
       const adapterName = adapter.constructor.name;
 
-      if (adapterName.includes('Postgres')) {
-        c = c.defaultTo(sql`gen_random_uuid()`);
-      } else if (adapterName.includes('Sqlite')) {
-        c = c.defaultTo(uuid);
+      if (!columnDef.nullable) {
+        if (adapterName.includes('Sqlite')) {
+          c = c.defaultTo(uuid);
+        } else {
+          c = c.defaultTo(sql`gen_random_uuid()`);
+        }
       }
     }
 

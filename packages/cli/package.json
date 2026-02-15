@@ -1,13 +1,13 @@
 {
   "name": "@forgebase/cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "type": "module",
   "description": "CLI tool for ForgeBase",
   "main": "dist/index.js",
   "bin": {
-    "forgebase-cli": "dist/index.js",
-    "dbcli": "dist/index.js"
+    "forgebase-cli": "dist/esm/index.js",
+    "dbcli": "dist/esm/index.js"
   },
   "scripts": {
     "clean": "rm -rf dist",
