@@ -37,25 +37,12 @@ pnpm add @forgebase/sdk
 
 ### Initialization
 
+First, define your database schema and initialize the SDK. This provides automatic type safety across your entire application.
+
 ```typescript
 import { DatabaseSDK } from '@forgebase/sdk/client';
 
-// Initialize with your API URL
-const db = new DatabaseSDK({
-  baseUrl: 'http://localhost:3000',
-  axiosConfig: {
-    withCredentials: true,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  },
-});
-```
-
-### Database Operations
-
-```typescript
-// Define your entity type
+// 1. Define your entity types
 interface User {
   id: number;
   name: string;
@@ -64,24 +51,52 @@ interface User {
   status: 'active' | 'inactive';
 }
 
-// simple query
-const users = await db.table<User>('users').select('id', 'name', 'email').where('status', 'active').query();
+interface Order {
+  id: number;
+  user_id: number;
+  amount: number;
+  status: 'pending' | 'completed';
+}
 
-// Create a new record
-const newUser = await db.table<User>('users').create({
+// 2. Define your Database Schema
+interface Schema {
+  users: User;
+  orders: Order;
+}
+
+// 3. Initialize the SDK with your Schema
+const db = new DatabaseSDK<Schema>({
+  baseUrl: 'http://localhost:3000',
+  axiosConfig: {
+    withCredentials: true,
+    headers: { 'Content-Type': 'application/json' },
+  },
+});
+```
+
+### Database Operations
+
+The SDK automatically infers types based on your Schema.
+
+```typescript
+// Query users (Type is inferred as User[])
+const users = await db.table('users').select('id', 'name', 'email').where('status', 'active').query();
+
+// Create a new record (Type checking ensures payload matches User)
+const newUser = await db.table('users').create({
   name: 'John Doe',
   email: 'john@example.com',
   role: 'user',
   status: 'active',
 });
 
-// Update a record by ID
-await db.table<User>('users').update(1, {
+// Update a record
+await db.table('users').update(1, {
   status: 'inactive',
 });
 
-// Delete a record by ID
-await db.table<User>('users').delete(1);
+// Delete a record
+await db.table('users').delete(1);
 ```
 
 ### Advanced Queries
@@ -89,7 +104,7 @@ await db.table<User>('users').delete(1);
 ```typescript
 // Complex filtering
 const results = await db
-  .table<User>('users')
+  .table('users') // Type inferred automatically
   .where('status', 'active')
   .andWhere((query) => {
     query.where('role', 'admin').orWhere('email', 'like', '%@company.com');
@@ -100,6 +115,9 @@ const results = await db
 
 // Aggregations
 const stats = await db.table('orders').groupBy('status').sum('amount', 'total_amount').count('id', 'order_count').having('total_amount', '>', 5000).query();
+
+// Result type is narrowed:
+// stats.data -> { status: string, total_amount: number, order_count: number }[]
 
 // Window Functions
 const rankedUsers = await db

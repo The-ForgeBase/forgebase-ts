@@ -1,0 +1,49 @@
+{
+  "name": "@forgebase/cli",
+  "version": "0.0.1",
+  "private": false,
+  "type": "module",
+  "description": "CLI tool for ForgeBase",
+  "main": "dist/index.js",
+  "bin": {
+    "forgebase-cli": "dist/index.js",
+    "dbcli": "dist/index.js"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
+    "dev": "tsc -p tsconfig.esm.json --watch",
+    "start": "node dist/index.js",
+    "test:mock-server": "node mock-server.js",
+    "test:generate": "node dist/esm/index.js database --url http://localhost:3001/schema --output test-schema.ts"
+  },
+  "keywords": [
+    "forgebase",
+    "cli",
+    "database",
+    "schema"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "SOG-web",
+  "license": "MIT",
+  "dependencies": {
+    "@types/figlet": "^1.7.0",
+    "axios": "^1.11.0",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "figlet": "^1.10.0",
+    "inquirer": "^13.2.4",
+    "ora": "^9.3.0",
+    "prettier": "^3.6.2"
+  },
+  "devDependencies": {
+    "@forgebase/typescript-config": "workspace:*",
+    "@types/node": "^20.0.0",
+    "tslib": "^2.3.0",
+    "typescript": "5.8.2"
+  }
+}

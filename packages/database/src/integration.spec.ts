@@ -422,6 +422,33 @@ describe('Integration Test: Client SDK & Server with RLS (using pg-mem)', () => 
       }
     });
 
+    it('should group by field and aggregate', async () => {
+      // Group by owner_id and count records
+      const response = await client
+        .table(TABLE_NAME)
+        .groupBy('owner_id')
+        .count('id', 'total_count')
+        .orderBy('owner_id', 'desc')
+        .query();
+
+      // console.log('GROUP BY RESPONSE', JSON.stringify(response.records));
+
+      expect(response.records).toBeDefined();
+      // We expect 2 groups: owner_id 1 (3 records: Alice, Charlie, Eve) and owner_id 2 (2 records: Bob, Diana)
+      // Note: Data is seeded in beforeAll:
+      // Alice(1), Bob(2), Charlie(1), Diana(2), Eve(1)
+
+      expect(response.records!.length).toBe(2);
+
+      const group1 = response.records![0];
+      expect(group1.owner_id).toBe(1);
+      expect(Number(group1.total_count)).toBe(3);
+
+      const group2 = response.records![1];
+      expect(group2.owner_id).toBe(2);
+      expect(Number(group2.total_count)).toBe(2);
+    });
+
     it('should limit results', async () => {
       const response = await client.table(TABLE_NAME).limit(2).query();
 

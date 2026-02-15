@@ -170,12 +170,58 @@ export class KyselyQueryHandler {
     // Add select handling at the start of query building
     // Only apply select/selectAll for SELECT queries (not UPDATE/DELETE builders)
     if (typeof query.selectAll === 'function') {
+      const selections: any[] = [];
+
+      // 1. Handle explicit selects
       if (params.select?.length) {
-        query = query.select(params.select);
-      } else if (
-        !params.aggregates?.length &&
-        !params.windowFunctions?.length
-      ) {
+        selections.push(...params.select);
+      }
+      // 2. Handle GroupBy fields (auto-select if not explicitly selected)
+      else if (params.groupBy?.length) {
+        selections.push(...params.groupBy);
+      }
+
+      // 3. Handle Aggregates
+      if (params.aggregates?.length) {
+        params.aggregates.forEach((agg) => {
+          // Construct aggregate: type(field) as alias
+          // e.g. count(id) as total_count
+          let aggExpr: any;
+
+          if (agg.type === 'count') {
+            // count(field) or count(*)
+            aggExpr = this.db.fn.count(agg.field);
+          } else if (agg.type === 'sum') {
+            aggExpr = this.db.fn.sum(agg.field);
+          } else if (agg.type === 'avg') {
+            aggExpr = this.db.fn.avg(agg.field);
+          } else if (agg.type === 'min') {
+            aggExpr = this.db.fn.min(agg.field);
+          } else if (agg.type === 'max') {
+            aggExpr = this.db.fn.max(agg.field);
+          }
+
+          if (aggExpr) {
+            if (agg.alias) {
+              aggExpr = aggExpr.as(agg.alias);
+            }
+            selections.push(aggExpr);
+          }
+        });
+      }
+
+      // 4. Handle Window Functions
+      if (params.windowFunctions?.length) {
+        params.windowFunctions.forEach((wf) => {
+          selections.push(sql.raw(this.adapter.buildWindowFunction(wf)));
+        });
+      }
+
+      // Apply selections
+      if (selections.length > 0) {
+        query = query.select(selections);
+      } else {
+        // Default to selectAll if no specific selections
         query = query.selectAll();
       }
     }

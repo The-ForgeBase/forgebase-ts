@@ -202,7 +202,7 @@ export interface AuthInterceptors {
   };
 }
 
-export class DatabaseSDK {
+export class DatabaseSDK<Schema extends Record<string, any> = any> {
   private baseUrl: string;
   private axiosInstance: AxiosInstance;
 
@@ -532,8 +532,12 @@ export class DatabaseSDK {
    * Helper method to create a query builder for fluent API usage
    * @param tableName The name of the table to query
    */
-  table<T extends Record<string, any>>(tableName: string) {
-    return new QueryBuilder<T>(this, tableName);
+  table<K extends keyof Schema>(tableName: K): QueryBuilder<Schema[K]>;
+  table<T extends Record<string, any>>(tableName: string): QueryBuilder<T>;
+  table<T extends Record<string, any>>(
+    tableName: string | keyof Schema,
+  ): QueryBuilder<T> {
+    return new QueryBuilder<T>(this, tableName as string);
   }
 
   /**
@@ -549,7 +553,13 @@ export class DatabaseSDK {
 /**
  * Query builder class for more fluent API usage
  */
-class QueryBuilder<T extends Record<string, any>> {
+/**
+ * Query builder class for more fluent API usage
+ */
+class QueryBuilder<
+  T extends Record<string, any>,
+  Result extends Record<string, any> | undefined = undefined,
+> {
   private params: QueryParams<T> = {};
   private currentGroup?: WhereGroup<T>;
   private ctes: Map<string, CTE<T>> = new Map();
@@ -564,8 +574,8 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   withRecursive(
     name: string,
-    initialQuery: QueryBuilder<T>,
-    recursiveQuery: QueryBuilder<T>,
+    initialQuery: QueryBuilder<T, any>,
+    recursiveQuery: QueryBuilder<T, any>,
     options: { unionAll?: boolean; columns?: string[] } = {},
   ): this {
     if (!this.params.recursiveCtes) {
@@ -635,7 +645,7 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   rowNumber(
     alias: string,
-    partitionBy?: string[],
+    partitionBy?: FieldKeys<T>[],
     orderBy?: OrderByClause<T>[],
   ): this {
     return this.window('row_number', alias, { partitionBy, orderBy });
@@ -643,25 +653,25 @@ class QueryBuilder<T extends Record<string, any>> {
 
   rank(
     alias: string,
-    partitionBy?: string[],
+    partitionBy?: FieldKeys<T>[],
     orderBy?: OrderByClause<T>[],
   ): this {
     return this.window('rank', alias, { partitionBy, orderBy });
   }
 
   lag(
-    field: string,
+    field: FieldKeys<T>,
     alias: string,
-    partitionBy?: string[],
+    partitionBy?: FieldKeys<T>[],
     orderBy?: OrderByClause<T>[],
   ): this {
     return this.window('lag', alias, { field, partitionBy, orderBy });
   }
 
   lead(
-    field: string,
+    field: FieldKeys<T>,
     alias: string,
-    partitionBy?: string[],
+    partitionBy?: FieldKeys<T>[],
     orderBy?: OrderByClause<T>[],
   ): this {
     return this.window('lead', alias, { field, partitionBy, orderBy });
@@ -672,10 +682,12 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   with(
     name: string,
-    queryOrCallback: QueryBuilder<T> | ((query: QueryBuilder<T>) => void),
+    queryOrCallback:
+      | QueryBuilder<T, any>
+      | ((query: QueryBuilder<T, T>) => void),
     columns?: FieldKeys<T>[],
   ): this {
-    let query: QueryBuilder<T>;
+    let query: QueryBuilder<T, any>;
 
     if (typeof queryOrCallback === 'function') {
       query = new QueryBuilder(this.sdk, this.tableName);
@@ -742,18 +754,6 @@ class QueryBuilder<T extends Record<string, any>> {
    * @param operator The comparison operator
    * @param value The value to compare against
    * @returns The query builder instance
-   * @example
-   * db.table<User>("users").where("status", "active").execute();
-   * db.table<User>("users").where("age", ">", 18).execute();
-   * db.table<User>("users").where("role", "in", ["admin", "manager"]).execute();
-   * db.table<User>("users").where("created_at", "is not null").execute();
-   * db.table<User>("users").where("name", "like", "%doe%").execute();
-   * db.table<User>("users").where("id", 1).execute();
-   * db.table<User>("users").where({ status: "active", role: "admin" }).execute();
-   * db.table<User>("users").where("age", ">=", 18).where("role", "manager").execute();
-   * db.table<User>("users").where("age", ">=", 18).orWhere((query) => {
-   *  query.where("role", "manager").where("department", "IT");
-   * }).execute();
    */
   where(field: FieldKeys<T>, operator: WhereOperator, value: any): this;
   where(field: FieldKeys<T>, value: any): this;
@@ -880,14 +880,14 @@ class QueryBuilder<T extends Record<string, any>> {
   /**
    * Start an OR where group
    */
-  orWhere(callback: (query: QueryBuilder<T>) => void): this {
+  orWhere(callback: (query: QueryBuilder<T, Result>) => void): this {
     return this.whereGroup('OR', callback);
   }
 
   /**
    * Start an AND where group
    */
-  andWhere(callback: (query: QueryBuilder<T>) => void): this {
+  andWhere(callback: (query: QueryBuilder<T, Result>) => void): this {
     return this.whereGroup('AND', callback);
   }
 
@@ -896,10 +896,10 @@ class QueryBuilder<T extends Record<string, any>> {
    */
   private whereGroup(
     operator: GroupOperator,
-    callback: (query: QueryBuilder<T>) => void,
+    callback: (query: QueryBuilder<T, Result>) => void,
   ): this {
     // Create a new builder for the group to collect clauses
-    const groupBuilder = new QueryBuilder<T>(this.sdk, this.tableName);
+    const groupBuilder = new QueryBuilder<T, Result>(this.sdk, this.tableName);
 
     // Execute the callback with the group builder to collect clauses
     callback(groupBuilder);
@@ -939,18 +939,10 @@ class QueryBuilder<T extends Record<string, any>> {
 
   /**
    * Add a where exists clause using a subquery
-   * @param subqueryBuilder A function that returns a configured query builder for the subquery
-   * @returns The query builder instance
-   * @example
-   * db.table<User>("users")
-   *   .whereExists((subquery) =>
-   *     subquery.table("orders")
-   *       .where("orders.user_id", "=", "users.id")
-   *       .where("total", ">", 1000)
-   *   )
-   *   .execute();
    */
-  whereExists(subqueryBuilder: (qb: DatabaseSDK) => QueryBuilder<any>): this {
+  whereExists(
+    subqueryBuilder: (qb: DatabaseSDK) => QueryBuilder<any, any>,
+  ): this {
     if (!this.params.whereExists) {
       this.params.whereExists = [];
     }
@@ -972,23 +964,12 @@ class QueryBuilder<T extends Record<string, any>> {
 
   /**
    * Add a where exists clause with join conditions
-   * @param tableName The table to check for existence
-   * @param leftField The field from the main table
-   * @param rightField The field from the subquery table
-   * @param additionalConditions Additional conditions for the subquery
-   * @returns The query builder instance
-   * @example
-   * db.table<User>("users")
-   *   .whereExistsJoin("orders", "id", "user_id", (qb) =>
-   *     qb.where("total", ">", 1000)
-   *   )
-   *   .execute();
    */
   whereExistsJoin(
     tableName: string,
     leftField: FieldKeys<T>,
     rightField: string,
-    additionalConditions?: (qb: QueryBuilder<any>) => void,
+    additionalConditions?: (qb: QueryBuilder<any, any>) => void,
   ): this {
     if (!this.params.whereExists) {
       this.params.whereExists = [];
@@ -1028,23 +1009,26 @@ class QueryBuilder<T extends Record<string, any>> {
     return this.params;
   }
 
-  // rawExpression method removed for security reasons
-
   /**
    * Group by clause
    */
-  groupBy(...fields: string[]): this {
+  groupBy<K extends keyof T>(
+    ...fields: K[]
+  ): QueryBuilder<
+    T,
+    Result extends undefined ? Pick<T, K> : Result & Pick<T, K>
+  > {
     if (!this.params.groupBy) {
       this.params.groupBy = [];
     }
-    this.params.groupBy.push(...fields);
-    return this;
+    this.params.groupBy.push(...(fields as string[]));
+    return this as any;
   }
 
   /**
    * Having clause for grouped queries
    */
-  having(field: string, operator: WhereOperator, value: any): this {
+  having(field: FieldKeys<T>, operator: WhereOperator, value: any): this {
     if (!this.params.having) {
       this.params.having = [];
     }
@@ -1055,50 +1039,95 @@ class QueryBuilder<T extends Record<string, any>> {
   /**
    * Add an aggregate function
    */
-  aggregate(
+  aggregate<Alias extends string>(
     type: AggregateOptions<T>['type'],
     field: FieldKeys<T>,
-    alias?: string,
-  ): this {
+    alias?: Alias,
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     if (!this.params.aggregates) {
       this.params.aggregates = [];
     }
     this.params.aggregates.push({ type, field, alias });
-    return this;
+    return this as any;
   }
 
   /**
    * Shorthand for count aggregate
    */
-  count(field: FieldKeys<T> = '*', alias?: string): this {
+  count<Alias extends string = 'count'>(
+    field: FieldKeys<T> = '*',
+    alias: Alias = 'count' as Alias,
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.aggregate('count', field, alias);
   }
 
   /**
    * Shorthand for sum aggregate
    */
-  sum(field: FieldKeys<T>, alias?: string): this {
+  sum<Alias extends string>(
+    field: FieldKeys<T>,
+    alias: Alias,
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.aggregate('sum', field, alias);
   }
 
   /**
    * Shorthand for average aggregate
    */
-  avg(field: FieldKeys<T>, alias?: string): this {
+  avg<Alias extends string>(
+    field: FieldKeys<T>,
+    alias: Alias,
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.aggregate('avg', field, alias);
   }
 
   /**
    * Shorthand for minimum aggregate
    */
-  min(field: FieldKeys<T>, alias?: string): this {
+  min<Alias extends string>(
+    field: FieldKeys<T>,
+    alias: Alias,
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.aggregate('min', field, alias);
   }
 
   /**
    * Shorthand for maximum aggregate
    */
-  max(field: FieldKeys<T>, alias?: string): this {
+  max<Alias extends string>(
+    field: FieldKeys<T>,
+    alias: Alias,
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.aggregate('max', field, alias);
   }
 
@@ -1115,16 +1144,19 @@ class QueryBuilder<T extends Record<string, any>> {
    * @param axiosConfig Optional axios config to be used for this request
    * @returns Promise with the query results
    */
-  async query(axiosConfig: AxiosRequestConfig = {}): Promise<ApiResponse<T>> {
-    const response = await this.sdk.getRecords<T>(
+  async query(
+    axiosConfig: AxiosRequestConfig = {},
+  ): Promise<ApiResponse<Result extends undefined ? T : Result>> {
+    const response = await this.sdk.getRecords<any>(
       this.tableName,
-      this.params,
+      this.params as any,
       { execute: true },
       axiosConfig,
     );
 
     if (this.params.transforms && response.records) {
-      return this.applyTransformations(response);
+      // Transformations might change type, but for now assuming Result matches
+      return this.applyTransformations(response as any) as any;
     }
 
     return response;
@@ -1140,6 +1172,7 @@ class QueryBuilder<T extends Record<string, any>> {
     data: T,
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
+    // Create returns T, not Result
     return this.sdk.createRecord<T>(this.tableName, data, axiosConfig);
   }
 
@@ -1261,45 +1294,16 @@ class QueryBuilder<T extends Record<string, any>> {
    *   .select("id", "name", "email")
    *   .execute();
    */
-  select(...fields: string[]): this {
+  select<K extends keyof T>(
+    ...fields: K[]
+  ): QueryBuilder<
+    T,
+    Result extends undefined ? Pick<T, K> : Result & Pick<T, K>
+  > {
     if (!this.params.select) {
       this.params.select = [];
     }
-    this.params.select.push(...fields);
-    return this;
+    this.params.select.push(...(fields as string[]));
+    return this as any;
   }
 }
-
-// Example usage functions
-// function demonstrateComplexQueries() {
-//   const db = new DatabaseSDK("https://api.example.com");
-
-//   // Complex grouped conditions
-//   db.table<User>("users")
-//     .where("status", "active")
-//     .andWhere((query) => {
-//       query.where("role", "admin").orWhere((subQuery) => {
-//         subQuery.where("role", "manager").where("department", "IT");
-//       });
-//     })
-//     .query();
-
-//   // Using exists with raw SQL
-//   db.table<Order>("orders")
-//     .whereExists(
-//       "SELECT 1 FROM order_items WHERE order_items.order_id = orders.id AND quantity > ?",
-//       [10]
-//     )
-//     .query();
-
-//   // Aggregations with grouping
-//   db.table<Order>("orders")
-//     .groupBy("customer_id", "status")
-//     .having("total_amount", ">", 1000)
-//     .sum("amount", "total_amount")
-//     .count("id", "order_count")
-//     .avg("amount", "average_amount")
-//     .query();
-
-//   // Raw expressions removed for security reasons
-// }
