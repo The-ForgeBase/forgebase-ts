@@ -24,6 +24,7 @@ interface Schema {
 const db = new DatabaseSDK<Schema>({ baseUrl: 'http://localhost' });
 
 async function testInference() {
+  const q0 = await db.table('users').select('*').query();
   // 1. Basic Select Narrowing
   const q1 = await db.table('users').select('name', 'email').query();
   if (q1.records) {

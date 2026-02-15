@@ -6,6 +6,7 @@ import type {
 } from '../types';
 import { PermissionService } from '../permissionService';
 import { DBInspector } from './inspector';
+import type { Kysely } from 'kysely';
 
 /**
  * Initializes permissions for all tables in the database
@@ -16,8 +17,6 @@ import { DBInspector } from './inspector';
  * @param reportPath Path where to save the report file
  * @param onComplete Callback function to call when initialization is complete
  */
-import type { Kysely } from 'kysely';
-
 export async function initializePermissions(
   db: Kysely<any>,
   permissionService: PermissionService,

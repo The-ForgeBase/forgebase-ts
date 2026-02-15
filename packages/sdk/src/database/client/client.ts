@@ -57,7 +57,7 @@ export interface HavingClause<T> {
 
 export interface AggregateOptions<T> {
   type: 'count' | 'sum' | 'avg' | 'min' | 'max';
-  field: FieldKeys<T>;
+  field: FieldKeys<T> | '*';
   alias?: string;
 }
 
@@ -168,7 +168,7 @@ export interface QueryParams<T extends Record<string, any>> {
   explain?: ExplainOptions;
   recursiveCtes?: RecursiveCTE<T>[];
   advancedWindows?: WindowFunctionAdvanced<T>[];
-  select?: FieldKeys<T>[];
+  select?: (FieldKeys<T> | '*')[];
 }
 
 // Add this interface for subquery configurations
@@ -335,23 +335,6 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
       throw error;
     }
   }
-
-  // private serializeQueryParams<T extends Record<string, any>>(
-  //   params: QueryParams<T>
-  // ): Record<string, string> {
-  //   const serialized: Record<string, string> = {};
-
-  //   // any param that is type of object should be serialized to JSON
-  //   Object.entries(params).forEach(([key, value]) => {
-  //     if (typeof value === 'object') {
-  //       serialized[key] = JSON.stringify(value);
-  //     } else {
-  //       serialized[key] = value.toString();
-  //     }
-  //   });
-
-  //   return serialized;
-  // }
 
   /**
    * Creates a new record in the specified table
@@ -1291,19 +1274,28 @@ class QueryBuilder<
   }
 
   /**
-   * Select specific fields from the table
-   * @param fields Fields to select
+   * Select specific fields from the table. Pass `'*'` (or call with no args)
+   * to select the entire row type `T`.
+   * @param fields Fields to select or '*' for all fields
    * @example
-   * db.table("users")
-   *   .select("id", "name", "email")
-   *   .execute();
+   * db.table("users").select("id", "name").execute();
+   * db.table("users").select('*').execute();
    */
+  select(): QueryBuilder<T, T>;
+  select(key: '*'): QueryBuilder<T, T>;
   select<K extends keyof T>(
     ...fields: K[]
   ): QueryBuilder<
     T,
     Result extends undefined ? Pick<T, K> : Result & Pick<T, K>
-  > {
+  >;
+  select(...fields: (keyof T | '*')[]): any {
+    // support select('*') or no-arg select() to request full row
+    if (fields.length === 0 || (fields.length === 1 && fields[0] === '*')) {
+      this.params.select = ['*'];
+      return this as any;
+    }
+
     if (!this.params.select) {
       this.params.select = [];
     }

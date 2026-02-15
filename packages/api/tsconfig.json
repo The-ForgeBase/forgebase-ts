@@ -1,13 +1,25 @@
 {
-  "extends": "@forgebase/typescript-config/base.json",
   "compilerOptions": {
-    "rootDir": "src",
+    "outDir": "dist",
+    "rootDir": "./",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noImplicitAny": false,
-    "composite": true,
     "types": ["node"],
-    "strict": false
+    "strict": false,
+    "esModuleInterop": true,
+    "incremental": false,
+    "declaration": true,
+    "declarationMap": true,
+    "isolatedModules": true,
+    "module": "ES2020",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "sourceMap": true
   },
   "include": ["src"],
   "exclude": [

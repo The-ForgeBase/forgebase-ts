@@ -1,4 +1,4 @@
-export type * from './types';
+export * from './types';
 export * from './utils/column-utils';
 export * from './utils/inspector';
 export * from './utils/permission-initializer';

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start:server": "tsx src/server.ts",
-    "generate:schema": "node ../../packages/cli/dist/esm/index.js database --url http://localhost:3333/schema --output src/schema.ts -y",
+    "generate:schema": "pnpm forgebase-cli database --url http://localhost:3333/schema --output src/schema.ts -y",
     "start:client": "tsx src/client.ts",
     "test:full": "pnpm start:server & PID=$! && sleep 5 && pnpm generate:schema && pnpm start:client && kill $PID"
   },

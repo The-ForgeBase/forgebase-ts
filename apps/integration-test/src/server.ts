@@ -1,6 +1,5 @@
 import express from 'express';
 import { ForgeDatabase } from '@forgebase/database';
-// import fs from 'fs';
 
 // Helper to handle BigInt serialization
 function sanitize(obj: any): any {

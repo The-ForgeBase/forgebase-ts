@@ -1,47 +1,62 @@
 {
   "name": "@forgebase/sdk",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": false,
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
-    "dev": "tsc -p tsconfig.esm.json --watch",
+    "build:esm": "tsup --format esm --outdir dist/esm",
+    "build:cjs": "tsup --format cjs --outdir dist/cjs",
+    "build": "pnpm clean && tsup",
+    "dev": "pnpm build:esm --watch",
     "lint": "tsc --noEmit"
   },
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/esm/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./client": {
-      "types": "./dist/esm/database/client/index.d.ts",
-      "import": "./dist/esm/database/client/index.js",
-      "require": "./dist/cjs/database/client/index.js"
+      "import": {
+        "types": "./dist/database/client/index.d.ts",
+        "default": "./dist/database/client/index.js"
+      },
+      "require": {
+        "types": "./dist/database/client/index.d.cts",
+        "default": "./dist/database/client/index.cjs"
+      }
     },
     "./server": {
-      "types": "./dist/esm/database/server/index.d.ts",
-      "import": "./dist/esm/database/server/index.js",
-      "require": "./dist/cjs/database/server/index.js"
+      "import": {
+        "types": "./dist/database/server/index.d.ts",
+        "default": "./dist/database/server/index.js"
+      },
+      "require": {
+        "types": "./dist/database/server/index.d.cts",
+        "default": "./dist/database/server/index.cjs"
+      }
     }
   },
   "typesVersions": {
     "*": {
       ".": [
-        "./dist/esm/index.d.ts"
+        "./dist/index.d.ts"
       ],
       "client": [
-        "./dist/esm/database/client/index.d.ts"
+        "./dist/database/client/index.d.ts"
       ],
       "server": [
-        "./dist/esm/database/server/index.d.ts"
+        "./dist/database/server/index.d.ts"
       ]
     }
   },
@@ -63,9 +78,10 @@
     "@forgebase/database": "workspace:*"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "@forgebase/typescript-config": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
     "tslib": "^2.3.0",
+    "tsup": "^8.5.1",
     "typescript": "5.8.2"
   }
 }

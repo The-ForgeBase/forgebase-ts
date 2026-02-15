@@ -1,47 +1,62 @@
 {
   "name": "@forgebase/api",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": false,
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
-    "dev": "tsc -p tsconfig.esm.json --watch",
+    "build:esm": "tsup --format esm --outdir dist/esm",
+    "build:cjs": "tsup --format cjs --outdir dist/cjs",
+    "build": "pnpm clean && tsup",
+    "dev": "pnpm build:esm --watch",
     "lint": "tsc --noEmit"
   },
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/esm/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./core/nest": {
-      "types": "./dist/esm/core/nest/index.d.ts",
-      "import": "./dist/esm/core/nest/index.js",
-      "require": "./dist/cjs/core/nest/index.js"
+      "import": {
+        "types": "./dist/core/nest/index.d.ts",
+        "default": "./dist/core/nest/index.js"
+      },
+      "require": {
+        "types": "./dist/core/nest/index.d.cts",
+        "default": "./dist/core/nest/index.cjs"
+      }
     },
     "./core": {
-      "types": "./dist/esm/core/index.d.ts",
-      "import": "./dist/esm/core/index.js",
-      "require": "./dist/cjs/core/index.js"
+      "import": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/core/index.js"
+      },
+      "require": {
+        "types": "./dist/core/index.d.cts",
+        "default": "./dist/core/index.cjs"
+      }
     }
   },
   "typesVersions": {
     "*": {
       ".": [
-        "./dist/esm/index.d.ts"
+        "./dist/index.d.ts"
       ],
       "core/nest": [
-        "./dist/esm/core/nest/index.d.ts"
+        "./dist/core/nest/index.d.ts"
       ],
       "core": [
-        "./dist/esm/core/index.d.ts"
+        "./dist/core/index.d.ts"
       ]
     }
   },
@@ -60,15 +75,16 @@
   "peerDependencies": {
     "@nestjs/common": "^11.1.13",
     "@nestjs/core": "^11.1.13",
-    "kysely": "^0.28.11",
     "express": "^5.2.1",
     "itty-router": "^5.0.22",
+    "kysely": "^0.28.11",
     "ultimate-express": "^2.0.17"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "@forgebase/typescript-config": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
     "@types/node": "~18.16.9",
+    "tsup": "^8.5.1",
     "tslib": "^2.8.1",
     "typescript": "5.8.2"
   }
