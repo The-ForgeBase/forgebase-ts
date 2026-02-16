@@ -734,11 +734,16 @@ class QueryBuilder<
   /**
    * Advanced window function
    */
-  windowAdvanced(
+  windowAdvanced<Alias extends string>(
     type: WindowFunction<T>['type'],
-    alias: string,
+    alias: Alias,
     config: Partial<WindowFunctionAdvanced<T>>,
-  ): this {
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? T & { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     if (!this.params.advancedWindows) {
       this.params.advancedWindows = [];
     }
@@ -749,17 +754,22 @@ class QueryBuilder<
       ...config,
     });
 
-    return this;
+    return this as any;
   }
 
   /**
    * Add a window function
    */
-  window(
+  window<Alias extends string>(
     type: WindowFunction<T>['type'],
-    alias: string,
+    alias: Alias,
     config: Partial<Omit<WindowFunction<T>, 'type' | 'alias'>> = {},
-  ): this {
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? T & { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     if (!this.params.windowFunctions) {
       this.params.windowFunctions = [];
     }
@@ -773,43 +783,63 @@ class QueryBuilder<
       frameClause: config.frameClause,
     });
 
-    return this;
+    return this as any;
   }
 
   /**
    * Add common window functions
    */
-  rowNumber(
-    alias: string,
+  rowNumber<Alias extends string>(
+    alias: Alias,
     partitionBy?: FieldKeys<T>[],
     orderBy?: OrderByClause<T>[],
-  ): this {
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? T & { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.window('row_number', alias, { partitionBy, orderBy });
   }
 
-  rank(
-    alias: string,
+  rank<Alias extends string>(
+    alias: Alias,
     partitionBy?: FieldKeys<T>[],
     orderBy?: OrderByClause<T>[],
-  ): this {
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? T & { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.window('rank', alias, { partitionBy, orderBy });
   }
 
-  lag(
+  lag<Alias extends string>(
     field: FieldKeys<T>,
-    alias: string,
+    alias: Alias,
     partitionBy?: FieldKeys<T>[],
     orderBy?: OrderByClause<T>[],
-  ): this {
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? T & { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.window('lag', alias, { field, partitionBy, orderBy });
   }
 
-  lead(
+  lead<Alias extends string>(
     field: FieldKeys<T>,
-    alias: string,
+    alias: Alias,
     partitionBy?: FieldKeys<T>[],
     orderBy?: OrderByClause<T>[],
-  ): this {
+  ): QueryBuilder<
+    T,
+    Result extends undefined
+      ? T & { [P in Alias]: number }
+      : Result & { [P in Alias]: number }
+  > {
     return this.window('lead', alias, { field, partitionBy, orderBy });
   }
 
@@ -893,9 +923,9 @@ class QueryBuilder<
    */
   where(field: FieldKeys<T>, operator: WhereOperator, value: any): this;
   where(field: FieldKeys<T>, value: any): this;
-  where(conditions: Record<FieldKeys<T>, any>): this;
+  where(conditions: Partial<T>): this;
   where(
-    fieldOrConditions: FieldKeys<T> | Record<FieldKeys<T>, any>,
+    fieldOrConditions: FieldKeys<T> | Partial<T>,
     operatorOrValue?: WhereOperator | any,
     value?: any,
   ): this {
@@ -1148,17 +1178,12 @@ class QueryBuilder<
   /**
    * Group by clause
    */
-  groupBy<K extends keyof T>(
-    ...fields: K[]
-  ): QueryBuilder<
-    T,
-    Result extends undefined ? Pick<T, K> : Result & Pick<T, K>
-  > {
+  groupBy<K extends keyof T>(...fields: K[]): this {
     if (!this.params.groupBy) {
       this.params.groupBy = [];
     }
     this.params.groupBy.push(...(fields as string[]));
-    return this as any;
+    return this;
   }
 
   /**
@@ -1186,7 +1211,7 @@ class QueryBuilder<
   ): QueryBuilder<
     T,
     Result extends undefined
-      ? { [P in Alias]: number }
+      ? T & { [P in Alias]: number }
       : Result & { [P in Alias]: number }
   > {
     if (!this.params.aggregates) {
@@ -1205,7 +1230,7 @@ class QueryBuilder<
   ): QueryBuilder<
     T,
     Result extends undefined
-      ? { [P in Alias]: number }
+      ? T & { [P in Alias]: number }
       : Result & { [P in Alias]: number }
   > {
     return this.aggregate('count', field, alias);
@@ -1220,7 +1245,7 @@ class QueryBuilder<
   ): QueryBuilder<
     T,
     Result extends undefined
-      ? { [P in Alias]: number }
+      ? T & { [P in Alias]: number }
       : Result & { [P in Alias]: number }
   > {
     return this.aggregate('sum', field, alias);
@@ -1235,7 +1260,7 @@ class QueryBuilder<
   ): QueryBuilder<
     T,
     Result extends undefined
-      ? { [P in Alias]: number }
+      ? T & { [P in Alias]: number }
       : Result & { [P in Alias]: number }
   > {
     return this.aggregate('avg', field, alias);
@@ -1250,7 +1275,7 @@ class QueryBuilder<
   ): QueryBuilder<
     T,
     Result extends undefined
-      ? { [P in Alias]: number }
+      ? T & { [P in Alias]: number }
       : Result & { [P in Alias]: number }
   > {
     return this.aggregate('min', field, alias);
@@ -1265,7 +1290,7 @@ class QueryBuilder<
   ): QueryBuilder<
     T,
     Result extends undefined
-      ? { [P in Alias]: number }
+      ? T & { [P in Alias]: number }
       : Result & { [P in Alias]: number }
   > {
     return this.aggregate('max', field, alias);

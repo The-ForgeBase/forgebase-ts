@@ -1,15 +1,27 @@
-# ForgeBase Database SDK
+# ForgeBase TypeScript SDK
 
-A flexible and powerful database client for interacting with ForgeBase APIs, with seamless integration with ForgebaseAuth for authenticated requests.
+A powerful, type-safe TypeScript SDK for interacting with ForgeBase services, providing comprehensive database operations, advanced query capabilities, and type safety.
 
-## Features
+## Core Features
 
-- 🔄 Axios-based HTTP client for modern API interactions
-- 🔒 Seamless integration with ForgebaseAuth for authenticated requests
-- 🔁 Automatic token refresh when used with ForgebaseAuth
-- 🔍 Fluent query builder for complex database operations
-- 🧩 Type-safe API with TypeScript support
-- 🚀 Support for filtering, sorting, pagination, and more
+- **Type-Safe Query Builder**:
+  - Fluent API design
+  - Advanced filtering (`where`, `whereIn`, `whereExists`, etc.)
+  - Complex joins and relations
+  - Aggregations (`count`, `sum`, `avg`, `min`, `max`)
+  - Window functions (`rowNumber`, `rank`, `lag`, `lead`)
+  - Recursive CTEs
+  - Result transformations (`pivot`, `compute`)
+
+- **Database Operations**:
+  - CRUD operations (`create`, `update`, `delete`)
+  - Batch operations
+  - Pagination (`limit`, `offset`)
+  - Sorting (`orderBy`)
+
+- **Security & Validation**:
+  - Input validation
+  - Type inference from your interfaces
 
 ## Installation
 
@@ -17,279 +29,179 @@ A flexible and powerful database client for interacting with ForgeBase APIs, wit
 npm install @forgebase/sdk
 # or
 yarn add @forgebase/sdk
+# or
+pnpm add @forgebase/sdk
 ```
 
 ## Basic Usage
 
-### Standalone Usage
+### Initialization
+
+First, define your database schema and initialize the SDK. This provides automatic type safety across your entire application.
 
 ```typescript
-import { DatabaseSDK } from '@forgebase/sdk';
+import { DatabaseSDK } from '@forgebase/sdk/client';
 
-// Create a new instance
-const db = new DatabaseSDK('https://api.example.com');
+// 1. Define your entity types
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'inactive';
+}
 
-// Fetch records
-const users = await db.getRecords('users', {
-  filter: { active: true },
-  limit: 10,
-  orderBy: [{ field: 'created_at', direction: 'desc' }],
+interface Order {
+  id: number;
+  user_id: number;
+  amount: number;
+  status: 'pending' | 'completed';
+}
+
+// 2. Define your Database Schema
+interface Schema {
+  users: User;
+  orders: Order;
+}
+
+// 3. Initialize the SDK with your Schema
+const db = new DatabaseSDK<Schema>({
+  baseUrl: 'http://localhost:3000',
+  axiosConfig: {
+    withCredentials: true,
+    headers: { 'Content-Type': 'application/json' },
+  },
 });
+```
 
-// Create a record
-const newUser = await db.createRecord('users', {
+### Advanced Configuration
+
+#### Custom Fetch Implementation
+
+You can provide a custom `fetch` implementation to handle specific environments (like edge functions) or complex authentication requirements.
+
+```typescript
+import { DatabaseSDK } from '@forgebase/sdk/client';
+import { authClient } from '@/lib/auth-client'; // Assuming authClient is an instance of Better-auth
+
+const db = new DatabaseSDK<Schema>({
+  baseUrl: 'http://localhost:3000',
+  // Provide a custom fetch wrapper
+  fetch: async (input, init) => {
+    const cookies = authClient.getCookie();
+
+    return fetch(input, {
+      ...init,
+      headers: {
+        ...init?.headers,
+        Cookie: cookies,
+      },
+      // Avoid interference with manual cookie headers
+      credentials: 'omit',
+    });
+  },
+});
+```
+
+### Database Operations
+
+The SDK automatically infers types based on your Schema.
+
+```typescript
+// Query users (Type is inferred as User[])
+const users = await db.table('users').select('id', 'name', 'email').where('status', 'active').query();
+
+// Create a new record (Type checking ensures payload matches User)
+const newUser = await db.table('users').create({
   name: 'John Doe',
   email: 'john@example.com',
+  role: 'user',
+  status: 'active',
 });
 
 // Update a record
-const updatedUser = await db.updateRecord('users', 123, {
-  name: 'John Smith',
+await db.table('users').update(1, {
+  status: 'inactive',
 });
 
 // Delete a record
-await db.deleteRecord('users', 123);
+await db.table('users').delete(1);
 ```
 
-### Using with ForgebaseAuth
-
-The DatabaseSDK can be used with the ForgebaseAuth SDK to make authenticated requests. This integration provides several benefits:
-
-- **Automatic Authentication**: All requests include the authentication token
-- **Token Refresh**: Expired tokens are automatically refreshed
-- **Consistent Headers**: Authentication headers are consistently applied
-- **Error Handling**: Authentication errors are properly handled
+### Advanced Queries
 
 ```typescript
-import { DatabaseSDK } from '@forgebase/sdk';
-import { ForgebaseAuth, SecureStoreAdapter } from '@forgebase/react-native-auth';
-import * as SecureStore from 'expo-secure-store';
+// Complex filtering
+const results = await db
+  .table('users') // Type inferred automatically
+  .where('status', 'active')
+  .andWhere((query) => {
+    query.where('role', 'admin').orWhere('email', 'like', '%@company.com');
+  })
+  .orderBy('name', 'asc')
+  .limit(10)
+  .query();
 
-// Initialize auth
-const secureStorage = new SecureStoreAdapter(SecureStore);
-const auth = new ForgebaseAuth({
-  apiUrl: 'https://api.example.com',
-  storage: secureStorage,
-});
+// Aggregations
+const stats = await db.table('orders').groupBy('status').sum('amount', 'total_amount').count('id', 'order_count').having('total_amount', '>', 5000).query();
 
-// Login to get authenticated
-await auth.login({
-  email: 'user@example.com',
-  password: 'password123',
-});
+// Result type is narrowed:
+// stats.data -> { status: string, total_amount: number, order_count: number }[]
 
-// Option 1: Create a database SDK with the auth axios instance
-const db = new DatabaseSDK('https://api.example.com', auth.api);
+// Window Functions
+const rankedUsers = await db
+  .table('users')
+  .select('name', 'department', 'salary')
+  .rank('salary_rank', ['department'], [{ field: 'salary', direction: 'desc' }])
+  .query();
 
-// Option 2: Create a database SDK with auth interceptors
-const authInterceptors = auth.getAuthInterceptors();
-const db2 = new DatabaseSDK('https://api.example.com', undefined, {}, authInterceptors);
-
-// Now all database requests will include authentication headers
-// and benefit from automatic token refresh
-const myData = await db.getRecords('my_private_data');
+// Recursive CTEs (e.g., for hierarchical data)
+const categories = await db
+  .table('categories')
+  .withRecursive(
+    'category_tree',
+    // Initial query
+    db.table('categories').where('parent_id', null),
+    // Recursive query
+    db.table('categories').join('category_tree', 'parent_id', 'id'),
+    { unionAll: true },
+  )
+  .query();
 ```
 
-#### Using in React Components with Hooks
+### Transformations
+
+You can transform the result set on the client side using `pivot` or `compute`.
 
 ```typescript
-import React, { useEffect, useState } from 'react';
-import { DatabaseSDK } from '@forgebase/sdk';
-import { useAuth } from '@forgebase/react-native-auth';
+// Pivot data
+const pivoted = await db.table('sales').pivot('month', ['Jan', 'Feb', 'Mar'], { type: 'sum', field: 'amount' }).query();
 
-function MyComponent() {
-  const { getApi, isAuthenticated } = useAuth();
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (isAuthenticated) {
-        try {
-          // Get the authenticated axios instance
-          const api = getApi();
-
-          // Create a database SDK with the auth axios instance
-          const db = new DatabaseSDK('https://api.example.com', api);
-
-          // Fetch data with authentication
-          const result = await db.getRecords('my_data');
-          setData(result.records || []);
-        } catch (error) {
-          console.error('Error fetching data:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-  }, [isAuthenticated, getApi]);
-
-  // Render component
-}
+// Compute new fields
+const computed = await db
+  .table('employees')
+  .compute({
+    fullName: (row) => `${row.firstName} ${row.lastName}`,
+    tax: (row) => row.salary * 0.2,
+  })
+  .query();
 ```
-
-## Query Builder
-
-The SDK includes a fluent query builder for more complex queries:
-
-```typescript
-import { DatabaseSDK } from '@forgebase/sdk';
-
-const db = new DatabaseSDK('https://api.example.com');
-
-// Build a complex query
-const results = await db.table('users').where('role', 'admin').where('status', 'active').whereIn('department', ['IT', 'HR']).orderBy('last_login', 'desc').limit(20).offset(0).query();
-
-// Create a record
-await db.table('posts').create({
-  title: 'New Post',
-  content: 'Post content',
-  author_id: 123,
-});
-
-// Update a record
-await db.table('posts').update(456, {
-  title: 'Updated Title',
-});
-
-// Delete a record
-await db.table('posts').delete(456);
-```
-
-## Authentication Integration
-
-The DatabaseSDK can be integrated with ForgebaseAuth in two ways:
-
-### 1. Using the Auth Axios Instance
-
-```typescript
-import { DatabaseSDK } from '@forgebase/sdk';
-import { ForgebaseWebAuth } from '@forgebase/web-auth';
-
-// Initialize auth
-const auth = new ForgebaseWebAuth({ apiUrl: 'https://api.example.com' });
-
-// Create a database SDK with the auth axios instance
-const db = new DatabaseSDK('https://api.example.com', auth.api);
-```
-
-### 2. Using Auth Interceptors
-
-```typescript
-import { DatabaseSDK } from '@forgebase/sdk';
-import { ForgebaseWebAuth } from '@forgebase/web-auth';
-
-// Initialize auth
-const auth = new ForgebaseWebAuth({ apiUrl: 'https://api.example.com' });
-
-// Get auth interceptors
-const authInterceptors = auth.getAuthInterceptors();
-
-// Create a database SDK with auth interceptors
-const db = new DatabaseSDK('https://api.example.com', undefined, { timeout: 5000 }, authInterceptors);
-```
-
-You can also apply auth interceptors to an existing DatabaseSDK instance:
-
-```typescript
-import { DatabaseSDK } from '@forgebase/sdk';
-import { ForgebaseWebAuth } from '@forgebase/web-auth';
-
-// Initialize auth and database
-const auth = new ForgebaseWebAuth({ apiUrl: 'https://api.example.com' });
-const db = new DatabaseSDK('https://api.example.com');
-
-// Get auth interceptors and apply them
-const authInterceptors = auth.getAuthInterceptors();
-db.applyAuthInterceptors(authInterceptors);
-```
-
-## Axios Configuration
-
-### Instance Configuration
-
-You can pass custom axios configuration when creating a DatabaseSDK instance:
-
-```typescript
-// With custom axios config
-const db = new DatabaseSDK(
-  'https://api.example.com',
-  undefined, // No auth instance
-  {
-    timeout: 5000,
-    headers: {
-      'X-Custom-Header': 'value',
-    },
-  }
-);
-
-// With auth instance and custom config
-const db = new DatabaseSDK('https://api.example.com', auth.api, {
-  timeout: 5000,
-});
-```
-
-### Per-Request Configuration
-
-You can also pass custom axios configuration for individual requests:
-
-```typescript
-// Custom config for a specific request
-const users = await db.getRecords(
-  'users',
-  { limit: 10 },
-  { execute: true },
-  {
-    timeout: 3000,
-    headers: {
-      'X-Custom-Header': 'value-for-this-request',
-    },
-  }
-);
-
-// Custom config with the query builder
-const posts = await db.table('posts').where('status', 'published').query({
-  timeout: 3000,
-});
-```
-
-### Configuration Merging
-
-When you provide axios configuration at different levels, they are merged as follows:
-
-1. **Base Configuration**: Set when creating the axios instance (in constructor)
-2. **Request Configuration**: Set when making a specific request
-
-The merging follows these rules:
-
-- Simple properties (like `timeout`) from the request config override the instance config
-- For `headers`, the objects are merged, so request headers are added to or override specific instance headers
-- When using ForgebaseAuth, authentication headers are always included
-
-This allows you to:
-
-- Set global defaults in the constructor
-- Override specific settings for individual requests
-- Maintain authentication when using ForgebaseAuth
 
 ## Error Handling
 
-The SDK provides detailed error information:
+The SDK throws standard errors that you can catch and handle.
 
 ```typescript
 try {
-  const result = await db.getRecords('users');
+  await db.table('users').create(data);
 } catch (error) {
-  if (axios.isAxiosError(error)) {
-    console.error('API Error:', error.response?.data);
-    console.error('Status:', error.response?.status);
-  } else {
-    console.error('Error:', error.message);
-  }
+  console.error('Failed to create user:', error.message);
 }
 ```
+
+## Real-time Updates
+
+> ⚠️ **Note**: Real-time features (WebSockets/SSE) are currently experimental and under active development. They are not yet fully documented or recommended for production use.
 
 ## License
 
