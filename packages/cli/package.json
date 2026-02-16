@@ -1,6 +1,6 @@
 {
   "name": "@forgebase/cli",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "private": false,
   "type": "module",
   "description": "CLI tool for ForgeBase",
