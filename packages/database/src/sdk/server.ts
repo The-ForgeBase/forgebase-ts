@@ -240,6 +240,7 @@ export class KyselyQueryHandler {
 
     // 1. CTEs and Window Functions (must come first)
     // Handle CTEs first
+    // TODO: This is not working yet - query.with is not a function
     if (params.ctes?.length) {
       params.ctes.forEach((cte) => {
         // Assuming cte.query.params describes the subquery
@@ -336,6 +337,24 @@ export class KyselyQueryHandler {
         }
       });
     }
+
+    // Apply where exists clauses
+    // TODO: TypeError: query.whereExists is not a function
+    // if (params.whereExists) {
+    //   params.whereExists.forEach((subQueryConfig) => {
+    //     query = query.whereExists((qb: any) => {
+    //       const subQuery = this.buildQuery(subQueryConfig.params, qb);
+    //       if (subQueryConfig.joinCondition) {
+    //         subQuery.where(
+    //           subQueryConfig.joinCondition.leftField,
+    //           subQueryConfig.joinCondition.operator,
+    //           sql.ref(subQueryConfig.joinCondition.rightField),
+    //         );
+    //       }
+    //       return subQuery;
+    //     });
+    //   });
+    // }
 
     // Apply group by
     if (params.groupBy) {

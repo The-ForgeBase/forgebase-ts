@@ -358,11 +358,6 @@ async function startServer() {
       const tableName = req.params.table;
       const params = req.body;
 
-      console.log(
-        `Received query for table ${tableName} with params:`,
-        JSON.stringify(params.query),
-      );
-
       const result = await forgeDb.endpoints.data.query(
         tableName,
         params.query,
@@ -389,7 +384,9 @@ async function startServer() {
         true,
       );
 
-      res.json(sanitize(result));
+      // console.log('Create result:', JSON.stringify(result));
+
+      res.json(...sanitize(result));
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ error: err.message });
@@ -409,7 +406,7 @@ async function startServer() {
         true,
       );
 
-      res.json(sanitize(result));
+      res.json(...sanitize(result));
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ error: err.message });
@@ -428,7 +425,7 @@ async function startServer() {
         true,
       );
 
-      res.json(sanitize(result));
+      res.json(...sanitize(result));
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ error: err.message });
@@ -447,7 +444,7 @@ async function startServer() {
         true,
       );
 
-      res.json(sanitize(result));
+      res.json(...sanitize(result));
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ error: err.message });
@@ -466,7 +463,7 @@ async function startServer() {
         true,
       );
 
-      res.json(sanitize(result));
+      res.json(...sanitize(result));
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ error: err.message });

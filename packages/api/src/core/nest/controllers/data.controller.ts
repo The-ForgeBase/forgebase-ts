@@ -19,7 +19,7 @@ import type {
 export class DataController {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  @Post(':table/query')
+  @Post('query/:table')
   async query(
     @Param('table') table: string,
     @Body() query: DataQueryParams,
@@ -33,7 +33,7 @@ export class DataController {
     );
   }
 
-  @Post(':table')
+  @Post('create/:table')
   async insert(
     @Param('table') table: string,
     @Body() data: DataMutationParams,
@@ -47,24 +47,41 @@ export class DataController {
     );
   }
 
-  @Patch(':table')
-  async update(@Body() params: DataMutationParams, @Req() req: any) {
-    return this.databaseService.update(params, req.userContext, req.isSystem);
-  }
-
-  @Post('advance-update')
-  async advanceUpdate(
-    @Body() params: AdvanceDataMutationParams,
+  @Patch('update/:table/:id')
+  async update(
+    @Param('table') table: string,
+    @Param('id') id: string,
+    @Body() params: DataMutationParams,
     @Req() req: any,
   ) {
-    return this.databaseService.advanceUpdate(
-      params,
+    return this.databaseService.update(
+      {
+        ...params,
+        tableName: table,
+        id,
+      },
       req.userContext,
       req.isSystem,
     );
   }
 
-  @Delete(':table/:id')
+  @Post('update/:table')
+  async advanceUpdate(
+    @Param('table') table: string,
+    @Body() params: AdvanceDataMutationParams,
+    @Req() req: any,
+  ) {
+    return this.databaseService.advanceUpdate(
+      {
+        ...params,
+        tableName: table,
+      },
+      req.userContext,
+      req.isSystem,
+    );
+  }
+
+  @Delete('del/:table/:id')
   async delete(
     @Param('table') table: string,
     @Param('id') id: string,
@@ -78,13 +95,17 @@ export class DataController {
     );
   }
 
-  @Post('advance-delete')
+  @Post('del/:table')
   async advanceDelete(
+    @Param('table') table: string,
     @Body() params: AdvanceDataDeleteParams,
     @Req() req: any,
   ) {
     return this.databaseService.advanceDelete(
-      params,
+      {
+        ...params,
+        tableName: table,
+      },
       req.userContext,
       req.isSystem,
     );
