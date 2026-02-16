@@ -52,13 +52,32 @@ const DEFAULT_TYPE = 'any';
 
 interface ColumnInfo {
   name: string;
+  defaultValue: any;
   dataType: string;
   isNullable: boolean;
+  isPrimaryKey: boolean;
   hasAutoIncrement: boolean;
+  hasDefaultValue: boolean;
+  foreignKeyReference?: {
+    table: string;
+    column: string;
+  };
+}
+
+interface ForeignKeyInfo {
+  table: string;
+  column: string;
+  foreignTable: string;
+  foreignColumn: string;
+  constraintName?: string;
+  onDelete?: string;
+  onUpdate?: string;
 }
 
 interface TableInfo {
   columns: ColumnInfo[];
+  foreignKeys: ForeignKeyInfo[];
+  //indexes: any;
 }
 
 interface DatabaseSchema {
@@ -115,6 +134,7 @@ export const databaseCommand = new Command('database')
         const interfaceName = toPascalCase(tableName);
         tableNames.push(tableName); // Keep original table name for Schema interface keys
 
+        // Generate the main interface (for reading/selecting)
         lines.push(`export interface ${interfaceName} {`);
 
         for (const col of tableInfo.columns) {
@@ -124,10 +144,28 @@ export const databaseCommand = new Command('database')
 
           // Handle nullability
           if (col.isNullable) {
-            tsType += ' | null';
+            lines.push(`  ${col.name}?: ${tsType};`);
+          } else {
+            lines.push(`  ${col.name}: ${tsType};`);
           }
+        }
 
-          lines.push(`  ${col.name}: ${tsType};`);
+        lines.push('}');
+        lines.push('');
+
+        // Generate the Create interface (for inserting/creating)
+        lines.push(`export interface ${interfaceName}Create {`);
+
+        for (const col of tableInfo.columns) {
+          // Map type
+          let tsType =
+            KyselyTypeMapping[col.dataType.toLowerCase()] || DEFAULT_TYPE;
+
+          if (col.hasDefaultValue || col.hasAutoIncrement || col.isNullable) {
+            lines.push(`  ${col.name}?: ${tsType};`);
+          } else {
+            lines.push(`  ${col.name}: ${tsType};`);
+          }
         }
 
         lines.push('}');
@@ -143,6 +181,14 @@ export const databaseCommand = new Command('database')
         // Let's use the generated interface name.
         const interfaceName = toPascalCase(tableName);
         lines.push(`  ${tableName}: ${interfaceName};`);
+      }
+      lines.push('}');
+      lines.push('');
+
+      lines.push('export interface CreateSchema {');
+      for (const tableName of tableNames) {
+        const interfaceName = toPascalCase(tableName);
+        lines.push(`  ${tableName}: ${interfaceName}Create;`);
       }
       lines.push('}');
       lines.push('');

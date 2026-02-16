@@ -202,7 +202,10 @@ export interface AuthInterceptors {
   };
 }
 
-export class DatabaseSDK<Schema extends Record<string, any> = any> {
+export class DatabaseSDK<
+  Schema extends Record<string, any> = any,
+  CreatedSchema extends Record<string, any> = any,
+> {
   private baseUrl: string;
   private axiosInstance: AxiosInstance;
   private customFetch?: typeof fetch;
@@ -390,6 +393,7 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
         payload,
         axiosConfig,
       );
+
       return {
         records: response.data as T[],
         params: params,
@@ -411,9 +415,12 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
    * @param axiosConfig Custom axios config for this specific request
    * @returns Promise containing the created record
    */
-  async createRecord<T extends Record<string, any>>(
+  async createRecord<
+    T extends Record<string, any>,
+    C extends Record<string, any> = any,
+  >(
     tableName: string,
-    data: T,
+    data: C,
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
     this.validateData(data);
@@ -668,7 +675,13 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
    * Helper method to create a query builder for fluent API usage
    * @param tableName The name of the table to query
    */
-  table<K extends keyof Schema>(tableName: K): QueryBuilder<Schema[K]>;
+  table<K extends keyof Schema | keyof CreatedSchema>(
+    tableName: K,
+  ): QueryBuilder<
+    K extends keyof Schema ? Schema[K] : any,
+    undefined,
+    K extends keyof CreatedSchema ? CreatedSchema[K] : any
+  >;
   table<T extends Record<string, any>>(tableName: string): QueryBuilder<T>;
   table<T extends Record<string, any>>(
     tableName: string | keyof Schema,
@@ -695,6 +708,7 @@ export class DatabaseSDK<Schema extends Record<string, any> = any> {
 class QueryBuilder<
   T extends Record<string, any>,
   Result extends Record<string, any> | undefined = undefined,
+  C extends Record<string, any> = any,
 > {
   private params: QueryParams<T> = {};
   private currentGroup?: WhereGroup<T>;
@@ -1324,6 +1338,10 @@ class QueryBuilder<
       return this.applyTransformations(response as any) as any;
     }
 
+    this.params = {}; // Reset params after execution
+    this.currentGroup = undefined;
+    this.ctes.clear();
+
     return response;
   }
 
@@ -1334,11 +1352,11 @@ class QueryBuilder<
    * @returns Promise with the created record
    */
   async create(
-    data: T,
+    data: C,
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
     // Create returns T, not Result
-    return this.sdk.createRecord<T>(this.tableName, data, axiosConfig);
+    return this.sdk.createRecord<T, C>(this.tableName, data, axiosConfig);
   }
 
   /**
@@ -1366,13 +1384,24 @@ class QueryBuilder<
     data: Partial<T>,
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
-    return this.sdk.advanceUpdateRecord(
+    const reps = await this.sdk.advanceUpdateRecord(
       this.tableName,
       data,
       this.params,
       { execute: true },
       axiosConfig,
     );
+
+    if (this.params.transforms && reps.records) {
+      // Transformations might change type, but for now assuming Result matches
+      return this.applyTransformations(reps as any) as any;
+    }
+
+    this.params = {}; // Reset params after execution
+    this.currentGroup = undefined;
+    this.ctes.clear();
+
+    return reps;
   }
 
   /**
@@ -1396,12 +1425,20 @@ class QueryBuilder<
   async advanceDelete(
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<ApiResponse<any>> {
-    return this.sdk.advanceDeleteRecord(
+    const reps = await this.sdk.advanceDeleteRecord(
       this.tableName,
       this.params,
       { execute: true },
       axiosConfig,
     );
+    if (this.params.transforms && reps.records) {
+      // Transformations might change type, but for now assuming Result matches
+      return this.applyTransformations(reps as any) as any;
+    }
+    this.params = {}; // Reset params after execution
+    this.currentGroup = undefined;
+    this.ctes.clear();
+    return reps;
   }
 
   private applyTransformations(response: ApiResponse<T>): ApiResponse<T> {

@@ -174,7 +174,11 @@ export class KyselyQueryHandler {
 
       // 1. Handle explicit selects
       if (params.select?.length) {
-        selections.push(...params.select);
+        // first remove the * if it's present, since explicit fields should override it
+        const filteredSelects = params.select.filter((s) => s !== '*');
+        if (filteredSelects.length > 0) {
+          selections.push(...filteredSelects);
+        }
       }
       // 2. Handle GroupBy fields (auto-select if not explicitly selected)
       else if (params.groupBy?.length) {

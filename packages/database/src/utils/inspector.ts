@@ -7,6 +7,7 @@ export interface ColumnInfo {
   isNullable: boolean;
   isPrimaryKey: boolean;
   hasAutoIncrement: boolean;
+  hasDefaultValue: boolean;
   foreignKeyReference?: {
     table: string;
     column: string;
@@ -190,6 +191,7 @@ export class DBInspector {
         dataType: col.dataType,
         isNullable: col.isNullable,
         isPrimaryKey: isPk,
+        hasDefaultValue: col.hasDefaultValue,
         hasAutoIncrement: col.isAutoIncrementing,
         foreignKeyReference: fk
           ? {

@@ -83,7 +83,10 @@ export function createColumn(
     }
 
     // Auto timestamps
-    if (columnDef.name === 'created_at' || columnDef.name === 'updated_at') {
+    if (
+      (columnDef.name === 'created_at' || columnDef.name === 'updated_at') &&
+      columnDef.type.includes('time')
+    ) {
       c = c.defaultTo(sql`now()`);
     }
 
