@@ -161,7 +161,12 @@ export const databaseCommand = new Command('database')
           let tsType =
             KyselyTypeMapping[col.dataType.toLowerCase()] || DEFAULT_TYPE;
 
-          if (col.hasDefaultValue || col.hasAutoIncrement || col.isNullable) {
+          if (
+            col.hasDefaultValue ||
+            col.hasAutoIncrement ||
+            col.isNullable ||
+            col.isPrimaryKey
+          ) {
             lines.push(`  ${col.name}?: ${tsType};`);
           } else {
             lines.push(`  ${col.name}: ${tsType};`);
