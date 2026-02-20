@@ -491,12 +491,6 @@ export class ForgeDatabase {
             }
           }
 
-          if (filtered.length === 0) {
-            throw new PermissionDeniedError(
-              `User does not have permission to query table "${tableName}"`,
-            );
-          }
-
           return filtered as any;
         }
 
