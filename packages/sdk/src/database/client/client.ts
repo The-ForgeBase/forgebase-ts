@@ -207,7 +207,7 @@ export class DatabaseSDK<
   CreatedSchema extends Record<string, any> = any,
 > {
   private baseUrl: string;
-  private axiosInstance: AxiosInstance;
+  private axiosInstance?: AxiosInstance;
   private customFetch?: typeof fetch;
 
   /**
@@ -239,18 +239,20 @@ export class DatabaseSDK<
     }
 
     // Use the provided axios instance or create a new one
-    if (axiosInstance) {
-      this.axiosInstance = axiosInstance;
-    } else {
-      this.axiosInstance = axios.create({
-        baseURL: this.baseUrl,
-        withCredentials: true,
-        ...axiosConfig,
-      });
+    if (!this.customFetch) {
+      if (axiosInstance) {
+        this.axiosInstance = axiosInstance;
+      } else {
+        this.axiosInstance = axios.create({
+          baseURL: this.baseUrl,
+          withCredentials: true,
+          ...axiosConfig,
+        });
 
-      // Apply auth interceptors if provided
-      if (authInterceptors) {
-        this.applyAuthInterceptors(authInterceptors);
+        // Apply auth interceptors if provided
+        if (authInterceptors) {
+          this.applyAuthInterceptors(authInterceptors);
+        }
       }
     }
   }
@@ -271,7 +273,7 @@ export class DatabaseSDK<
     this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
 
     // Update the axios instance baseURL if it was created by this class
-    if (this.axiosInstance.defaults.baseURL) {
+    if (this.axiosInstance?.defaults.baseURL) {
       this.axiosInstance.defaults.baseURL = this.baseUrl;
     }
   }
@@ -280,7 +282,7 @@ export class DatabaseSDK<
    * Get the axios instance used for API requests
    * @returns The axios instance
    */
-  getAxiosInstance(): AxiosInstance {
+  getAxiosInstance(): AxiosInstance | undefined {
     return this.axiosInstance;
   }
 
@@ -303,24 +305,13 @@ export class DatabaseSDK<
   ): Promise<any> {
     if (!this.customFetch) return null;
 
-    const { headers, signal, withCredentials } = axiosConfig;
-
     const fetchOptions: RequestInit = {
       method,
       headers: {
         'Content-Type': 'application/json',
-        ...(headers as any),
       },
       body: payload ? JSON.stringify(payload) : undefined,
     };
-
-    if (withCredentials) {
-      fetchOptions.credentials = 'include';
-    }
-
-    if (signal) {
-      fetchOptions.signal = signal as AbortSignal;
-    }
 
     const response = await this.customFetch(url, fetchOptions);
     const data = await response.json();
@@ -341,10 +332,10 @@ export class DatabaseSDK<
    */
   applyAuthInterceptors(authInterceptors: AuthInterceptors): void {
     // Add request interceptor
-    this.axiosInstance.interceptors.request.use(authInterceptors.request);
+    this.axiosInstance?.interceptors.request.use(authInterceptors.request);
 
     // Add response interceptors
-    this.axiosInstance.interceptors.response.use(
+    this.axiosInstance?.interceptors.response.use(
       authInterceptors.response.onFulfilled,
       authInterceptors.response.onRejected,
     );
@@ -388,14 +379,14 @@ export class DatabaseSDK<
         };
       }
 
-      const response = await this.axiosInstance.post<ApiResponse<T>>(
+      const response = await this.axiosInstance?.post<ApiResponse<T>>(
         `/query/${tableName}`,
         payload,
         axiosConfig,
       );
 
       return {
-        records: response.data as T[],
+        records: response?.data as T[],
         params: params,
         message: 'Records fetched successfully',
         error: undefined,
@@ -443,13 +434,13 @@ export class DatabaseSDK<
         };
       }
 
-      const response = await this.axiosInstance.post<ApiResponse<T>>(
+      const response = await this.axiosInstance?.post<ApiResponse<T>>(
         `/create/${tableName}`,
         payload,
         axiosConfig,
       );
       return {
-        records: [response.data as T],
+        records: [response?.data as T],
         message: 'Record created successfully',
         error: undefined,
       };
@@ -495,13 +486,13 @@ export class DatabaseSDK<
         };
       }
 
-      const response = await this.axiosInstance.put<ApiResponse<T>>(
+      const response = await this.axiosInstance?.put<ApiResponse<T>>(
         `/update/${tableName}/${id}`,
         payload,
         axiosConfig,
       );
       return {
-        records: [response.data as T],
+        records: [response?.data as T],
         message: 'Record updated successfully',
         error: undefined,
       };
@@ -551,7 +542,7 @@ export class DatabaseSDK<
         };
       }
 
-      const response = await this.axiosInstance.post<ApiResponse<never>>(
+      const response = await this.axiosInstance?.post<ApiResponse<never>>(
         `/update/${tableName}`,
         payload,
         axiosConfig,
@@ -559,7 +550,7 @@ export class DatabaseSDK<
       return {
         message: 'Records updated successfully',
         error: undefined,
-        records: response.data as T[],
+        records: response?.data as T[],
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -599,7 +590,7 @@ export class DatabaseSDK<
         };
       }
 
-      const response = await this.axiosInstance.post<ApiResponse<never>>(
+      const response = await this.axiosInstance?.post<ApiResponse<never>>(
         `/del/${tableName}/${id}`,
         {},
         axiosConfig,
@@ -607,7 +598,7 @@ export class DatabaseSDK<
       return {
         message: 'Record deleted successfully',
         error: undefined,
-        records: response.data as any[],
+        records: response?.data as any[],
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -653,7 +644,7 @@ export class DatabaseSDK<
         };
       }
 
-      const response = await this.axiosInstance.post<ApiResponse<never>>(
+      const response = await this.axiosInstance?.post<ApiResponse<never>>(
         `/del/${tableName}`,
         payload,
         axiosConfig,
@@ -661,7 +652,7 @@ export class DatabaseSDK<
       return {
         message: 'Record deleted successfully',
         error: undefined,
-        records: response.data as any[],
+        records: response?.data as any[],
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {

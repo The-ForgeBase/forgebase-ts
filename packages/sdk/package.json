@@ -1,6 +1,6 @@
 {
   "name": "@forgebase/sdk",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": false,
   "type": "module",
   "main": "./dist/index.cjs",
